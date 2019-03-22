@@ -1,11 +1,11 @@
-# docker stack deploy -c docker-compose.yml dejavu
+# docker stack deploy -c docker-compose.yml careless-whisper
 version: '3.5'
 
 services:
 
-  dejavu:
+  careless-whisper:
     build: .
-    image: abilioesteves/dejavu:1.0.2
+    image: abilioesteves/careless-whisper:0.0.1
     ports:
       - "7070:7070"
     environment:
@@ -18,7 +18,7 @@ services:
     environment:
       - SCRAPE_INTERVAL=15s
       - SCRAPE_TIMEOUT=10s
-      - STATIC_SCRAPE_TARGETS=dejavu@dejavu:7070/metrics
+      - STATIC_SCRAPE_TARGETS=careless-whisper@careless-whisper:7070/metrics
 
   grafana:
     image: flaviostutz/grafana

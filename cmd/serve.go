@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/abilioesteves/whisper/web"
+	"github.com/abilioesteves/careless-whisper/web"
 	"github.com/spf13/cobra"
 )
 

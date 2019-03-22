@@ -1,11 +1,11 @@
-# docker stack deploy -c docker-compose.yml careless-whisper
+# docker stack deploy -c docker-compose.yml whisper
 version: '3.5'
 
 services:
 
-  careless-whisper:
+  whisper:
     build: .
-    image: abilioesteves/careless-whisper:0.0.1
+    image: abilioesteves/whisper:0.0.1
     ports:
       - "7070:7070"
     environment:
@@ -18,7 +18,7 @@ services:
     environment:
       - SCRAPE_INTERVAL=15s
       - SCRAPE_TIMEOUT=10s
-      - STATIC_SCRAPE_TARGETS=careless-whisper@careless-whisper:7070/metrics
+      - STATIC_SCRAPE_TARGETS=whisper@whisper:7070/metrics
 
   grafana:
     image: flaviostutz/grafana

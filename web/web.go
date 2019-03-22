@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/abilioesteves/careless-whisper/web/api"
-	"github.com/abilioesteves/careless-whisper/web/ui"
+	"github.com/abilioesteves/whisper/web/api"
+	"github.com/abilioesteves/whisper/web/ui"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )

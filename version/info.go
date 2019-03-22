@@ -1,7 +1,22 @@
 package version
 
+import "fmt"
+
+// Default build-time variable.
+// These values are overridden via ldflags
 var (
-	Version   = "dev"
-	GitHash   = "undefined"
-	BuildTime = "I don't remember exactly"
+	Version   = "unknown-version"
+	GitCommit = "unknown-commit"
+	BuildTime = "unknown-buildtime"
 )
+
+const versionF = `Bindman-DNS Bind9
+  Version: %s
+  GitCommit: %s
+  BuildTime: %s
+`
+
+// FormattedMessage gets the full formatted version message
+func FormattedMessage() string {
+	return fmt.Sprintf(versionF, Version, GitCommit, BuildTime)
+}

@@ -1,0 +1,27 @@
+# docker stack deploy -c docker-compose.yml dejavu
+version: '3.5'
+
+services:
+
+  dejavu:
+    build: .
+    image: abilioesteves/dejavu:1.0.2
+    ports:
+      - "7070:7070"
+    environment:
+      - PORT=7070
+
+  prometheus:
+    image: abilioesteves/prometheus:1.0.0
+    ports:
+      - 9090:9090
+    environment:
+      - SCRAPE_INTERVAL=15s
+      - SCRAPE_TIMEOUT=10s
+      - STATIC_SCRAPE_TARGETS=dejavu@dejavu:7070/metrics
+
+  grafana:
+    image: flaviostutz/grafana
+    ports:
+      - 3000:3000
+

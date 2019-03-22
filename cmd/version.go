@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/abilioesteves/whisper/version"
+	"github.com/abilioesteves/careless-whisper/version"
 
 	"github.com/spf13/cobra"
 )

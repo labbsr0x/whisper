@@ -1,2 +1,2 @@
-# housekeeper
-A Login and Consent provider implementation in go
+# whisper
+A Login and Consent provider implementation in go.

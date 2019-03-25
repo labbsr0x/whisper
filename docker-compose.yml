@@ -9,7 +9,7 @@ services:
     ports:
       - "7070:7070"
     environment:
-      - PORT=7070
+      - WHISPER_PORT=7070
 
   prometheus:
     image: abilioesteves/prometheus:1.0.0

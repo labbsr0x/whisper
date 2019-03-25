@@ -16,9 +16,7 @@ FROM alpine
 
 RUN mkdir -p /static
 
-COPY --from=builder /whisper /go/bin/
-ADD web/ui/static/index.html /static
+COPY --from=builder /whisper /
+ADD web/ui/static/index.html /static/
 
-ENTRYPOINT [ "/go/bin/whisper" ]
-
-CMD [ "serve" ]
+CMD [ "/whisper", "serve" ]

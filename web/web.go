@@ -37,10 +37,10 @@ func (b *Builder) New() (s *Server, err error) {
 func (s *Server) Initialize() error {
 	router := mux.NewRouter().StrictSlash(true)
 
-	router.HandleFunc("/api/users", s.UserAPIs.ListUsersHandler).Methods("GET")
-	router.HandleFunc("/api/users", s.UserAPIs.AddUserHandler).Methods("POST")
-	router.HandleFunc("/api/users", s.UserAPIs.RemoveUserHandler).Methods("DELETE")
-	router.HandleFunc("/api/users/{clientId}", s.UserAPIs.GetUserHandler).Methods("GET")
+	router.Handle("/api/users", Intercept(s.UserAPIs.ListUsersHandler)).Methods("GET")
+	router.Handle("/api/users", Intercept(s.UserAPIs.AddUserHandler)).Methods("POST")
+	router.Handle("/api/users", Intercept(s.UserAPIs.RemoveUserHandler)).Methods("DELETE")
+	router.Handle("/api/users/{clientId}", Intercept(s.UserAPIs.GetUserHandler)).Methods("GET")
 
 	router.Handle("/", ui.Handler(s.BaseUIPath))
 	router.Handle("/metrics", promhttp.Handler()).Methods("GET")

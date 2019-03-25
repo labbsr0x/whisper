@@ -10,7 +10,7 @@ var (
 	BuildTime = "unknown-buildtime"
 )
 
-const versionF = `Bindman-DNS Bind9
+const versionF = `Whisper
   Version: %s
   GitCommit: %s
   BuildTime: %s

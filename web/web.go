@@ -21,8 +21,7 @@ func Initialize() error {
 	router.HandleFunc("/api/users", api.RemoveUserHandler).Methods("DELETE")
 	router.HandleFunc("/api/users/{clientId}", api.GetUserHandler).Methods("GET")
 
-	router.Handle("/login", ui.Handler())
-	router.Handle("/consent", ui.Handler())
+	router.Handle("/", ui.Handler())
 	router.Handle("/metrics", promhttp.Handler()).Methods("GET")
 
 	srv := &http.Server{
@@ -35,7 +34,7 @@ func Initialize() error {
 	log.Print("Initialized")
 	err := srv.ListenAndServe()
 	if err != nil {
-		log.Fatal("server initializing error", err)
+		log.Fatal("server initialization error", err)
 		return err
 	}
 	return nil

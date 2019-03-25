@@ -6,5 +6,5 @@ import (
 
 // Handler defines the handler for ui requests
 func Handler() http.Handler {
-	return http.FileServer(http.Dir("/"))
+	return http.FileServer(http.Dir("/static"))
 }

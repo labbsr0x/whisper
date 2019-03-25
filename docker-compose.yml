@@ -7,9 +7,9 @@ services:
     build: .
     image: abilioesteves/whisper:0.0.1
     ports:
-      - "7070:7070"
+      - "7070:7072"
     environment:
-      - WHISPER_PORT=7070
+      - WHISPER_PORT=7072
 
   prometheus:
     image: abilioesteves/prometheus:1.0.0

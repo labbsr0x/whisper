@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/abilioesteves/whisper/web/middleware"
+
 	"github.com/abilioesteves/whisper/web/api"
 	"github.com/abilioesteves/whisper/web/ui"
 	"github.com/gorilla/mux"
@@ -36,14 +38,19 @@ func (b *Builder) New() (s *Server, err error) {
 // Initialize inits the web server and its apis
 func (s *Server) Initialize() error {
 	router := mux.NewRouter().StrictSlash(true)
-
-	router.Handle("/api/users", Intercept(s.UserAPIs.ListUsersHandler)).Methods("GET")
-	router.Handle("/api/users", Intercept(s.UserAPIs.AddUserHandler)).Methods("POST")
-	router.Handle("/api/users", Intercept(s.UserAPIs.RemoveUserHandler)).Methods("DELETE")
-	router.Handle("/api/users/{clientId}", Intercept(s.UserAPIs.GetUserHandler)).Methods("GET")
+	secureRouter := router.PathPrefix("/api").Subrouter()
 
 	router.Handle("/", ui.Handler(s.BaseUIPath))
 	router.Handle("/metrics", promhttp.Handler()).Methods("GET")
+
+	secureRouter.HandleFunc("/users", s.UserAPIs.ListUsersHandler).Methods("GET")
+	secureRouter.HandleFunc("/users", s.UserAPIs.AddUserHandler).Methods("POST")
+	secureRouter.HandleFunc("/users", s.UserAPIs.RemoveUserHandler).Methods("DELETE")
+	secureRouter.HandleFunc("/users/{clientId}", s.UserAPIs.GetUserHandler).Methods("GET")
+
+	router.Use(middleware.PrometheusMiddleware)
+	router.Use(middleware.ErrorMiddleware)
+	secureRouter.Use(middleware.SecurityMiddleware)
 
 	srv := &http.Server{
 		Handler:      router,

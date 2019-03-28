@@ -14,9 +14,9 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /whisper main.go
 ## PKG
 FROM alpine
 
-RUN mkdir -p /static
+RUN mkdir -p /www
 
 COPY --from=builder /whisper /
-ADD web/ui/static/index.html /static/
+COPY web/ui/www/ /www/
 
 CMD [ "/whisper", "serve" ]

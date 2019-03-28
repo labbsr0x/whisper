@@ -19,6 +19,34 @@ type HydraClient struct {
 	HTTPClient *gohclient.Default
 }
 
+// AcceptLoginRequestPayload holds the data to communicate with hydra's accept login api
+type AcceptLoginRequestPayload struct {
+	Subject     string `json:"subject"`
+	Remember    bool   `json:"remember"`
+	RememberFor int    `json:"remember_for"`
+	ACR         string `json:"acr"`
+}
+
+// AcceptConsentRequestPayload holds the data to communicate with hydra's accept consent api
+type AcceptConsentRequestPayload struct {
+	GrantScope               []string            `json:"grant_scope"`
+	GrantAccessTokenAudience interface{}         `json:"requested_access_token_audience"`
+	Remember                 bool                `json:"remember"`
+	RememberFor              int                 `json:"remember_for"`
+	Session                  TokenSessionPayload `json:"session"`
+}
+
+// TokenSessionPayload holds additional data to be carried with the created token
+type TokenSessionPayload struct {
+	Owner string `json:"owner"`
+}
+
+// RejectConsentRequestPayload holds the data to communicate with hydra's reject consent api
+type RejectConsentRequestPayload struct {
+	Error            string `json:"error"`
+	ErrorDescription string `json:"error_description"`
+}
+
 // Init initializes a hydra client
 func (hydra *HydraClient) Init(hydraEndpoint string) *HydraClient {
 	hydra.BaseURL = new(url.URL)
@@ -36,13 +64,9 @@ func (hydra *HydraClient) GetLoginRequestInfo(challenge string) map[string]inter
 }
 
 // AcceptLoginRequest sends an accept login request to hydra
-func (hydra *HydraClient) AcceptLoginRequest(challenge string, data []byte) map[string]interface{} {
+func (hydra *HydraClient) AcceptLoginRequest(challenge string, payload AcceptLoginRequestPayload) map[string]interface{} {
+	data, _ := json.Marshal(&payload)
 	return hydra.put("login", "accept", challenge, data)
-}
-
-// RejectLoginRequest sends a reject login request to hydra
-func (hydra *HydraClient) RejectLoginRequest(challenge string, data []byte) map[string]interface{} {
-	return hydra.put("login", "reject", challenge, data)
 }
 
 // GetConsentRequestInfo retrieves information to drive decisions over how to deal with the consent request
@@ -51,12 +75,14 @@ func (hydra *HydraClient) GetConsentRequestInfo(challenge string) map[string]int
 }
 
 // AcceptConsentRequest sends an accept login request to hydra
-func (hydra *HydraClient) AcceptConsentRequest(challenge string, data []byte) map[string]interface{} {
+func (hydra *HydraClient) AcceptConsentRequest(challenge string, payload AcceptConsentRequestPayload) map[string]interface{} {
+	data, _ := json.Marshal(&payload)
 	return hydra.put("consent", "accept", challenge, data)
 }
 
 // RejectConsentRequest sends a reject login request to hydra
-func (hydra *HydraClient) RejectConsentRequest(challenge string, data []byte) map[string]interface{} {
+func (hydra *HydraClient) RejectConsentRequest(challenge string, payload RejectConsentRequestPayload) map[string]interface{} {
+	data, _ := json.Marshal(&payload)
 	return hydra.put("consent", "reject", challenge, data)
 }
 

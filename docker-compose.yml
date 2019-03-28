@@ -7,9 +7,13 @@ services:
     build: .
     image: abilioesteves/whisper:0.0.1
     ports:
-      - "7070:7072"
+      - "7070:7070"
     environment:
-      - WHISPER_PORT=7072
+      - WHISPER_PORT=7070
+
+  # TODO hydra
+
+  # TODO example client app
 
   prometheus:
     image: abilioesteves/prometheus:1.0.0

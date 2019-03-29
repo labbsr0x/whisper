@@ -8,8 +8,10 @@ import (
 type MockConsentAPI struct {
 }
 
-// ConsentPOSTHandler REST POST api handler for app authorization
-func (u *MockConsentAPI) ConsentPOSTHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO
-	w.WriteHeader(200)
+func (mock *MockConsentAPI) ConsentGETHandler(route string) http.Handler {
+	return nil
+}
+
+func (mock *MockConsentAPI) ConsentPOSTHandler() http.Handler {
+	return nil
 }

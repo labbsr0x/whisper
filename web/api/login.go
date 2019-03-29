@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/gorilla/mux"
+	"github.com/sirupsen/logrus"
 
 	"github.com/abilioesteves/goh/gohtypes"
 
@@ -13,8 +13,8 @@ import (
 
 // LoginAPI defines the available user apis
 type LoginAPI interface {
-	LoginGETHandler() http.Handler
-	LoginPOSTHandler(w http.ResponseWriter, r *http.Request)
+	LoginGETHandler(route string) http.Handler
+	LoginPOSTHandler() http.Handler
 }
 
 // LoginRequestPayload holds the data that defines a login request to Whisper
@@ -39,41 +39,46 @@ func (api *DefaultLoginAPI) Init(hydraClient *misc.HydraClient, baseUIPath strin
 }
 
 // LoginPOSTHandler REST POST api handler for logging in users
-func (api *DefaultLoginAPI) LoginPOSTHandler(w http.ResponseWriter, r *http.Request) {
-	var loginRequest LoginRequestPayload
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&loginRequest)
-	if err == nil {
-		if loginRequest.Password == "foobar" && loginRequest.Username == "foo@bar.com" { // TODO validatation BL
-			info := api.HydraClient.AcceptLoginRequest(
-				loginRequest.Challenge,
-				misc.AcceptLoginRequestPayload{ACR: "0", Remember: loginRequest.Remember, RememberFor: 3600, Subject: loginRequest.Username},
-			)
-			if info != nil {
-				http.Redirect(w, r, info["redirect_to"].(string), 302)
+func (api *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var loginRequest LoginRequestPayload
+		decoder := json.NewDecoder(r.Body)
+		err := decoder.Decode(&loginRequest)
+		if err == nil {
+			logrus.Infof("Login request. Payload '%v'", loginRequest)
+			if loginRequest.Password == "foobar" && loginRequest.Username == "foo@bar.com" { // TODO validation BL
+				info := api.HydraClient.AcceptLoginRequest(
+					loginRequest.Challenge,
+					misc.AcceptLoginRequestPayload{ACR: "0", Remember: loginRequest.Remember, RememberFor: 3600, Subject: loginRequest.Username},
+				)
+				if info != nil {
+					http.Redirect(w, r, info["redirect_to"].(string), 302)
+				}
 			}
+			panic(gohtypes.Error{Code: 403, Message: "Unable to authenticate user"})
 		}
-		panic(gohtypes.Error{Code: 403, Message: "Unable to authenticate user"})
-	}
-	panic(gohtypes.Error{Err: err, Code: 400, Message: "Unable to read request login payload."})
+		panic(gohtypes.Error{Err: err, Code: 400, Message: "Unable to read request login payload."})
+	})
 }
 
 // LoginGETHandler redirects the browser appropriately given
-func (api *DefaultLoginAPI) LoginGETHandler() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		challenge := vars["login_challenge"]
+func (api *DefaultLoginAPI) LoginGETHandler(route string) http.Handler {
+	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		challenge := r.URL.Query().Get("login_challenge")
+		logrus.Infof("challenge: %v", challenge)
 		info := api.HydraClient.GetLoginRequestInfo(challenge)
 		if info["skip"].(bool) {
+			subject := info["subject"].(string)
 			info = api.HydraClient.AcceptLoginRequest(
 				challenge,
-				misc.AcceptLoginRequestPayload{Subject: info["subject"].(string)},
+				misc.AcceptLoginRequestPayload{Subject: subject},
 			)
 			if info != nil {
+				logrus.Infof("Login request skipped for subject '%v'", subject)
 				http.Redirect(w, r, info["redirect_to"].(string), 302)
 			}
 		} else {
 			http.ServeFile(w, r, api.BaseUIPath)
 		}
-	})
+	}))
 }

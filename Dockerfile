@@ -1,7 +1,5 @@
 # BUILD
-FROM golang:1.11-alpine as builder
-
-RUN apk add --no-cache git mercurial 
+FROM abilioesteves/gowebbuilder:unstable as builder
 
 ENV p $GOPATH/src/github.com/abilioesteves/whisper
 

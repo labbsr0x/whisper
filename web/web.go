@@ -1,7 +1,6 @@
 package web
 
 import (
-	"log"
 	"net/http"
 	"time"
 
@@ -51,13 +50,16 @@ func (s *Server) Initialize() error {
 
 	router.PathPrefix("/static").Handler(ui.Handler(s.BaseUIPath)).Methods("GET")
 	router.Handle("/metrics", promhttp.Handler()).Methods("GET")
-	router.Handle("/login", http.StripPrefix("/login", s.LoginAPIs.LoginGETHandler())).Methods("GET")
-	router.HandleFunc("/login", s.LoginAPIs.LoginPOSTHandler).Methods("POST")
-	router.Handle("/consent", http.StripPrefix("/consent", s.ConsentAPIs.ConsentGETHandler())).Methods("GET")
-	router.HandleFunc("/consent", s.ConsentAPIs.ConsentPOSTHandler).Methods("POST")
+
+	router.Handle("/login", s.LoginAPIs.LoginGETHandler("/login")).Methods("GET")
+	router.Handle("/login", s.LoginAPIs.LoginPOSTHandler()).Methods("POST")
+
+	router.Handle("/consent", s.ConsentAPIs.ConsentGETHandler("/consent")).Methods("GET")
+	router.Handle("/consent", s.ConsentAPIs.ConsentPOSTHandler()).Methods("POST")
+
+	router.HandleFunc("/users", s.UserAPIs.AddUserHandler).Methods("POST")
 
 	secureRouter.HandleFunc("/users", s.UserAPIs.ListUsersHandler).Methods("GET")
-	secureRouter.HandleFunc("/users", s.UserAPIs.AddUserHandler).Methods("POST")
 	secureRouter.HandleFunc("/users", s.UserAPIs.RemoveUserHandler).Methods("DELETE")
 	secureRouter.HandleFunc("/users/{clientId}", s.UserAPIs.GetUserHandler).Methods("GET")
 
@@ -74,10 +76,10 @@ func (s *Server) Initialize() error {
 
 	logrus.Infof("Port %v", s.Port)
 
-	log.Print("Initialized")
+	logrus.Print("Initialized")
 	err := srv.ListenAndServe()
 	if err != nil {
-		log.Fatal("server initialization error", err)
+		logrus.Fatal("server initialization error", err)
 		return err
 	}
 	return nil

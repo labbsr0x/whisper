@@ -14,15 +14,25 @@ services:
       - WHISPER_HYDRA_ENDPOINT=http://hydra:4444/
 
   hydra-migrate:
-    image: oryd/hydra:v1.0.0-rc.6_oryOS.10-alpine 
+    image: oryd/hydra:v1.0.0-rc.6_oryOS.10
     environment:
       - DATABASE_URL=postgres://hydra:secret@postgresd-hydra:5432/hydra?sslmode=disable
     command:
       migrate sql -e
     restart: on-failure
 
+  consent:
+    environment:
+      - HYDRA_ADMIN_URL=http://hydra:4445
+    image: oryd/hydra-login-consent-node:v1.0.0-rc.2
+    links:
+      - hydra
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
   hydra:
-    image: oryd/hydra:v1.0.0-rc.6_oryOS.10-alpine 
+    image: oryd/hydra:v1.0.0-rc.6_oryOS.10
     depends_on:
       - hydra-migrate
     ports:
@@ -43,6 +53,7 @@ services:
       - OAUTH2_SHARE_ERROR_DEBUG=1
       - OIDC_SUBJECT_TYPES_SUPPORTED=public,pairwise
       - OIDC_SUBJECT_TYPE_PAIRWISE_SALT=youReallyNeedToChangeThis
+      - CORS_ENABLED=true
 #     - OAUTH2_ACCESS_TOKEN_STRATEGY=jwt
 
   postgresd-hydra:
@@ -64,9 +75,4 @@ services:
       - SCRAPE_INTERVAL=15s
       - SCRAPE_TIMEOUT=10s
       - STATIC_SCRAPE_TARGETS=whisper@whisper:7070/metrics
-
-  grafana:
-    image: flaviostutz/grafana
-    ports:
-      - 3000:3000
 

@@ -1,6 +1,7 @@
 package web
 
 import (
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 )
@@ -23,5 +24,6 @@ func (b *Builder) InitFromViper(v *viper.Viper) *Builder {
 	b.Port = v.GetString(port)
 	b.BaseUIPath = v.GetString(baseUIPath)
 	b.HydraEndpoint = v.GetString(hydraEndpoint)
+	logrus.Infof("Run config: %v", b)
 	return b
 }

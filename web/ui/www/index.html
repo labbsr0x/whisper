@@ -80,6 +80,8 @@
                 <br/>
                 <br/>
                 <form action="/consent" method="POST">
+                    <input id="accept-consent" type="hidden" name="accept" value="false"></input>
+                    <input id="consent-challenge" type="hidden" name="challenge" value=""></input>
                     <div class="row">
                         <div class="col-sm-3"></div>
                         <div class="col-sm-6">
@@ -92,10 +94,10 @@
                     <div class="row">
                         <div class="col-sm-3"></div>
                         <div class="col-sm-3">
-                            <button type="reset" class="btn btn-primary">Cancel</button>
+                            <button type="reset" onclick="acceptConsent(false);" class="btn btn-primary">Cancel</button>
                         </div>
                         <div class="col-sm-3">
-                            <button type="reset" class="btn btn-primary">Accept</button>
+                            <button type="reset" onclick="acceptConsent(true); " class="btn btn-primary">Accept</button>
                         </div>
                         <div class="col-sm-3"></div>
                     </div>
@@ -154,10 +156,16 @@
                     loginControl.challengeElement.value = params.get("login_challenge")
                 } else if (consentControl.matcher.exec(url)) {
                     consentControl.element.hidden = false
+                    consentControl.challengeElement.value = params.get("consent_challenge")
                     // list scopes
                 } else {
                     errorControl.element.hidden = false
                 }
+            }
+
+            acceptConsent = function(value) {
+                var el = document.getElementById("accept-consent")
+                el.value = value
             }
 
             var getParams = function (url) {

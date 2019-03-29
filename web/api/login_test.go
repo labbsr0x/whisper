@@ -8,7 +8,10 @@ import (
 type MockLoginAPI struct {
 }
 
-// LoginPOSTHandler REST POST api handler for logging in users
-func (u *MockLoginAPI) LoginPOSTHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(200)
+func (mock *MockLoginAPI) LoginGETHandler(route string) http.Handler {
+	return nil
+}
+
+func (mock *MockLoginAPI) LoginPOSTHandler() http.Handler {
+	return nil
 }

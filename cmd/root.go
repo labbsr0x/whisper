@@ -14,7 +14,7 @@ var cfgFile string
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "whisper",
-	Short: "A login and consent provider",
+	Short: "A login and consent provider for Hydra",
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -32,7 +32,7 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	viper.SetEnvPrefix("WHISPER")
+	viper.SetEnvPrefix("WHISPER") // all whisper environment variables must be prefixed with WHISPER_
 	viper.SetEnvKeyReplacer(strings.NewReplacer("-", "_", ".", "_"))
 	viper.AutomaticEnv() // read in environment variables that match
 }

@@ -2,10 +2,10 @@ package api
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
 	"net/url"
-
-	"github.com/abilioesteves/whisper/web/ui"
+	"path"
 
 	"github.com/abilioesteves/goh/gohtypes"
 	"github.com/abilioesteves/whisper/misc"
@@ -16,6 +16,20 @@ import (
 type ConsentAPI interface {
 	ConsentGETHandler(route string) http.Handler
 	ConsentPOSTHandler() http.Handler
+}
+
+// ConsentPage defines the data needed to build a consent page
+type ConsentPage struct {
+	ClientURI       string
+	ClientName      string
+	RequestedScopes []GrantScope
+}
+
+// GrantScope defines the structure of a grant scope
+type GrantScope struct {
+	Description string
+	Details     string
+	Scope       string
 }
 
 // ConsentRequestPayload holds the data that defines a consent request to Whisper
@@ -56,16 +70,18 @@ func (payload *ConsentRequestPayload) check(form url.Values) error {
 type DefaultConsentAPI struct {
 	HydraClient *misc.HydraClient
 	BaseUIPath  string
+	GrantScopes map[string]GrantScope
 }
 
 // Init initializes a default consent api instance
-func (api *DefaultConsentAPI) Init(hydraClient *misc.HydraClient, baseUIPath string) *DefaultConsentAPI {
+func (api *DefaultConsentAPI) Init(hydraClient *misc.HydraClient, baseUIPath string, grantScopes map[string]GrantScope) *DefaultConsentAPI {
 	api.HydraClient = hydraClient
 	api.BaseUIPath = baseUIPath
+	api.GrantScopes = grantScopes
 	return api
 }
 
-// ConsentPOSTHandler REST POST api handler for app authorization
+// ConsentPOSTHandler post form handler for app authorization
 func (api *DefaultConsentAPI) ConsentPOSTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		consentRequest := new(ConsentRequestPayload).InitFromRequest(r)
@@ -100,15 +116,16 @@ func (api *DefaultConsentAPI) ConsentPOSTHandler() http.Handler {
 	})
 }
 
-// ConsentGETHandler redirects the browser appropriately
+// ConsentGETHandler prompts the browser to the consent UI or redirects it to hydra
 func (api *DefaultConsentAPI) ConsentGETHandler(route string) http.Handler {
 	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		challenge := r.URL.Query().Get("consent_challenge")
 		info := api.HydraClient.GetConsentRequestInfo(challenge)
+		logrus.Debugf("Consent Request Info: '%v'", info)
 		if info["skip"].(bool) {
 			info = api.HydraClient.AcceptConsentRequest(
 				challenge,
-				misc.AcceptConsentRequestPayload{GrantScope: info["requested_scope"].([]string), GrantAccessTokenAudience: info["requested_access_token_audience"].([]string)},
+				misc.AcceptConsentRequestPayload{GrantScope: info["requested_scope"].([]string), GrantAccessTokenAudience: misc.ConvertInterfaceArrayToStringArray(info["requested_access_token_audience"].([]interface{}))},
 			)
 
 			if info != nil {
@@ -116,7 +133,30 @@ func (api *DefaultConsentAPI) ConsentGETHandler(route string) http.Handler {
 				http.Redirect(w, r, info["redirect_to"].(string), 302)
 			}
 		} else {
-			ui.Handler(api.BaseUIPath).ServeHTTP(w, r)
+			templ := template.Must(template.ParseFiles(path.Join(api.BaseUIPath, "index.html")))
+			templ.Execute(w, api.getConsentPageInfo(info))
 		}
 	}))
+}
+
+func (api *DefaultConsentAPI) getConsentPageInfo(consentRequestInfo map[string]interface{}) ConsentPage {
+	toReturn := ConsentPage{ClientName: "Unknown", ClientURI: "#", RequestedScopes: make([]GrantScope, 0)}
+	if clientName, ok := consentRequestInfo["client_name"].(string); ok {
+		toReturn.ClientName = clientName
+	}
+
+	if clientURI, ok := consentRequestInfo["client_uri"].(string); ok {
+		toReturn.ClientURI = clientURI
+	}
+
+	if i, ok := consentRequestInfo["requested_scope"].([]interface{}); ok {
+		requestedScopes := misc.ConvertInterfaceArrayToStringArray(i)
+
+		for _, scope := range requestedScopes {
+			toReturn.RequestedScopes = append(toReturn.RequestedScopes, api.GrantScopes[scope])
+		}
+	}
+
+	logrus.Debugf("Consent page info: '%v'", toReturn)
+	return toReturn
 }

@@ -2,10 +2,10 @@ package api
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
 	"net/url"
-
-	"github.com/abilioesteves/whisper/web/ui"
+	"path"
 
 	"github.com/sirupsen/logrus"
 
@@ -68,7 +68,7 @@ func (api *DefaultLoginAPI) Init(hydraClient *misc.HydraClient, baseUIPath strin
 	return api
 }
 
-// LoginPOSTHandler REST POST api handler for logging in users
+// LoginPOSTHandler post form handler for logging in users
 func (api *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		loginRequest := new(LoginRequestPayload).InitFromRequest(r)
@@ -89,7 +89,7 @@ func (api *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 	})
 }
 
-// LoginGETHandler redirects the browser appropriately given
+// LoginGETHandler prompts the browser to the login UI or redirects it to hydra
 func (api *DefaultLoginAPI) LoginGETHandler(route string) http.Handler {
 	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		challenge, err := url.QueryUnescape(r.URL.Query().Get("login_challenge"))
@@ -107,7 +107,8 @@ func (api *DefaultLoginAPI) LoginGETHandler(route string) http.Handler {
 					http.Redirect(w, r, info["redirect_to"].(string), 302)
 				}
 			} else {
-				ui.Handler(api.BaseUIPath).ServeHTTP(w, r)
+				templ := template.Must(template.ParseFiles(path.Join(api.BaseUIPath, "index.html")))
+				templ.Execute(w, nil)
 			}
 			return
 		}

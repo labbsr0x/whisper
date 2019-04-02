@@ -12,7 +12,11 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /whisper main.go
 ## PKG
 FROM alpine
 
-RUN mkdir -p /www
+ENV WHISPER_BASE_UI_PATH "/www/"
+ENV WHISPER_PORT ""
+ENV WHISPER_HYDRA_ENDPOINT ""
+
+RUN mkdir -p ${WHISPER_BASE_UI_PATH}}
 
 COPY --from=builder /whisper /
 COPY web/ui/www/ /www/

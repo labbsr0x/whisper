@@ -1,8 +1,11 @@
 package api
 
 import (
-	"encoding/json"
+	"fmt"
 	"net/http"
+	"net/url"
+
+	"github.com/abilioesteves/whisper/web/ui"
 
 	"github.com/sirupsen/logrus"
 
@@ -19,16 +22,43 @@ type LoginAPI interface {
 
 // LoginRequestPayload holds the data that defines a login request to Whisper
 type LoginRequestPayload struct {
-	Username  string `json:"username"`
-	Password  string `json:"password"`
-	Challenge string `json:"challenge"`
-	Remember  bool   `json:"remember"`
+	Username  string
+	Password  string
+	Challenge string
+	Remember  bool
 }
 
 // DefaultLoginAPI holds the default implementation of the User API interface
 type DefaultLoginAPI struct {
 	HydraClient *misc.HydraClient
 	BaseUIPath  string
+}
+
+// InitFromRequest initializes the login request payload from an http request form
+func (payload *LoginRequestPayload) InitFromRequest(r *http.Request) *LoginRequestPayload {
+	err := r.ParseForm()
+	if err == nil {
+		logrus.Debugf("Form sent: '%v'", r.Form)
+		if err := payload.check(r.Form); err == nil {
+			payload.Challenge = r.Form["challenge"][0]
+			payload.Password = r.Form["password"][0]
+			payload.Username = r.Form["username"][0]
+			payload.Remember = len(r.Form["remember"]) > 0 && r.Form["remember"][0] == "on"
+
+			return payload
+		}
+		panic(gohtypes.Error{Code: 400, Message: "Bad Request", Err: err})
+	}
+	panic(gohtypes.Error{Code: 400, Message: "Not possible to parse http form", Err: err})
+}
+
+// check verifies if the login request payload is ok
+func (payload *LoginRequestPayload) check(form url.Values) error {
+	if len(form["challenge"]) == 0 || len(form["password"]) == 0 || len(form["username"]) == 0 {
+		return fmt.Errorf("Incomplete form data")
+	}
+
+	return nil
 }
 
 // Init initializes a default login api instance
@@ -41,44 +71,46 @@ func (api *DefaultLoginAPI) Init(hydraClient *misc.HydraClient, baseUIPath strin
 // LoginPOSTHandler REST POST api handler for logging in users
 func (api *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var loginRequest LoginRequestPayload
-		decoder := json.NewDecoder(r.Body)
-		err := decoder.Decode(&loginRequest)
-		if err == nil {
-			logrus.Infof("Login request. Payload '%v'", loginRequest)
-			if loginRequest.Password == "foobar" && loginRequest.Username == "foo@bar.com" { // TODO validation BL
-				info := api.HydraClient.AcceptLoginRequest(
-					loginRequest.Challenge,
-					misc.AcceptLoginRequestPayload{ACR: "0", Remember: loginRequest.Remember, RememberFor: 3600, Subject: loginRequest.Username},
-				)
-				if info != nil {
-					http.Redirect(w, r, info["redirect_to"].(string), 302)
-				}
+		loginRequest := new(LoginRequestPayload).InitFromRequest(r)
+		logrus.Debugf("Login request payload '%v'", loginRequest)
+		if loginRequest.Password == "foobar" && loginRequest.Username == "foo@bar.com" { // TODO validation BL
+			info := api.HydraClient.AcceptLoginRequest(
+				loginRequest.Challenge,
+				misc.AcceptLoginRequestPayload{ACR: "0", Remember: loginRequest.Remember, RememberFor: 3600, Subject: loginRequest.Username},
+			)
+			logrus.Debugf("Accept login request info: %v", info)
+			if info != nil {
+				http.Redirect(w, r, info["redirect_to"].(string), 302)
+				return
 			}
-			panic(gohtypes.Error{Code: 403, Message: "Unable to authenticate user"})
+
 		}
-		panic(gohtypes.Error{Err: err, Code: 400, Message: "Unable to read request login payload."})
+		panic(gohtypes.Error{Code: 403, Message: "Unable to authenticate user"})
 	})
 }
 
 // LoginGETHandler redirects the browser appropriately given
 func (api *DefaultLoginAPI) LoginGETHandler(route string) http.Handler {
 	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		challenge := r.URL.Query().Get("login_challenge")
-		logrus.Infof("challenge: %v", challenge)
-		info := api.HydraClient.GetLoginRequestInfo(challenge)
-		if info["skip"].(bool) {
-			subject := info["subject"].(string)
-			info = api.HydraClient.AcceptLoginRequest(
-				challenge,
-				misc.AcceptLoginRequestPayload{Subject: subject},
-			)
-			if info != nil {
-				logrus.Infof("Login request skipped for subject '%v'", subject)
-				http.Redirect(w, r, info["redirect_to"].(string), 302)
+		challenge, err := url.QueryUnescape(r.URL.Query().Get("login_challenge"))
+		if err == nil {
+			info := api.HydraClient.GetLoginRequestInfo(challenge)
+			logrus.Debugf("Login Request Info: %v", info)
+			if info["skip"].(bool) {
+				subject := info["subject"].(string)
+				info = api.HydraClient.AcceptLoginRequest(
+					challenge,
+					misc.AcceptLoginRequestPayload{Subject: subject},
+				)
+				if info != nil {
+					logrus.Debugf("Login request skipped for subject '%v'", subject)
+					http.Redirect(w, r, info["redirect_to"].(string), 302)
+				}
+			} else {
+				ui.Handler(api.BaseUIPath).ServeHTTP(w, r)
 			}
-		} else {
-			http.ServeFile(w, r, api.BaseUIPath)
+			return
 		}
+		panic(gohtypes.Error{Code: 500, Err: err, Message: "Unable to parse the login_challenge"})
 	}))
 }

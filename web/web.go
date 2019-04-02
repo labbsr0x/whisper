@@ -5,11 +5,11 @@ import (
 	"time"
 
 	"github.com/abilioesteves/whisper/misc"
+	"github.com/abilioesteves/whisper/web/ui"
 
 	"github.com/abilioesteves/whisper/web/middleware"
 
 	"github.com/abilioesteves/whisper/web/api"
-	"github.com/abilioesteves/whisper/web/ui"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
@@ -31,6 +31,21 @@ type Server struct {
 	ConsentAPIs api.ConsentAPI
 }
 
+func getDefaultGrantScopes() map[string]api.GrantScope {
+	return map[string]api.GrantScope{
+		"openid": api.GrantScope{
+			Description: "Access to your personal data",
+			Scope:       "openid",
+			Details:     "Provides access to personal data such as: email, name etc",
+		},
+		"offline": api.GrantScope{
+			Description: "Always Sign in",
+			Scope:       "offline",
+			Details:     "Provides the possibility for the app to be always signed in",
+		},
+	}
+}
+
 // New builds a Server instance
 func (b *Builder) New() (s *Server, err error) {
 	s = &Server{}
@@ -39,7 +54,7 @@ func (b *Builder) New() (s *Server, err error) {
 	s.Builder = b
 	s.UserAPIs = new(api.DefaultUserAPI)
 	s.LoginAPIs = new(api.DefaultLoginAPI).Init(hydraClient, b.BaseUIPath)
-	s.ConsentAPIs = new(api.DefaultConsentAPI).Init(hydraClient, b.BaseUIPath)
+	s.ConsentAPIs = new(api.DefaultConsentAPI).Init(hydraClient, b.BaseUIPath, getDefaultGrantScopes()) //
 
 	logLevel, err := logrus.ParseLevel(s.LogLevel)
 	if err != nil {

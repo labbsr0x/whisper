@@ -10,11 +10,11 @@ services:
       - "7070:7070"
     environment:
       - WHISPER_PORT=7070
-      - WHISPER_BASE_UI_PATH=/www/
-      - WHISPER_HYDRA_ENDPOINT=http://hydra:4444/
+      - WHISPER_LOG_LEVEL=debug
+      - WHISPER_HYDRA_ADMIN_ENDPOINT=http://hydra:4445/
 
   hydra-migrate:
-    image: oryd/hydra:v1.0.0-rc.6_oryOS.10
+    image: oryd/hydra:v1.0.0-rc.6_oryOS.10-alpine
     environment:
       - DATABASE_URL=postgres://hydra:secret@postgresd-hydra:5432/hydra?sslmode=disable
     command:
@@ -32,7 +32,7 @@ services:
     restart: unless-stopped
 
   hydra:
-    image: oryd/hydra:v1.0.0-rc.6_oryOS.10
+    image: oryd/hydra:v1.0.0-rc.6_oryOS.10-alpine
     depends_on:
       - hydra-migrate
     ports:
@@ -45,6 +45,7 @@ services:
     command:
       serve all --dangerous-force-http
     environment:
+      - LOG_LEVEL=debug
       - OAUTH2_ISSUER_URL=http://localhost:4444
       - OAUTH2_CONSENT_URL=http://localhost:7070/consent
       - OAUTH2_LOGIN_URL=http://localhost:7070/login

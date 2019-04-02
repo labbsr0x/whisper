@@ -16,6 +16,6 @@ func ErrorMiddleware(next http.Handler) http.Handler {
 			defer gohserver.HandleError(sw)
 			next.ServeHTTP(sw, r)
 		}()
-		logrus.Infof("Done processing request to '%v' with status %v", r.RequestURI, sw.StatusCode) // logs
+		logrus.Debugf("Done processing request to '%v' with status %v", r.RequestURI, sw.StatusCode) // logs
 	})
 }

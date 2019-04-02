@@ -17,9 +17,10 @@ import (
 
 // Builder defines the parametric information of a whisper server instance
 type Builder struct {
-	Port          string
-	BaseUIPath    string
-	HydraEndpoint string
+	Port               string
+	BaseUIPath         string
+	HydraAdminEndpoint string
+	LogLevel           string
 }
 
 // Server holds the information needed to run Whisper
@@ -33,12 +34,19 @@ type Server struct {
 // New builds a Server instance
 func (b *Builder) New() (s *Server, err error) {
 	s = &Server{}
-	hydraClient := new(misc.HydraClient).Init(b.HydraEndpoint)
+	hydraClient := new(misc.HydraClient).Init(b.HydraAdminEndpoint)
 
 	s.Builder = b
 	s.UserAPIs = new(api.DefaultUserAPI)
 	s.LoginAPIs = new(api.DefaultLoginAPI).Init(hydraClient, b.BaseUIPath)
 	s.ConsentAPIs = new(api.DefaultConsentAPI).Init(hydraClient, b.BaseUIPath)
+
+	logLevel, err := logrus.ParseLevel(s.LogLevel)
+	if err != nil {
+		logrus.Errorf("Not able to parse log level string. Setting Default.")
+		logLevel = logrus.InfoLevel
+	}
+	logrus.SetLevel(logLevel)
 
 	return s, nil
 }
@@ -74,9 +82,7 @@ func (s *Server) Initialize() error {
 		ReadTimeout:  15 * time.Second,
 	}
 
-	logrus.Infof("Port %v", s.Port)
-
-	logrus.Print("Initialized")
+	logrus.Info("Initialized")
 	err := srv.ListenAndServe()
 	if err != nil {
 		logrus.Fatal("server initialization error", err)

@@ -52,23 +52,23 @@
             <div class="card-body">
                 <br/>
                 <br/> 
-                <form class="row" action="/login" method="POST">
+                <form id="login-form" class="row" action="/login" method="POST">
                     <input id="login-challenge" type="hidden" name="challenge" value=""></input>
                     <div class="col-sm-3"></div>
                     <div class="col-sm-6">
                         <div class="form-group">
                             <label for="username">Username</label>
-                            <input type="username" class="form-control" id="username" placeholder="foo@bar.com">
+                            <input type="username" class="form-control" id="login-username" name="username" placeholder="foo@bar.com">
                         </div>
                         <div class="form-group">
                             <label for="password">Password</label>
-                            <input type="password" class="form-control" id="password" placeholder="foobar">
+                            <input type="password" class="form-control" id="login-password" name="password" placeholder="foobar">
                         </div>
                         <div class="form-group form-check">
-                            <input type="checkbox" class="form-check-input" id="remember">
+                            <input type="checkbox" class="form-check-input" id="remember" name="remember">
                             <label class="form-check-label" for="remember">Remember me</label>
                         </div>
-                        <button type="submit" class="btn btn-primary">Submit</button>
+                        <button id="login-submit" type="submit" class="btn btn-primary">Submit</button>
                     </div>
                     <div class="col-sm-3"></div>
                 </form>
@@ -79,7 +79,7 @@
             <div class="card-body">
                 <br/>
                 <br/>
-                <form action="/consent" method="POST">
+                <form id="consent-form" action="/consent" method="POST">
                     <input id="accept-consent" type="hidden" name="accept" value="false"></input>
                     <input id="consent-challenge" type="hidden" name="challenge" value=""></input>
                     <div class="row">
@@ -87,17 +87,20 @@
                         <div class="col-sm-6">
                             An application requests access to your data!
     
-                            Do you accept?
+                            Do you allow its access?
                         </div>
                         <div class="col-sm-3"></div>
                     </div>
+                    <br/>
+                    <!--TODO: add scope grants-->
+                    <br/>
                     <div class="row">
                         <div class="col-sm-3"></div>
                         <div class="col-sm-3">
-                            <button type="reset" onclick="acceptConsent(false);" class="btn btn-primary">Cancel</button>
+                            <button id="consent-deny" type="submit" onclick="acceptConsent(false);" class="btn btn-primary">Deny</button>
                         </div>
                         <div class="col-sm-3">
-                            <button type="reset" onclick="acceptConsent(true); " class="btn btn-primary">Accept</button>
+                            <button id="consent-allow" type="submit" onclick="acceptConsent(true);" class="btn btn-primary">Allow</button>
                         </div>
                         <div class="col-sm-3"></div>
                     </div>
@@ -136,6 +139,36 @@
             </div>
         </footer>
         <script>
+            window.onload = function() {
+                var action = window.location.pathname.replace("/", "")
+                if (action != "login" && action != "consent") {
+                    action = "error"
+                }
+                setupControl(action)
+                setupConsentForm()
+            }
+
+            function setupConsentForm() {
+                buttons = [{id: "consent-allow", value: "true"}, {id: "consent-deny", value: "false"}]
+                for (i = 0; i < buttons.length; i++) {
+                    button = buttons[i]
+                    document.getElementById(button.id).addEventListener("click", function(value){
+                        return function(ev) {
+                            event.preventDefault()
+                            document.getElementById("accept-consent").value = value
+                            document.getElementById("consent-form").submit();
+                        }
+                    }(button.value))
+                }
+            }
+
+            function setupControl(action) {
+                var params = new URLSearchParams(window.location.search)
+                var control = getControl(action)
+                control.element.hidden = false
+                control.challengeElement.value = params.get(action+"_challenge")
+            }
+
             function getControl(id) {
                 return {
                     matcher: new RegExp(id),
@@ -144,42 +177,6 @@
                 }
             }
 
-            window.onload = function() {
-                var loginControl = getControl("login")
-                var consentControl = getControl("consent")
-                var errorControl = getControl("error")
-
-                var url = window.location.pathname
-                var params = new URLSearchParams(url)
-                if (loginControl.matcher.exec(url)) {
-                    loginControl.element.hidden = false
-                    loginControl.challengeElement.value = params.get("login_challenge")
-                } else if (consentControl.matcher.exec(url)) {
-                    consentControl.element.hidden = false
-                    consentControl.challengeElement.value = params.get("consent_challenge")
-                    // list scopes
-                } else {
-                    errorControl.element.hidden = false
-                }
-            }
-
-            acceptConsent = function(value) {
-                var el = document.getElementById("accept-consent")
-                el.value = value
-            }
-
-            var getParams = function (url) {
-                var params = {};
-                var parser = document.createElement('a');
-                parser.href = url;
-                var query = parser.search.substring(1);
-                var vars = query.split('&');
-                for (var i = 0; i < vars.length; i++) {
-                    var pair = vars[i].split('=');
-                    params[pair[0]] = decodeURIComponent(pair[1]);
-                }
-                return params;
-            };
         </script>
     </body>
 </html>

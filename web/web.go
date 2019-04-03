@@ -41,7 +41,7 @@ func getDefaultGrantScopes() map[string]api.GrantScope {
 		"offline": api.GrantScope{
 			Description: "Always Sign in",
 			Scope:       "offline",
-			Details:     "Provides the possibility for the app to be always signed in",
+			Details:     "Provides the possibility for the app to be always signed in to your account",
 		},
 	}
 }

@@ -21,3 +21,21 @@ body {
     max-width: 680px;
     padding: 15px 15px;
 }
+
+.deny {
+    justify-content: center;
+    display: flex; 
+    align-items: center;
+}
+
+.deny span {
+    color:#077bff; 
+    cursor: pointer; 
+    display: flex;
+}
+
+.page-content {
+    justify-content: center;
+    display: flex; 
+    align-items: center;
+}

@@ -49,7 +49,7 @@ func (payload *ConsentRequestPayload) InitFromRequest(r *http.Request) *ConsentR
 			payload.Accept = r.Form["accept"][0] == "true"
 			payload.Challenge = r.Form["challenge"][0]
 			payload.GrantScope = r.Form["grant-scope"]
-			payload.Remember = len(r.Form["remember"]) > 0 && r.Form["remember"][0] == "on"
+			payload.Remember = true
 
 			return payload
 		}

@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/abilioesteves/whisper/misc"
+	"github.com/abilioesteves/whisper/web/config"
 	"github.com/abilioesteves/whisper/web/ui"
 
 	"github.com/abilioesteves/whisper/web/middleware"
@@ -15,46 +15,20 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Builder defines the parametric information of a whisper server instance
-type Builder struct {
-	Port               string
-	BaseUIPath         string
-	HydraAdminEndpoint string
-	LogLevel           string
-}
-
 // Server holds the information needed to run Whisper
 type Server struct {
-	*Builder
+	*config.WebBuilder
 	UserAPIs    api.UserAPI
 	LoginAPIs   api.LoginAPI
 	ConsentAPIs api.ConsentAPI
 }
 
-func getDefaultGrantScopes() map[string]api.GrantScope {
-	return map[string]api.GrantScope{
-		"openid": api.GrantScope{
-			Description: "Access to your personal data",
-			Scope:       "openid",
-			Details:     "Provides access to personal data such as: email, name etc",
-		},
-		"offline": api.GrantScope{
-			Description: "Always Sign in",
-			Scope:       "offline",
-			Details:     "Provides the possibility for the app to be always signed in to your account",
-		},
-	}
-}
-
-// New builds a Server instance
-func (b *Builder) New() (s *Server, err error) {
-	s = &Server{}
-	hydraClient := new(misc.HydraClient).Init(b.HydraAdminEndpoint)
-
-	s.Builder = b
+// InitFromWebBuilder builds a Server instance
+func (s *Server) InitFromWebBuilder(webBuilder *config.WebBuilder) *Server {
+	s.WebBuilder = webBuilder
 	s.UserAPIs = new(api.DefaultUserAPI)
-	s.LoginAPIs = new(api.DefaultLoginAPI).Init(hydraClient, b.BaseUIPath)
-	s.ConsentAPIs = new(api.DefaultConsentAPI).Init(hydraClient, b.BaseUIPath, getDefaultGrantScopes()) //
+	s.LoginAPIs = new(api.DefaultLoginAPI).InitFromWebBuilder(webBuilder)
+	s.ConsentAPIs = new(api.DefaultConsentAPI).InitFromWebBuilder(webBuilder) //
 
 	logLevel, err := logrus.ParseLevel(s.LogLevel)
 	if err != nil {
@@ -63,11 +37,11 @@ func (b *Builder) New() (s *Server, err error) {
 	}
 	logrus.SetLevel(logLevel)
 
-	return s, nil
+	return s
 }
 
-// Initialize inits the web server and its apis
-func (s *Server) Initialize() error {
+// Run initializes the web server and its apis
+func (s *Server) Run() error {
 	router := mux.NewRouter().StrictSlash(true)
 	secureRouter := router.PathPrefix("/api").Subrouter()
 

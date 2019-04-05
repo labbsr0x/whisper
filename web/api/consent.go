@@ -9,6 +9,7 @@ import (
 
 	"github.com/abilioesteves/goh/gohtypes"
 	"github.com/abilioesteves/whisper/misc"
+	"github.com/abilioesteves/whisper/web/config"
 	"github.com/sirupsen/logrus"
 )
 
@@ -22,14 +23,7 @@ type ConsentAPI interface {
 type ConsentPage struct {
 	ClientURI       string
 	ClientName      string
-	RequestedScopes []GrantScope
-}
-
-// GrantScope defines the structure of a grant scope
-type GrantScope struct {
-	Description string
-	Details     string
-	Scope       string
+	RequestedScopes []config.GrantScope
 }
 
 // ConsentRequestPayload holds the data that defines a consent request to Whisper
@@ -40,51 +34,21 @@ type ConsentRequestPayload struct {
 	Remember   bool
 }
 
-// InitFromRequest initializes the consent payload from an http request
-func (payload *ConsentRequestPayload) InitFromRequest(r *http.Request) *ConsentRequestPayload {
-	err := r.ParseForm()
-	if err == nil {
-		logrus.Debugf("Form sent: '%v'", r.Form)
-		if err := payload.check(r.Form); err == nil {
-			payload.Accept = r.Form["accept"][0] == "true"
-			payload.Challenge = r.Form["challenge"][0]
-			payload.GrantScope = r.Form["grant-scope"]
-			payload.Remember = true
-
-			return payload
-		}
-		panic(gohtypes.Error{Code: 400, Message: "Bad Request", Err: err})
-	}
-	panic(gohtypes.Error{Code: 400, Err: err, Message: "Not possible to parse http form"})
-}
-
-// check verifies if the consent payload is ok
-func (payload *ConsentRequestPayload) check(form url.Values) error {
-	if len(form["challenge"]) == 0 && len(form["accept"]) > 0 {
-		return fmt.Errorf("Incomplete form data")
-	}
-	return nil
-}
-
 // DefaultConsentAPI holds the default implementation of the User API interface
 type DefaultConsentAPI struct {
-	HydraClient *misc.HydraClient
-	BaseUIPath  string
-	GrantScopes map[string]GrantScope
+	*config.WebBuilder
 }
 
-// Init initializes a default consent api instance
-func (api *DefaultConsentAPI) Init(hydraClient *misc.HydraClient, baseUIPath string, grantScopes map[string]GrantScope) *DefaultConsentAPI {
-	api.HydraClient = hydraClient
-	api.BaseUIPath = baseUIPath
-	api.GrantScopes = grantScopes
+// InitFromWebBuilder initializes a default consent api instance from a web builder instance
+func (api *DefaultConsentAPI) InitFromWebBuilder(webBuilder *config.WebBuilder) *DefaultConsentAPI {
+	api.WebBuilder = webBuilder
 	return api
 }
 
 // ConsentPOSTHandler post form handler for app authorization
 func (api *DefaultConsentAPI) ConsentPOSTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		consentRequest := new(ConsentRequestPayload).InitFromRequest(r)
+		consentRequest := new(ConsentRequestPayload).initFromRequest(r)
 		logrus.Debugf("Consent request payload '%v'", consentRequest)
 		if consentRequest.Accept {
 			info := api.HydraClient.GetConsentRequestInfo(consentRequest.Challenge)
@@ -112,7 +76,7 @@ func (api *DefaultConsentAPI) ConsentPOSTHandler() http.Handler {
 				return
 			}
 		}
-		panic(gohtypes.Error{Code: 500, Message: "Unable process consent request"})
+		panic(gohtypes.Error{Code: 500, Message: "Unable to process consent request"})
 	})
 }
 
@@ -125,7 +89,9 @@ func (api *DefaultConsentAPI) ConsentGETHandler(route string) http.Handler {
 		if info["skip"].(bool) {
 			info = api.HydraClient.AcceptConsentRequest(
 				challenge,
-				misc.AcceptConsentRequestPayload{GrantScope: info["requested_scope"].([]string), GrantAccessTokenAudience: misc.ConvertInterfaceArrayToStringArray(info["requested_access_token_audience"].([]interface{}))},
+				misc.AcceptConsentRequestPayload{
+					GrantScope:               misc.ConvertInterfaceArrayToStringArray(info["requested_scope"].([]interface{})),
+					GrantAccessTokenAudience: misc.ConvertInterfaceArrayToStringArray(info["requested_access_token_audience"].([]interface{}))},
 			)
 
 			if info != nil {
@@ -139,8 +105,9 @@ func (api *DefaultConsentAPI) ConsentGETHandler(route string) http.Handler {
 	}))
 }
 
+// getConsentPageInfo builds the data structure for a consent page
 func (api *DefaultConsentAPI) getConsentPageInfo(consentRequestInfo map[string]interface{}) ConsentPage {
-	toReturn := ConsentPage{ClientName: "Unknown", ClientURI: "#", RequestedScopes: make([]GrantScope, 0)}
+	toReturn := ConsentPage{ClientName: "Unknown", ClientURI: "#", RequestedScopes: make([]config.GrantScope, 0)}
 	if clientName, ok := consentRequestInfo["client_name"].(string); ok {
 		toReturn.ClientName = clientName
 	}
@@ -159,4 +126,30 @@ func (api *DefaultConsentAPI) getConsentPageInfo(consentRequestInfo map[string]i
 
 	logrus.Debugf("Consent page info: '%v'", toReturn)
 	return toReturn
+}
+
+// initFromRequest initializes the consent payload from an http request
+func (payload *ConsentRequestPayload) initFromRequest(r *http.Request) *ConsentRequestPayload {
+	err := r.ParseForm()
+	if err == nil {
+		logrus.Debugf("Form sent: '%v'", r.Form)
+		if err := payload.check(r.Form); err == nil {
+			payload.Accept = r.Form["accept"][0] == "true"
+			payload.Challenge = r.Form["challenge"][0]
+			payload.GrantScope = r.Form["grant-scope"]
+			payload.Remember = true
+
+			return payload
+		}
+		panic(gohtypes.Error{Code: 400, Message: "Bad Request", Err: err})
+	}
+	panic(gohtypes.Error{Code: 400, Err: err, Message: "Not possible to parse http form"})
+}
+
+// check verifies if the consent payload is ok
+func (payload *ConsentRequestPayload) check(form url.Values) error {
+	if len(form["challenge"]) == 0 && len(form["accept"]) > 0 {
+		return fmt.Errorf("Incomplete form data")
+	}
+	return nil
 }

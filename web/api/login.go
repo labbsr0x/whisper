@@ -12,6 +12,7 @@ import (
 	"github.com/abilioesteves/goh/gohtypes"
 
 	"github.com/abilioesteves/whisper/misc"
+	"github.com/abilioesteves/whisper/web/config"
 )
 
 // LoginAPI defines the available user apis
@@ -30,48 +31,19 @@ type LoginRequestPayload struct {
 
 // DefaultLoginAPI holds the default implementation of the User API interface
 type DefaultLoginAPI struct {
-	HydraClient *misc.HydraClient
-	BaseUIPath  string
+	*config.WebBuilder
 }
 
-// InitFromRequest initializes the login request payload from an http request form
-func (payload *LoginRequestPayload) InitFromRequest(r *http.Request) *LoginRequestPayload {
-	err := r.ParseForm()
-	if err == nil {
-		logrus.Debugf("Form sent: '%v'", r.Form)
-		if err := payload.check(r.Form); err == nil {
-			payload.Challenge = r.Form["challenge"][0]
-			payload.Password = r.Form["password"][0]
-			payload.Username = r.Form["username"][0]
-			payload.Remember = len(r.Form["remember"]) > 0 && r.Form["remember"][0] == "on"
-
-			return payload
-		}
-		panic(gohtypes.Error{Code: 400, Message: "Bad Request", Err: err})
-	}
-	panic(gohtypes.Error{Code: 400, Message: "Not possible to parse http form", Err: err})
-}
-
-// check verifies if the login request payload is ok
-func (payload *LoginRequestPayload) check(form url.Values) error {
-	if len(form["challenge"]) == 0 || len(form["password"]) == 0 || len(form["username"]) == 0 {
-		return fmt.Errorf("Incomplete form data")
-	}
-
-	return nil
-}
-
-// Init initializes a default login api instance
-func (api *DefaultLoginAPI) Init(hydraClient *misc.HydraClient, baseUIPath string) *DefaultLoginAPI {
-	api.HydraClient = hydraClient
-	api.BaseUIPath = baseUIPath
+// InitFromWebBuilder initializes a default login api instance
+func (api *DefaultLoginAPI) InitFromWebBuilder(webBuilder *config.WebBuilder) *DefaultLoginAPI {
+	api.WebBuilder = webBuilder
 	return api
 }
 
 // LoginPOSTHandler post form handler for logging in users
 func (api *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		loginRequest := new(LoginRequestPayload).InitFromRequest(r)
+		loginRequest := new(LoginRequestPayload).initFromRequest(r)
 		logrus.Debugf("Login request payload '%v'", loginRequest)
 		if loginRequest.Password == "foobar" && loginRequest.Username == "foo@bar.com" { // TODO validation BL
 			info := api.HydraClient.AcceptLoginRequest(
@@ -83,7 +55,6 @@ func (api *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 				http.Redirect(w, r, info["redirect_to"].(string), 302)
 				return
 			}
-
 		}
 		panic(gohtypes.Error{Code: 403, Message: "Unable to authenticate user"})
 	})
@@ -114,4 +85,31 @@ func (api *DefaultLoginAPI) LoginGETHandler(route string) http.Handler {
 		}
 		panic(gohtypes.Error{Code: 500, Err: err, Message: "Unable to parse the login_challenge"})
 	}))
+}
+
+// initFromRequest initializes the login request payload from an http request form
+func (payload *LoginRequestPayload) initFromRequest(r *http.Request) *LoginRequestPayload {
+	err := r.ParseForm()
+	if err == nil {
+		logrus.Debugf("Form sent: '%v'", r.Form)
+		if err := payload.check(r.Form); err == nil {
+			payload.Challenge = r.Form["challenge"][0]
+			payload.Password = r.Form["password"][0]
+			payload.Username = r.Form["username"][0]
+			payload.Remember = len(r.Form["remember"]) > 0 && r.Form["remember"][0] == "on"
+
+			return payload
+		}
+		panic(gohtypes.Error{Code: 400, Message: "Bad Request", Err: err})
+	}
+	panic(gohtypes.Error{Code: 400, Message: "Not possible to parse http form", Err: err})
+}
+
+// check verifies if the login request payload is ok
+func (payload *LoginRequestPayload) check(form url.Values) error {
+	if len(form["challenge"]) == 0 || len(form["password"]) == 0 || len(form["username"]) == 0 {
+		return fmt.Errorf("Incomplete form data")
+	}
+
+	return nil
 }

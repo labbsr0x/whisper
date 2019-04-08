@@ -44,7 +44,7 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.String(port, "7070", "Custom port for accessing Whisper's services")
 	flags.String(hydraAdminEndpoint, "", "Hydra Admin Enpoint")
 	flags.String(logLevel, "info", "Sets the Log Level to one of seven (trace, debug, info, warn, error, fatal, panic)")
-	flags.String(scopesFilePath, "/scopes.json", "Sets the path to the json file where the available scopes will be found")
+	flags.String(scopesFilePath, "", "Sets the path to the json file where the available scopes will be found")
 }
 
 // InitFromViper initializes the web server builder with properties retrieved from Viper.

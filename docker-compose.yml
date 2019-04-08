@@ -14,25 +14,15 @@ services:
       - WHISPER_HYDRA_ADMIN_ENDPOINT=http://hydra:4445/
 
   hydra-migrate:
-    image: oryd/hydra:v1.0.0-rc.6_oryOS.10-alpine
+    image: oryd/hydra:v1.0.0-rc.8_oryOS.10-alpine
     environment:
       - DATABASE_URL=postgres://hydra:secret@postgresd-hydra:5432/hydra?sslmode=disable
     command:
       migrate sql -e
     restart: on-failure
 
-  consent:
-    environment:
-      - HYDRA_ADMIN_URL=http://hydra:4445
-    image: oryd/hydra-login-consent-node:v1.0.0-rc.2
-    links:
-      - hydra
-    ports:
-      - "3000:3000"
-    restart: unless-stopped
-
   hydra:
-    image: oryd/hydra:v1.0.0-rc.6_oryOS.10-alpine
+    image: oryd/hydra:v1.0.0-rc.8_oryOS.10-alpine
     depends_on:
       - hydra-migrate
     ports:

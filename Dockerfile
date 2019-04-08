@@ -13,6 +13,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /whisper main.go
 FROM alpine
 
 ENV WHISPER_BASE_UI_PATH "/www/"
+ENV WHISPER_SCOPES_FILE_PATH "/scopes.json"
 ENV WHISPER_PORT ""
 ENV WHISPER_HYDRA_ENDPOINT ""
 
@@ -20,5 +21,6 @@ RUN mkdir -p ${WHISPER_BASE_UI_PATH}}
 
 COPY --from=builder /whisper /
 COPY web/ui/www/ /www/
+COPY scopes.json /scopes.json
 
 CMD [ "/whisper", "serve" ]

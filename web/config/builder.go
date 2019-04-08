@@ -22,15 +22,20 @@ type GrantScope struct {
 	Scope       string
 }
 
-// WebBuilder defines the parametric information of a whisper server instance
-type WebBuilder struct {
+// Flags define the fields that will be passed via cmd
+type Flags struct {
 	Port               string
 	BaseUIPath         string
 	LogLevel           string
 	ScopesFilePath     string
 	HydraAdminEndpoint string
-	HydraClient        *misc.HydraClient
-	GrantScopes        map[string]GrantScope
+}
+
+// WebBuilder defines the parametric information of a whisper server instance
+type WebBuilder struct {
+	*Flags
+	HydraClient *misc.HydraClient
+	GrantScopes map[string]GrantScope
 }
 
 // AddFlags adds flags for Builder.
@@ -44,24 +49,27 @@ func AddFlags(flags *pflag.FlagSet) {
 
 // InitFromViper initializes the web server builder with properties retrieved from Viper.
 func (b *WebBuilder) InitFromViper(v *viper.Viper) *WebBuilder {
-	b.Port = v.GetString(port)
-	b.BaseUIPath = v.GetString(baseUIPath)
-	b.LogLevel = v.GetString(logLevel)
-	b.ScopesFilePath = v.GetString(scopesFilePath)
-	b.HydraAdminEndpoint = v.GetString(hydraAdminEndpoint)
+	flags := new(Flags)
+	flags.Port = v.GetString(port)
+	flags.BaseUIPath = v.GetString(baseUIPath)
+	flags.LogLevel = v.GetString(logLevel)
+	flags.ScopesFilePath = v.GetString(scopesFilePath)
+	flags.HydraAdminEndpoint = v.GetString(hydraAdminEndpoint)
 
-	b.HydraClient = new(misc.HydraClient).Init(v.GetString(hydraAdminEndpoint))
-	b.GrantScopes = b.getGrantScopesFromFile(v.GetString(scopesFilePath))
+	flags.check()
+
+	b.Flags = flags
+	b.HydraClient = new(misc.HydraClient).Init(flags.HydraAdminEndpoint)
+	b.GrantScopes = b.getGrantScopesFromFile(flags.ScopesFilePath)
 
 	logrus.Infof("Run config: %v", b)
 	return b
 }
 
-func (b *WebBuilder) check() {
-	if b.BaseUIPath == "" || b.HydraAdminEndpoint == "" || b.ScopesFilePath == "" {
+func (flags *Flags) check() {
+	if flags.BaseUIPath == "" || flags.HydraAdminEndpoint == "" || flags.ScopesFilePath == "" {
 		panic("base-ui-path, hydra-admin-endpoint and scopes-file-path cannot be empty")
 	}
-
 }
 
 // getGrantScopesFromFile reads into memory the json scopes file

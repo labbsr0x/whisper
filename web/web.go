@@ -32,7 +32,7 @@ func (s *Server) InitFromWebBuilder(webBuilder *config.WebBuilder) *Server {
 
 	logLevel, err := logrus.ParseLevel(s.LogLevel)
 	if err != nil {
-		logrus.Errorf("Not able to parse log level string. Setting Default.")
+		logrus.Errorf("Not able to parse log level string. Setting default level: info.")
 		logLevel = logrus.InfoLevel
 	}
 	logrus.SetLevel(logLevel)
@@ -54,8 +54,7 @@ func (s *Server) Run() error {
 	router.Handle("/consent", s.ConsentAPIs.ConsentGETHandler("/consent")).Methods("GET")
 	router.Handle("/consent", s.ConsentAPIs.ConsentPOSTHandler()).Methods("POST")
 
-	router.HandleFunc("/users", s.UserAPIs.AddUserHandler).Methods("POST")
-
+	secureRouter.HandleFunc("/users", s.UserAPIs.AddUserHandler).Methods("POST")
 	secureRouter.HandleFunc("/users", s.UserAPIs.ListUsersHandler).Methods("GET")
 	secureRouter.HandleFunc("/users", s.UserAPIs.RemoveUserHandler).Methods("DELETE")
 	secureRouter.HandleFunc("/users/{clientId}", s.UserAPIs.GetUserHandler).Methods("GET")

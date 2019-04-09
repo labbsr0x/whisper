@@ -1,6 +1,10 @@
 package config
 
 import (
+	"encoding/json"
+	"io/ioutil"
+	"os"
+
 	"github.com/abilioesteves/whisper/misc"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
@@ -74,16 +78,15 @@ func (flags *Flags) check() {
 
 // getGrantScopesFromFile reads into memory the json scopes file
 func (b *WebBuilder) getGrantScopesFromFile(scopesFilePath string) map[string]GrantScope {
-	return map[string]GrantScope{
-		"openid": GrantScope{
-			Description: "Access to your personal data",
-			Scope:       "openid",
-			Details:     "Provides access to personal data such as: email, name etc",
-		},
-		"offline": GrantScope{
-			Description: "Always Sign in",
-			Scope:       "offline",
-			Details:     "Provides the possibility for the app to be always signed in to your account",
-		},
+	jsonFile, err := os.Open(scopesFilePath)
+	if err != nil {
+		panic(err)
 	}
+	defer jsonFile.Close()
+
+	var grantScopes = map[string]GrantScope{}
+	bytes, _ := ioutil.ReadAll(jsonFile)
+	json.Unmarshal(bytes, &grantScopes)
+
+	return grantScopes
 }

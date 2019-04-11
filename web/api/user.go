@@ -10,8 +10,7 @@ import (
 type UserAPI interface {
 	AddUserHandler(w http.ResponseWriter, r *http.Request)
 	RemoveUserHandler(w http.ResponseWriter, r *http.Request)
-	ListUsersHandler(w http.ResponseWriter, r *http.Request)
-	GetUserHandler(w http.ResponseWriter, r *http.Request)
+	UpdateUserHandler(w http.ResponseWriter, r *http.Request)
 }
 
 // DefaultUserAPI holds the default implementation of the User API interface
@@ -30,14 +29,8 @@ func (u *DefaultUserAPI) RemoveUserHandler(w http.ResponseWriter, r *http.Reques
 	gohserver.WriteJSONResponse("RemoveUser: This is just a test", 200, w)
 }
 
-// ListUsersHandler REST GET api handler for listing available users.
-func (u *DefaultUserAPI) ListUsersHandler(w http.ResponseWriter, r *http.Request) {
+// UpdateUserHandler REST PUT api handler for updating users
+func (u *DefaultUserAPI) UpdateUserHandler(w http.ResponseWriter, r *http.Request) {
 	// TODO
-	gohserver.WriteJSONResponse("ListUsers: This is just a test", 500, w)
-}
-
-// GetUserHandler REST GET api handler for getting a user's info
-func (u *DefaultUserAPI) GetUserHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO
-	gohserver.WriteJSONResponse("GetUser: This is just a test", 200, w)
+	gohserver.WriteJSONResponse("UpdateUser: This is just a test", 200, w)
 }

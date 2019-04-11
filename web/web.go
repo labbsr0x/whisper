@@ -4,12 +4,13 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/abilioesteves/whisper/web/api"
+
 	"github.com/abilioesteves/whisper/web/config"
 	"github.com/abilioesteves/whisper/web/ui"
 
 	"github.com/abilioesteves/whisper/web/middleware"
 
-	"github.com/abilioesteves/whisper/web/api"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
@@ -28,7 +29,7 @@ func (s *Server) InitFromWebBuilder(webBuilder *config.WebBuilder) *Server {
 	s.WebBuilder = webBuilder
 	s.UserAPIs = new(api.DefaultUserAPI)
 	s.LoginAPIs = new(api.DefaultLoginAPI).InitFromWebBuilder(webBuilder)
-	s.ConsentAPIs = new(api.DefaultConsentAPI).InitFromWebBuilder(webBuilder) //
+	s.ConsentAPIs = new(api.DefaultConsentAPI).InitFromWebBuilder(webBuilder)
 
 	logLevel, err := logrus.ParseLevel(s.LogLevel)
 	if err != nil {
@@ -55,9 +56,8 @@ func (s *Server) Run() error {
 	router.Handle("/consent", s.ConsentAPIs.ConsentPOSTHandler()).Methods("POST")
 
 	secureRouter.HandleFunc("/users", s.UserAPIs.AddUserHandler).Methods("POST")
-	secureRouter.HandleFunc("/users", s.UserAPIs.ListUsersHandler).Methods("GET")
 	secureRouter.HandleFunc("/users", s.UserAPIs.RemoveUserHandler).Methods("DELETE")
-	secureRouter.HandleFunc("/users/{clientId}", s.UserAPIs.GetUserHandler).Methods("GET")
+	secureRouter.HandleFunc("/users/{userID}", s.UserAPIs.UpdateUserHandler).Methods("PUT")
 
 	router.Use(middleware.PrometheusMiddleware)
 	router.Use(middleware.ErrorMiddleware)

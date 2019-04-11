@@ -57,7 +57,7 @@ func (s *Server) Run() error {
 
 	secureRouter.HandleFunc("/users", s.UserCredentialsAPIs.AddUserCredentialHandler).Methods("POST")
 	secureRouter.HandleFunc("/users", s.UserCredentialsAPIs.RemoveUserCredentialHandler).Methods("DELETE")
-	secureRouter.HandleFunc("/users/{userID}", s.UserCredentialsAPIs.UpdateUserCredentialHandler).Methods("PUT")
+	// secureRouter.HandleFunc("/users/{userCredentialID}", s.UserCredentialsAPIs.UpdateUserCredentialHandler).Methods("PUT")
 
 	router.Use(middleware.PrometheusMiddleware)
 	router.Use(middleware.ErrorMiddleware)

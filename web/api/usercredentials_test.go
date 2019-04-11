@@ -14,8 +14,3 @@ func (u *MockUserCredentialsAPI) AddUserCredentialHandler(w http.ResponseWriter,
 func (u *MockUserCredentialsAPI) RemoveUserCredentialHandler(w http.ResponseWriter, r *http.Request) {
 	// TODO
 }
-
-// UpdateUserCredentialHandler REST PUT api handler for updating a user's info
-func (u *MockUserCredentialsAPI) UpdateUserCredentialHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO
-}

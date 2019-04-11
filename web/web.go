@@ -19,15 +19,15 @@ import (
 // Server holds the information needed to run Whisper
 type Server struct {
 	*config.WebBuilder
-	UserAPIs    api.UserAPI
-	LoginAPIs   api.LoginAPI
-	ConsentAPIs api.ConsentAPI
+	UserCredentialsAPIs api.UserCredentialsAPI
+	LoginAPIs           api.LoginAPI
+	ConsentAPIs         api.ConsentAPI
 }
 
 // InitFromWebBuilder builds a Server instance
 func (s *Server) InitFromWebBuilder(webBuilder *config.WebBuilder) *Server {
 	s.WebBuilder = webBuilder
-	s.UserAPIs = new(api.DefaultUserAPI)
+	s.UserCredentialsAPIs = new(api.DefaultUserCredentialsAPI)
 	s.LoginAPIs = new(api.DefaultLoginAPI).InitFromWebBuilder(webBuilder)
 	s.ConsentAPIs = new(api.DefaultConsentAPI).InitFromWebBuilder(webBuilder)
 
@@ -55,9 +55,9 @@ func (s *Server) Run() error {
 	router.Handle("/consent", s.ConsentAPIs.ConsentGETHandler("/consent")).Methods("GET")
 	router.Handle("/consent", s.ConsentAPIs.ConsentPOSTHandler()).Methods("POST")
 
-	secureRouter.HandleFunc("/users", s.UserAPIs.AddUserHandler).Methods("POST")
-	secureRouter.HandleFunc("/users", s.UserAPIs.RemoveUserHandler).Methods("DELETE")
-	secureRouter.HandleFunc("/users/{userID}", s.UserAPIs.UpdateUserHandler).Methods("PUT")
+	secureRouter.HandleFunc("/users", s.UserCredentialsAPIs.AddUserCredentialHandler).Methods("POST")
+	secureRouter.HandleFunc("/users", s.UserCredentialsAPIs.RemoveUserCredentialHandler).Methods("DELETE")
+	secureRouter.HandleFunc("/users/{userID}", s.UserCredentialsAPIs.UpdateUserCredentialHandler).Methods("PUT")
 
 	router.Use(middleware.PrometheusMiddleware)
 	router.Use(middleware.ErrorMiddleware)

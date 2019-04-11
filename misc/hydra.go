@@ -18,6 +18,23 @@ type HydraClient struct {
 	HTTPClient *gohclient.Default
 }
 
+// HydraToken holds a hydra token's data
+type HydraToken struct {
+	Active            bool                   `json:"active"`
+	Audiences         []string               `json:"aud,omitempty"`
+	ClientID          string                 `json:"client_id"`
+	Expiration        int64                  `json:"exp"`
+	Extra             map[string]interface{} `json:"ext,omitempty"`
+	IssuedAt          int64                  `json:"iat"`
+	IssuerURL         string                 `json:"iss"`
+	NotBefore         int64                  `json:"nbf"`
+	ObfuscatedSubject string                 `json:"obfuscated_subject,omitempty"`
+	Scope             string                 `json:"scope"`
+	Subject           string                 `json:"sub"`
+	TokenType         string                 `json:"token_type"`
+	Username          string                 `json:"username"`
+}
+
 // AcceptLoginRequestPayload holds the data to communicate with hydra's accept login api
 type AcceptLoginRequestPayload struct {
 	Subject     string `json:"subject"`
@@ -50,7 +67,6 @@ type RejectConsentRequestPayload struct {
 // Init initializes a hydra client
 func (hydra *HydraClient) Init(hydraEndpoint string) *HydraClient {
 	hydra.BaseURL, _ = url.Parse(hydraEndpoint)
-	hydra.BaseURL.Path = path.Join(hydra.BaseURL.Path, "/oauth2/auth/requests/")
 	hydra.HTTPClient = gohclient.New("application/json", "application/json")
 
 	logrus.Infof("Hydra enpoint url: %v", hydra.BaseURL.String())
@@ -85,16 +101,30 @@ func (hydra *HydraClient) RejectConsentRequest(challenge string, payload RejectC
 	return hydra.put("consent", challenge, "reject", data)
 }
 
+// IntrospectToken calls hydra to introspect a access or refresh token
+func (hydra *HydraClient) IntrospectToken(token string) (result HydraToken, err error) {
+	u, _ := url.Parse(hydra.BaseURL.String())
+	u.Path = path.Join(u.Path, "/oauth2/introspect/")
+	logrus.Debugf("url: '%v'", u.String())
+	resp, data, err := hydra.HTTPClient.Get(u.String())
+	if err == nil && resp != nil && resp.StatusCode == 200 {
+		if err = json.Unmarshal(data, &token); err == nil {
+			return result, err
+		}
+	}
+	return result, err
+}
+
 func (hydra *HydraClient) get(flow, challenge string) map[string]interface{} {
 	u, _ := url.Parse(hydra.BaseURL.String())
-	u.Path = path.Join(u.Path, flow, url.QueryEscape(challenge))
+	u.Path = path.Join(u.Path, "/oauth2/auth/requests/", flow, url.QueryEscape(challenge))
 	logrus.Debugf("url: '%v'", u.String())
 	return hydra.treatResponse(hydra.HTTPClient.Get(u.String()))
 }
 
 func (hydra *HydraClient) put(flow, challenge, action string, data []byte) map[string]interface{} {
 	u, _ := url.Parse(hydra.BaseURL.String())
-	u.Path = path.Join(u.Path, flow, url.QueryEscape(challenge), action)
+	u.Path = path.Join(u.Path, "/oauth2/auth/requests/", flow, url.QueryEscape(challenge), action)
 	logrus.Debugf("url: '%v'", u.String())
 	return hydra.treatResponse(hydra.HTTPClient.Put(u.String(), data))
 }

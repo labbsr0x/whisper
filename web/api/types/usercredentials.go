@@ -1,9 +1,5 @@
 package types
 
-import (
-	"github.com/google/uuid"
-)
-
 // AddUserCredentialRequestPayload defines the payload for adding a user
 type AddUserCredentialRequestPayload struct {
 	Username string `json:"username"`
@@ -12,7 +8,7 @@ type AddUserCredentialRequestPayload struct {
 
 // AddUserCredentialResponsePayload defines the response payload after adding a user
 type AddUserCredentialResponsePayload struct {
-	UserCredentialID uuid.UUID `json:"userCredentialId"`
+	UserCredentialID string `json:"userCredentialId"`
 }
 
 // UpdateUserCredentialRequestPayload defines the payload for updating a user

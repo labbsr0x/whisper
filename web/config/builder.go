@@ -17,6 +17,7 @@ const (
 	hydraAdminEndpoint = "hydra-admin-endpoint"
 	logLevel           = "log-level"
 	scopesFilePath     = "scopes-file-path"
+	databaseURL        = "database-url"
 )
 
 // GrantScope defines the structure of a grant scope
@@ -33,6 +34,7 @@ type Flags struct {
 	LogLevel           string
 	ScopesFilePath     string
 	HydraAdminEndpoint string
+	DatabaseURL        string
 }
 
 // WebBuilder defines the parametric information of a whisper server instance
@@ -49,6 +51,7 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.String(hydraAdminEndpoint, "", "Hydra Admin Enpoint")
 	flags.String(logLevel, "info", "Sets the Log Level to one of seven (trace, debug, info, warn, error, fatal, panic)")
 	flags.String(scopesFilePath, "", "Sets the path to the json file where the available scopes will be found")
+	flags.String(databaseURL, "", "Sets the database url where user credential data will be stored")
 }
 
 // InitFromViper initializes the web server builder with properties retrieved from Viper.
@@ -71,8 +74,8 @@ func (b *WebBuilder) InitFromViper(v *viper.Viper) *WebBuilder {
 }
 
 func (flags *Flags) check() {
-	if flags.BaseUIPath == "" || flags.HydraAdminEndpoint == "" || flags.ScopesFilePath == "" {
-		panic("base-ui-path, hydra-admin-endpoint and scopes-file-path cannot be empty")
+	if flags.BaseUIPath == "" || flags.HydraAdminEndpoint == "" || flags.ScopesFilePath == "" || flags.DatabaseURL == "" {
+		panic("base-ui-path, hydra-admin-endpoint, scopes-file-path and database-url cannot be empty")
 	}
 }
 

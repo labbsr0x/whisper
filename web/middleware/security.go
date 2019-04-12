@@ -12,6 +12,7 @@ import (
 type key string
 
 const (
+	// TokenKey defines the key that shall be used to store a token in a requests' context
 	TokenKey key = "token"
 )
 

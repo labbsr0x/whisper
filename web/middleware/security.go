@@ -9,9 +9,14 @@ import (
 	"github.com/abilioesteves/whisper/misc"
 )
 
-// SecurityMiddleware verifies if the client is authorized to make this request
-func SecurityMiddleware(next http.Handler, hydraClient *misc.HydraClient) mux.MiddlewareFunc {
+type key string
 
+const (
+	TokenKey key = "token"
+)
+
+// GetSecurityMiddleware verifies if the client is authorized to make this request
+func GetSecurityMiddleware(hydraClient *misc.HydraClient) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			var tokenString string
@@ -21,7 +26,7 @@ func SecurityMiddleware(next http.Handler, hydraClient *misc.HydraClient) mux.Mi
 			if tokenString, err = misc.GetAccessTokenFromRequest(r); err == nil {
 				if token, err = hydraClient.IntrospectToken(tokenString); err == nil {
 					if token.Active {
-						newR := r.WithContext(context.WithValue(r.Context(), "token", token))
+						newR := r.WithContext(context.WithValue(r.Context(), TokenKey, token))
 						next.ServeHTTP(w, newR)
 						return
 					}

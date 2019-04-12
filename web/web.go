@@ -59,9 +59,9 @@ func (s *Server) Run() error {
 	secureRouter.HandleFunc("/users", s.UserCredentialsAPIs.RemoveUserCredentialHandler).Methods("DELETE")
 	// secureRouter.HandleFunc("/users/{userCredentialID}", s.UserCredentialsAPIs.UpdateUserCredentialHandler).Methods("PUT")
 
-	router.Use(middleware.PrometheusMiddleware)
-	router.Use(middleware.ErrorMiddleware)
-	secureRouter.Use(middleware.SecurityMiddleware)
+	router.Use(middleware.GetPrometheusMiddleware())
+	router.Use(middleware.GetErrorMiddleware())
+	secureRouter.Use(middleware.GetSecurityMiddleware(s.HydraClient))
 
 	srv := &http.Server{
 		Handler:      router,

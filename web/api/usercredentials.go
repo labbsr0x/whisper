@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/abilioesteves/whisper/web/middleware"
+
 	"github.com/abilioesteves/whisper/db"
 	"github.com/abilioesteves/whisper/misc"
 
@@ -46,7 +48,7 @@ func (api *DefaultUserCredentialsAPI) AddUserCredentialHandler(w http.ResponseWr
 		panic(gohtypes.Error{Code: 400, Err: err, Message: "Unable to decode payload"})
 	}
 
-	if token, ok := r.Context().Value("token").(misc.HydraToken); ok {
+	if token, ok := r.Context().Value(middleware.TokenKey).(misc.HydraToken); ok {
 		if ucID, err = api.UserCredentialsDAO.CreateUserCredential(payload.Username, payload.Password, token.ClientID); err == nil {
 			gohserver.WriteJSONResponse(types.AddUserCredentialResponsePayload{UserCredentialID: ucID}, http.StatusOK, w)
 		}

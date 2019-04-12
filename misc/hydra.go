@@ -108,7 +108,7 @@ func (hydra *HydraClient) IntrospectToken(token string) (result HydraToken, err 
 	logrus.Debugf("url: '%v'", u.String())
 	resp, data, err := hydra.HTTPClient.Get(u.String())
 	if err == nil && resp != nil && resp.StatusCode == 200 {
-		if err = json.Unmarshal(data, &token); err == nil {
+		if err = json.Unmarshal(data, &result); err == nil {
 			return result, err
 		}
 	}

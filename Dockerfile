@@ -1,5 +1,5 @@
 # BUILD
-FROM abilioesteves/gowebbuilder:unstable as builder
+FROM abilioesteves/gowebbuilder:0.2.1 as builder
 
 ENV p $GOPATH/src/github.com/abilioesteves/whisper
 

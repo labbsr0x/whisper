@@ -1,6 +1,8 @@
 package misc
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -16,6 +18,14 @@ func ConvertInterfaceArrayToStringArray(toConvert []interface{}) []string {
 		}
 	}
 	return toReturn
+}
+
+// GetJSONStr gets the full json string from the toEncode structure
+func GetJSONStr(toEncode interface{}) string {
+	buf := new(bytes.Buffer)
+	enc := json.NewEncoder(buf)
+	enc.Encode(toEncode)
+	return buf.String()
 }
 
 // GetAccessTokenFromRequest is a helper method to recover an Access Token from a http request

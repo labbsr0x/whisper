@@ -1,8 +1,6 @@
 # Careful Whisper
 A Login and Consent provider implementation in go.
 
-# Use it yourself
-
 # Developer
 
 From the project root folder, fire the following commands to execute this project in development mode:

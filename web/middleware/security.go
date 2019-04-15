@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/abilioesteves/whisper-client/hydra"
+
 	"github.com/gorilla/mux"
 
 	"github.com/abilioesteves/whisper/misc"
@@ -17,11 +19,11 @@ const (
 )
 
 // GetSecurityMiddleware verifies if the client is authorized to make this request
-func GetSecurityMiddleware(hydraClient *misc.HydraClient) mux.MiddlewareFunc {
+func GetSecurityMiddleware(hydraClient *hydra.Client) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			var tokenString string
-			var token misc.HydraToken
+			var token hydra.Token
 			var err error
 
 			if tokenString, err = misc.GetAccessTokenFromRequest(r); err == nil {

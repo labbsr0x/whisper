@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"path"
 
+	"github.com/abilioesteves/whisper-client/hydra"
+
 	"github.com/abilioesteves/goh/gohtypes"
 	"github.com/abilioesteves/whisper/misc"
 	"github.com/abilioesteves/whisper/web/api/types"
@@ -40,7 +42,7 @@ func (api *DefaultConsentAPI) ConsentPOSTHandler() http.Handler {
 			if info != nil {
 				acceptInfo := api.HydraClient.AcceptConsentRequest(
 					consentRequest.Challenge,
-					misc.AcceptConsentRequestPayload{
+					hydra.AcceptConsentRequestPayload{
 						GrantAccessTokenAudience: misc.ConvertInterfaceArrayToStringArray(info["requested_access_token_audience"].([]interface{})),
 						GrantScope:               consentRequest.GrantScope,
 						Remember:                 consentRequest.Remember,
@@ -54,7 +56,7 @@ func (api *DefaultConsentAPI) ConsentPOSTHandler() http.Handler {
 				}
 			}
 		} else {
-			rejectInfo := api.HydraClient.RejectConsentRequest(consentRequest.Challenge, misc.RejectConsentRequestPayload{Error: "access_denied", ErrorDescription: "The resource owner denied the request"})
+			rejectInfo := api.HydraClient.RejectConsentRequest(consentRequest.Challenge, hydra.RejectConsentRequestPayload{Error: "access_denied", ErrorDescription: "The resource owner denied the request"})
 			if rejectInfo != nil {
 				http.Redirect(w, r, rejectInfo["redirect_to"].(string), 302)
 				return
@@ -73,7 +75,7 @@ func (api *DefaultConsentAPI) ConsentGETHandler(route string) http.Handler {
 		if info["skip"].(bool) {
 			info = api.HydraClient.AcceptConsentRequest(
 				challenge,
-				misc.AcceptConsentRequestPayload{
+				hydra.AcceptConsentRequestPayload{
 					GrantScope:               misc.ConvertInterfaceArrayToStringArray(info["requested_scope"].([]interface{})),
 					GrantAccessTokenAudience: misc.ConvertInterfaceArrayToStringArray(info["requested_access_token_audience"].([]interface{}))},
 			)
@@ -91,7 +93,7 @@ func (api *DefaultConsentAPI) ConsentGETHandler(route string) http.Handler {
 
 // getConsentPageInfo builds the data structure for a consent page
 func (api *DefaultConsentAPI) getConsentPageInfo(consentRequestInfo map[string]interface{}) types.ConsentPage {
-	toReturn := types.ConsentPage{ClientName: "Unknown", ClientURI: "#", RequestedScopes: make([]config.GrantScope, 0)}
+	toReturn := types.ConsentPage{ClientName: "Unknown", ClientURI: "#", RequestedScopes: make([]misc.GrantScope, 0)}
 	if clientName, ok := consentRequestInfo["client_name"].(string); ok {
 		toReturn.ClientName = clientName
 	}

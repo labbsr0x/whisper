@@ -6,7 +6,7 @@ import (
 	"net/url"
 
 	"github.com/abilioesteves/goh/gohtypes"
-	"github.com/abilioesteves/whisper/web/config"
+	"github.com/abilioesteves/whisper/misc"
 	"github.com/sirupsen/logrus"
 )
 
@@ -14,7 +14,7 @@ import (
 type ConsentPage struct {
 	ClientURI       string
 	ClientName      string
-	RequestedScopes []config.GrantScope
+	RequestedScopes []misc.GrantScope
 }
 
 // ConsentRequestPayload holds the data that defines a consent request to Whisper

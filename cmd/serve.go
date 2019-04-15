@@ -2,6 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+
+	"github.com/sirupsen/logrus"
+
+	"github.com/abilioesteves/whisper-client/client"
+	whisperClientConfig "github.com/abilioesteves/whisper-client/config"
 
 	"github.com/abilioesteves/whisper/web"
 	"github.com/abilioesteves/whisper/web/config"
@@ -16,10 +22,20 @@ var serveCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		webBuilder := new(config.WebBuilder).InitFromViper(viper.GetViper())
 		server := new(web.Server).InitFromWebBuilder(webBuilder)
-		err := server.Run()
-		if err != nil {
-			return fmt.Errorf("An error occurred while setting up the Whisper Web Server: %v", err)
+		self := new(client.WhisperClient).InitFromHydraClient(server.HydraClient)
+		t, err := self.CheckCredentials()
+
+		if err == nil {
+			token := self.GetTokenAsJSONStr(t)
+			logrus.Debugf("Initial Token: '%v'", token)
+			os.Setenv(string(whisperClientConfig.WhisperTokenEnvKey), token) // now the token can be referenced by a middleware or any other execution point
+
+			err = server.Run()
+			if err != nil {
+				return fmt.Errorf("An error occurred while setting up the Whisper Web Server: %v", err)
+			}
 		}
+
 		return nil
 	},
 }

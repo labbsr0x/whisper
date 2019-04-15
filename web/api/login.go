@@ -6,11 +6,12 @@ import (
 	"net/url"
 	"path"
 
+	"github.com/abilioesteves/whisper-client/hydra"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/abilioesteves/goh/gohtypes"
 
-	"github.com/abilioesteves/whisper/misc"
 	"github.com/abilioesteves/whisper/web/api/types"
 	"github.com/abilioesteves/whisper/web/config"
 )
@@ -40,7 +41,7 @@ func (api *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 		if loginRequest.Password == "foobar" && loginRequest.Username == "foo@bar.com" { // TODO validation BL
 			info := api.HydraClient.AcceptLoginRequest(
 				loginRequest.Challenge,
-				misc.AcceptLoginRequestPayload{ACR: "0", Remember: loginRequest.Remember, RememberFor: 3600, Subject: loginRequest.Username},
+				hydra.AcceptLoginRequestPayload{ACR: "0", Remember: loginRequest.Remember, RememberFor: 3600, Subject: loginRequest.Username},
 			)
 			logrus.Debugf("Accept login request info: %v", info)
 			if info != nil {
@@ -63,7 +64,7 @@ func (api *DefaultLoginAPI) LoginGETHandler(route string) http.Handler {
 				subject := info["subject"].(string)
 				info = api.HydraClient.AcceptLoginRequest(
 					challenge,
-					misc.AcceptLoginRequestPayload{Subject: subject},
+					hydra.AcceptLoginRequestPayload{Subject: subject},
 				)
 				if info != nil {
 					logrus.Debugf("Login request skipped for subject '%v'", subject)

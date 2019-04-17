@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/abilioesteves/goh/gohtypes"
-	"github.com/abilioesteves/whisper/misc"
+	"github.com/labbsr0x/goh/gohtypes"
+	"github.com/labbsr0x/whisper/misc"
 	"github.com/sirupsen/logrus"
 )
 

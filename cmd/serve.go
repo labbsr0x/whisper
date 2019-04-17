@@ -6,11 +6,11 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/abilioesteves/whisper-client/client"
-	whisperClientConfig "github.com/abilioesteves/whisper-client/config"
+	"github.com/labbsr0x/whisper-client/client"
+	whisperClientConfig "github.com/labbsr0x/whisper-client/config"
 
-	"github.com/abilioesteves/whisper/web"
-	"github.com/abilioesteves/whisper/web/config"
+	"github.com/labbsr0x/whisper/web"
+	"github.com/labbsr0x/whisper/web/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

@@ -7,8 +7,8 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/abilioesteves/goh/gohserver"
-	"github.com/abilioesteves/whisper/web/metrics"
+	"github.com/labbsr0x/goh/gohserver"
+	"github.com/labbsr0x/whisper/web/metrics"
 )
 
 // GetPrometheusMiddleware gets the middleware that feeds a prometheus registry with basic data over the http requests

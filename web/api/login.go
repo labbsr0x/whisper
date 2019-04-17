@@ -6,14 +6,14 @@ import (
 	"net/url"
 	"path"
 
-	"github.com/abilioesteves/whisper-client/hydra"
+	"github.com/labbsr0x/whisper-client/hydra"
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/abilioesteves/goh/gohtypes"
+	"github.com/labbsr0x/goh/gohtypes"
 
-	"github.com/abilioesteves/whisper/web/api/types"
-	"github.com/abilioesteves/whisper/web/config"
+	"github.com/labbsr0x/whisper/web/api/types"
+	"github.com/labbsr0x/whisper/web/config"
 )
 
 // LoginAPI defines the available user apis

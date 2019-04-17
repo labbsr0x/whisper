@@ -5,9 +5,9 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/abilioesteves/whisper/misc"
+	"github.com/labbsr0x/whisper/misc"
 
-	"github.com/abilioesteves/whisper-client/hydra"
+	"github.com/labbsr0x/whisper-client/hydra"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"

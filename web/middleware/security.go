@@ -4,11 +4,11 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/abilioesteves/whisper-client/hydra"
+	"github.com/labbsr0x/whisper-client/hydra"
 
 	"github.com/gorilla/mux"
 
-	"github.com/abilioesteves/whisper/misc"
+	"github.com/labbsr0x/whisper/misc"
 )
 
 type key string

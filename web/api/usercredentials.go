@@ -4,20 +4,20 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/abilioesteves/whisper-client/hydra"
+	"github.com/labbsr0x/whisper-client/hydra"
 
-	"github.com/abilioesteves/whisper/web/middleware"
+	"github.com/labbsr0x/whisper/web/middleware"
 
-	"github.com/abilioesteves/whisper/db"
+	"github.com/labbsr0x/whisper/db"
 
-	"github.com/abilioesteves/whisper/web/config"
+	"github.com/labbsr0x/whisper/web/config"
 
 	"github.com/gorilla/mux"
 
 	"github.com/labbsr0x/goh/gohtypes"
 
-	"github.com/abilioesteves/goh/gohserver"
-	"github.com/abilioesteves/whisper/web/api/types"
+	"github.com/labbsr0x/goh/gohserver"
+	"github.com/labbsr0x/whisper/web/api/types"
 )
 
 // UserCredentialsAPI defines the available user apis

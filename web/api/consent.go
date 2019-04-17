@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"path"
 
-	"github.com/abilioesteves/whisper-client/hydra"
+	"github.com/labbsr0x/whisper-client/hydra"
 
-	"github.com/abilioesteves/goh/gohtypes"
-	"github.com/abilioesteves/whisper/misc"
-	"github.com/abilioesteves/whisper/web/api/types"
-	"github.com/abilioesteves/whisper/web/config"
+	"github.com/labbsr0x/goh/gohtypes"
+	"github.com/labbsr0x/whisper/misc"
+	"github.com/labbsr0x/whisper/web/api/types"
+	"github.com/labbsr0x/whisper/web/config"
 	"github.com/sirupsen/logrus"
 )
 

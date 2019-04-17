@@ -4,12 +4,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/abilioesteves/whisper/web/api"
+	"github.com/labbsr0x/whisper/web/api"
 
-	"github.com/abilioesteves/whisper/web/config"
-	"github.com/abilioesteves/whisper/web/ui"
+	"github.com/labbsr0x/whisper/web/config"
+	"github.com/labbsr0x/whisper/web/ui"
 
-	"github.com/abilioesteves/whisper/web/middleware"
+	"github.com/labbsr0x/whisper/web/middleware"
 
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"

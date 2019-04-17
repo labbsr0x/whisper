@@ -5,7 +5,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/abilioesteves/goh/gohserver"
+	"github.com/labbsr0x/goh/gohserver"
 	"github.com/sirupsen/logrus"
 )
 

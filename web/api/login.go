@@ -2,6 +2,7 @@ package api
 
 import (
 	"html/template"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path"
@@ -28,18 +29,18 @@ type DefaultLoginAPI struct {
 }
 
 // InitFromWebBuilder initializes a default login api instance
-func (api *DefaultLoginAPI) InitFromWebBuilder(webBuilder *config.WebBuilder) *DefaultLoginAPI {
-	api.WebBuilder = webBuilder
-	return api
+func (dapi *DefaultLoginAPI) InitFromWebBuilder(webBuilder *config.WebBuilder) *DefaultLoginAPI {
+	dapi.WebBuilder = webBuilder
+	return dapi
 }
 
 // LoginPOSTHandler post form handler for logging in users
-func (api *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
+func (dapi *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		loginRequest := new(types.RequestLoginPayload).InitFromRequest(r)
 		logrus.Debugf("Login request payload '%v'", loginRequest)
 		if loginRequest.Password == "foobar" && loginRequest.Username == "foo@bar.com" { // TODO validation BL
-			info := api.HydraClient.AcceptLoginRequest(
+			info := dapi.HydraClient.AcceptLoginRequest(
 				loginRequest.Challenge,
 				hydra.AcceptLoginRequestPayload{ACR: "0", Remember: loginRequest.Remember, RememberFor: 3600, Subject: loginRequest.Username},
 			)
@@ -54,15 +55,15 @@ func (api *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 }
 
 // LoginGETHandler prompts the browser to the login UI or redirects it to hydra
-func (api *DefaultLoginAPI) LoginGETHandler(route string) http.Handler {
+func (dapi *DefaultLoginAPI) LoginGETHandler(route string) http.Handler {
 	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		challenge, err := url.QueryUnescape(r.URL.Query().Get("login_challenge"))
 		if err == nil {
-			info := api.HydraClient.GetLoginRequestInfo(challenge)
+			info := dapi.HydraClient.GetLoginRequestInfo(challenge)
 			logrus.Debugf("Login Request Info: %v", info)
 			if info["skip"].(bool) {
 				subject := info["subject"].(string)
-				info = api.HydraClient.AcceptLoginRequest(
+				info = dapi.HydraClient.AcceptLoginRequest(
 					challenge,
 					hydra.AcceptLoginRequestPayload{Subject: subject},
 				)
@@ -71,11 +72,26 @@ func (api *DefaultLoginAPI) LoginGETHandler(route string) http.Handler {
 					http.Redirect(w, r, info["redirect_to"].(string), 302)
 				}
 			} else {
-				templ := template.Must(template.ParseFiles(path.Join(api.BaseUIPath, "index.html")))
-				templ.Execute(w, nil)
+				templ, info := dapi.getLoginPageTemplateAndInfo()
+				templ.Execute(w, info)
+
 			}
 			return
 		}
 		panic(gohtypes.Error{Code: 500, Err: err, Message: "Unable to parse the login_challenge"})
 	}))
+}
+
+// getLoginPageTemplateAndInfo gets the login page html and its defining payload
+func (dapi *DefaultLoginAPI) getLoginPageTemplateAndInfo() (*template.Template, types.LoginPage) {
+	loginPage := types.LoginPage{}
+	pathToLoginHTML := path.Join(dapi.BaseUIPath, "login.html")
+	buf, err := ioutil.ReadFile(pathToLoginHTML)
+	if err != nil {
+		panic(err)
+	}
+
+	loginPage.HTML = template.HTML(buf)
+
+	return template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "index.html"))), loginPage
 }

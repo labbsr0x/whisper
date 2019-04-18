@@ -1,0 +1,47 @@
+<div id="consent-content" class="card container" hidden="true">
+    <div class="card-body">
+        <br/>
+        <br/>
+        <form id="consent-form" action="/consent" method="POST">
+            <input id="accept-consent" type="hidden" name="accept" value="false"></input>
+            <input id="consent-challenge" type="hidden" name="challenge" value=""></input>
+            <div class="row">
+                <div class="col-sm-2"></div>
+                <div class="col-sm-8">
+                    <h5>The app <a href="#">Unknown</a> wants access to your Whisper account</h5>
+                </div>
+                <div class="col-sm-2"></div>
+            </div>
+            <br/>
+            {{range .RequestedScopes}}
+                <input type="hidden" name="grant-scope" value="{{.Scope}}"/>
+                <div class="row">
+                    <div class="col-sm-2"></div>
+                    <div class="col-sm-8">
+                        {{.Description}}
+                        <a href="#consent-details-{{.Scope}}" role="button" style="float: right; cursor: pointer;" data-toggle="collapse" aria-expanded="false" aria-controls="consent-details-{{.Scope}}">
+                            <img src="static/images/info.svg"  height="20px" width="20px"/>
+                        </a>
+                        <div class="collapse multi-collapse" id="consent-details-{{.Scope}}">
+                            <span style="font-size: 0.7em">{{.Details}}</span>
+                        </div>
+                        <hr/>
+                    </div>
+                    <div class="col-sm-2"></div>
+                </div>
+            {{end}}
+            
+            <br/>
+            <div class="row">
+                <div class="col-sm-4"></div>
+                <div class="col-sm-2 deny">
+                    <h6 ><span class="deny" id="consent-deny" onclick="acceptConsent(false);">Deny</span></h6>
+                </div>
+                <div class="col-sm-2" >
+                    <button id="consent-allow" type="submit" onclick="acceptConsent(true);" class="btn btn-primary">Allow</button>
+                </div>
+                <div class="col-sm-4"></div>
+            </div>
+        </form>
+    </div>
+</div>

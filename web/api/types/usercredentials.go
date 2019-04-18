@@ -1,5 +1,17 @@
 package types
 
+// RegistrationPage defines the information needed to load a registration page
+type RegistrationPage struct {
+	Page
+}
+
+// UpdatePage defins the information needed to load a update user credentials page
+type UpdatePage struct {
+	Page
+	Username string
+	Email    string
+}
+
 // AddUserCredentialRequestPayload defines the payload for adding a user
 type AddUserCredentialRequestPayload struct {
 	Username string `json:"username"`

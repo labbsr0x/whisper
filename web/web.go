@@ -55,8 +55,8 @@ func (s *Server) Run() error {
 	router.Handle("/consent", s.ConsentAPIs.ConsentGETHandler("/consent")).Methods("GET")
 	router.Handle("/consent", s.ConsentAPIs.ConsentPOSTHandler()).Methods("POST")
 
-	secureRouter.HandleFunc("/users", s.UserCredentialsAPIs.AddUserCredentialHandler).Methods("POST")
-	secureRouter.HandleFunc("/users", s.UserCredentialsAPIs.RemoveUserCredentialHandler).Methods("DELETE")
+	// secureRouter.HandleFunc("/users", s.UserCredentialsAPIs.AddUserCredentialHandler).Methods("POST")
+	// secureRouter.HandleFunc("/users", s.UserCredentialsAPIs.RemoveUserCredentialHandler).Methods("DELETE")
 	// secureRouter.HandleFunc("/users/{userCredentialID}", s.UserCredentialsAPIs.UpdateUserCredentialHandler).Methods("PUT")
 
 	router.Use(middleware.GetPrometheusMiddleware())

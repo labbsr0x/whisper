@@ -6,8 +6,17 @@ import (
 	"net/url"
 
 	"github.com/labbsr0x/goh/gohtypes"
+	"github.com/labbsr0x/whisper/misc"
 	"github.com/sirupsen/logrus"
 )
+
+// LoginPage defines the data needed to build a consent page
+type LoginPage struct {
+	Page
+	ClientURI       string
+	ClientName      string
+	RequestedScopes []misc.GrantScope
+}
 
 // RequestLoginPayload holds the data that defines a login request to Whisper
 type RequestLoginPayload struct {

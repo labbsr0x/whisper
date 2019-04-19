@@ -15,7 +15,12 @@ func (mock *MockUserCredentialsAPI) PUTHandler() http.Handler {
 	return nil
 }
 
-// GETPageHandler builds the page where new credentials will be inserted
-func (mock *MockUserCredentialsAPI) GETPageHandler(route string) http.Handler {
+// GETRegistrationPageHandler builds the page where new credentials will be inserted
+func (mock *MockUserCredentialsAPI) GETRegistrationPageHandler(route string) http.Handler {
+	return nil
+}
+
+// GETUpdatePageHandler builder the page where credentials will be updated
+func (mock *MockUserCredentialsAPI) GETUpdatePageHandler(route string) http.Handler {
 	return nil
 }

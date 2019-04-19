@@ -1,6 +1,6 @@
 window.onload = function() {
     var action = window.location.pathname.replace("/", "")
-    if (action != "login" && action != "consent" && action != "register" && action != "update") {
+    if (action != "login" && action != "consent" && action != "registration" && action != "update") {
         action = "error"
     }
     setupControl(action)

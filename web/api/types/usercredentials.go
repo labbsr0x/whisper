@@ -12,12 +12,14 @@ import (
 // RegistrationPage defines the information needed to load a registration page
 type RegistrationPage struct {
 	Page
+	LoginChallenge string
 }
 
 // UpdatePage defins the information needed to load a update user credentials page
 type UpdatePage struct {
 	Page
-	Username string
+	Username   string
+	RedirectTo string
 }
 
 // AddUserCredentialRequestPayload defines the payload for adding a user
@@ -26,6 +28,7 @@ type AddUserCredentialRequestPayload struct {
 	Username             string
 	Password             string
 	PasswordConfirmation string
+	LoginChallenge       string
 }
 
 // AddUserCredentialResponsePayload defines the response payload after adding a user
@@ -51,6 +54,8 @@ func (payload *AddUserCredentialRequestPayload) InitFromRequest(r *http.Request)
 			payload.PasswordConfirmation = r.Form["password-confirmation"][0]
 			payload.Password = r.Form["password"][0]
 			payload.Username = r.Form["username"][0]
+			payload.LoginChallenge = r.Form["login-challenge"][0]
+			return payload
 		}
 		panic(gohtypes.Error{Code: 400, Message: "Bad Request", Err: err})
 	}
@@ -59,8 +64,8 @@ func (payload *AddUserCredentialRequestPayload) InitFromRequest(r *http.Request)
 
 // check verifies if the login request payload is ok
 func (payload *AddUserCredentialRequestPayload) check(form url.Values) error {
-	if len(form["username"]) == 0 || len(form["password"]) == 0 || len(form["password-confirmation"]) == 0 || len(form["email"]) == 0 {
-		return errors.New("all fields must not be empty")
+	if len(form["username"]) == 0 || len(form["password"]) == 0 || len(form["password-confirmation"]) == 0 || len(form["email"]) == 0 || len(form["login-challenge"]) == 0 {
+		return errors.New("all form fields are required")
 	}
 
 	if form["password"][0] != form["password-confirmation"][0] {
@@ -80,6 +85,7 @@ func (payload *UpdateUserCredentialRequestPayload) InitFromRequest(r *http.Reque
 			payload.NewPasswordConfirmation = r.Form["new-password-confirmation"][0]
 			payload.NewPassword = r.Form["new-password"][0]
 			payload.OldPassword = r.Form["old-password"][0]
+			return payload
 		}
 		panic(gohtypes.Error{Code: 400, Message: "Bad Request", Err: err})
 	}

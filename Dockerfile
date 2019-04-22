@@ -1,7 +1,7 @@
 # BUILD
-FROM abilioesteves/gowebbuilder:v0.2.3 as builder
+FROM abilioesteves/gowebbuilder:v0.3.0 as builder
 
-ENV p $GOPATH/src/github.com/abilioesteves/whisper
+ENV p $GOPATH/src/github.com/labbsr0x/whisper
 
 ADD ./ ${p}
 WORKDIR ${p}

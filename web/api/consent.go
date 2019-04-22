@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"path"
 
 	"github.com/labbsr0x/whisper-client/hydra"
@@ -71,7 +72,8 @@ func (dapi *DefaultConsentAPI) ConsentPOSTHandler() http.Handler {
 // ConsentGETHandler prompts the browser to the consent UI or redirects it to hydra
 func (dapi *DefaultConsentAPI) ConsentGETHandler(route string) http.Handler {
 	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		challenge := r.URL.Query().Get("consent_challenge")
+		challenge, err := url.QueryUnescape(r.URL.Query().Get("consent_challenge"))
+		gohtypes.PanicIfError("Unable to parse the consent_challenge parameter", 400, err)
 		info := dapi.HydraClient.GetConsentRequestInfo(challenge)
 		logrus.Debugf("Consent Request Info: '%v'", info)
 		if info["skip"].(bool) {
@@ -87,15 +89,15 @@ func (dapi *DefaultConsentAPI) ConsentGETHandler(route string) http.Handler {
 				http.Redirect(w, r, info["redirect_to"].(string), 302)
 			}
 		} else {
-			templ, consentPageInfo := dapi.getConsentPageTemplateAndInfo(info)
+			templ, consentPageInfo := dapi.getConsentPageTemplateAndInfo(info, challenge)
 			templ.Execute(w, consentPageInfo)
 		}
 	}))
 }
 
 // getConsentPageInfo builds the data structure for a consent page
-func (dapi *DefaultConsentAPI) getConsentPageTemplateAndInfo(consentRequestInfo map[string]interface{}) (*template.Template, types.ConsentPage) {
-	consentPageInfo := types.ConsentPage{ClientName: "Unknown", ClientURI: "#", RequestedScopes: make([]misc.GrantScope, 0)}
+func (dapi *DefaultConsentAPI) getConsentPageTemplateAndInfo(consentRequestInfo map[string]interface{}, challenge string) (*template.Template, types.ConsentPage) {
+	consentPageInfo := types.ConsentPage{ClientName: "Unknown", ClientURI: "#", RequestedScopes: make([]misc.GrantScope, 0), Challenge: challenge}
 
 	if clientName, ok := consentRequestInfo["client_name"].(string); ok {
 		consentPageInfo.ClientName = clientName

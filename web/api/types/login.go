@@ -16,6 +16,7 @@ type LoginPage struct {
 	ClientURI       string
 	ClientName      string
 	RequestedScopes []misc.GrantScope
+	Challenge       string
 }
 
 // RequestLoginPayload holds the data that defines a login request to Whisper

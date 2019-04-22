@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"html/template"
 	"io/ioutil"
 	"net/http"
@@ -72,26 +73,25 @@ func (dapi *DefaultLoginAPI) LoginGETHandler(route string) http.Handler {
 					http.Redirect(w, r, info["redirect_to"].(string), 302)
 				}
 			} else {
-				templ, info := dapi.getLoginPageTemplateAndInfo()
+				templ, info := dapi.getLoginPageTemplateAndInfo(challenge)
 				templ.Execute(w, info)
 
 			}
 			return
 		}
-		panic(gohtypes.Error{Code: 500, Err: err, Message: "Unable to parse the login_challenge"})
+		panic(gohtypes.Error{Code: 400, Err: err, Message: "Unable to parse the login_challenge"})
 	}))
 }
 
 // getLoginPageTemplateAndInfo gets the login page html and its defining payload
-func (dapi *DefaultLoginAPI) getLoginPageTemplateAndInfo() (*template.Template, types.LoginPage) {
-	loginPage := types.LoginPage{}
-	pathToLoginHTML := path.Join(dapi.BaseUIPath, "login.html")
-	buf, err := ioutil.ReadFile(pathToLoginHTML)
-	if err != nil {
-		panic(err)
-	}
+func (dapi *DefaultLoginAPI) getLoginPageTemplateAndInfo(challenge string) (*template.Template, types.LoginPage) {
+	loginPage := types.LoginPage{Challenge: challenge}
 
-	loginPage.HTML = template.HTML(buf)
+	buf := new(bytes.Buffer)
+	template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "login.html"))).Execute(buf, loginPage)
+	html, _ := ioutil.ReadAll(buf)
+
+	loginPage.HTML = template.HTML(html)
 
 	return template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "index.html"))), loginPage
 }

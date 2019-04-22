@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"path"
 
 	"github.com/labbsr0x/goh/gohtypes"
@@ -35,8 +36,9 @@ type DefaultUserCredentialsAPI struct {
 
 // InitFromWebBuilder initializes the default user credentials API from a WebBuilder
 func (dapi *DefaultUserCredentialsAPI) InitFromWebBuilder(builder *config.WebBuilder) *DefaultUserCredentialsAPI {
+	dapi.WebBuilder = builder
 	dapi.UserCredentialsDAO = new(db.DefaultUserCredentialsDAO)
-	return nil
+	return dapi
 }
 
 // POSTHandler handles post requests to create user credentials
@@ -44,6 +46,7 @@ func (dapi *DefaultUserCredentialsAPI) POSTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		payload := new(types.AddUserCredentialRequestPayload).InitFromRequest(r)
 		logrus.Debugf("%v", payload)
+		http.Redirect(w, r, "/login?login_challenge="+payload.LoginChallenge, 302)
 	})
 }
 
@@ -58,12 +61,15 @@ func (dapi *DefaultUserCredentialsAPI) PUTHandler() http.Handler {
 // GETRegistrationPageHandler builds the page where new credentials will be inserted
 func (dapi *DefaultUserCredentialsAPI) GETRegistrationPageHandler(route string) http.Handler {
 	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		page := types.RegistrationPage{}
-		buf, err := ioutil.ReadFile(path.Join(dapi.BaseUIPath, "registration.html"))
-		if err != nil {
-			panic(err)
-		}
-		page.HTML = template.HTML(buf)
+		challenge, err := url.QueryUnescape(r.URL.Query().Get("login_challenge"))
+		gohtypes.PanicIfError("Unable to parse the login_challenge parameter", 400, err)
+		page := types.RegistrationPage{LoginChallenge: challenge}
+
+		buf := new(bytes.Buffer)
+		template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "registration.html"))).Execute(buf, page)
+		html, _ := ioutil.ReadAll(buf)
+
+		page.HTML = template.HTML(html)
 
 		tmpl := template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "index.html")))
 		tmpl.Execute(w, page)

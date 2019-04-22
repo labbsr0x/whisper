@@ -27,7 +27,7 @@ type Server struct {
 // InitFromWebBuilder builds a Server instance
 func (s *Server) InitFromWebBuilder(webBuilder *config.WebBuilder) *Server {
 	s.WebBuilder = webBuilder
-	s.UserCredentialsAPIs = new(api.DefaultUserCredentialsAPI)
+	s.UserCredentialsAPIs = new(api.DefaultUserCredentialsAPI).InitFromWebBuilder(webBuilder)
 	s.LoginAPIs = new(api.DefaultLoginAPI).InitFromWebBuilder(webBuilder)
 	s.ConsentAPIs = new(api.DefaultConsentAPI).InitFromWebBuilder(webBuilder)
 
@@ -55,6 +55,7 @@ func (s *Server) Run() error {
 	router.Handle("/consent", s.ConsentAPIs.ConsentGETHandler("/consent")).Methods("GET")
 	router.Handle("/consent", s.ConsentAPIs.ConsentPOSTHandler()).Methods("POST")
 
+	logrus.Infof("Setting up UserCredentialAPIs: %v; %v", s.UserCredentialsAPIs, s.UserCredentialsAPIs.GETRegistrationPageHandler("/registration"))
 	router.Handle("/registration", s.UserCredentialsAPIs.GETRegistrationPageHandler("/registration")).Methods("GET")
 	router.Handle("/registration", s.UserCredentialsAPIs.POSTHandler()).Methods("POST")
 

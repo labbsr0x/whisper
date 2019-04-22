@@ -1,17 +1,6 @@
 window.onload = function() {
     var action = window.location.pathname.replace("/", "")
-    if (action != "login" && action != "consent" && action != "registration" && action != "update") {
-        action = "error"
-    }
-    setupControl(action)
     setupConsentForm(action)
-}
-
-function setupControl(action) {
-    var params = new URLSearchParams(window.location.search)
-    var control = getControl(action)
-    control.element.hidden = false
-    control.challengeElement.value = params.get(action+"_challenge")
 }
 
 function setupConsentForm(action) {
@@ -27,13 +16,5 @@ function setupConsentForm(action) {
                 }
             }(button.value))
         }
-    }
-}
-
-function getControl(id) {
-    return {
-        matcher: new RegExp(id),
-        element: document.getElementById(id+"-content"),
-        challengeElement: document.getElementById(id+"-challenge")
     }
 }

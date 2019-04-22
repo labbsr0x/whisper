@@ -1,14 +1,14 @@
-<div id="consent-content" class="card container" hidden="true">
+<div id="consent-content" class="card container">
     <div class="card-body">
         <br/>
         <br/>
         <form id="consent-form" action="/consent" method="POST">
             <input id="accept-consent" type="hidden" name="accept" value="false"></input>
-            <input id="consent-challenge" type="hidden" name="challenge" value=""></input>
+            <input id="consent-challenge" type="hidden" name="challenge" value="{{.Challenge}}"></input>
             <div class="row">
                 <div class="col-sm-2"></div>
                 <div class="col-sm-8">
-                    <h5>The app <a href="#">Unknown</a> wants access to your Whisper account</h5>
+                    <h5>The app <a href="{{.ClientURI}}">{{.ClientName}}</a> wants access to your Whisper account</h5>
                 </div>
                 <div class="col-sm-2"></div>
             </div>

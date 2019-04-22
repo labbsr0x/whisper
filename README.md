@@ -1,6 +1,7 @@
 # Whisper
-A Login and Consent provider implementation in go.
+[![Docker Pulls](https://img.shields.io/docker/pulls/labbsr0x/whisper.svg)](https://hub.docker.com/r/labbsr0x/whisper)
 
+A Login and Consent provider implementation in Go for Ory Hydra
 
 
 

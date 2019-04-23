@@ -4,6 +4,8 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/labbsr0x/goh/gohtypes"
+
 	"github.com/labbsr0x/whisper-client/hydra"
 
 	"github.com/gorilla/mux"
@@ -35,7 +37,7 @@ func GetSecurityMiddleware(hydraClient *hydra.Client) mux.MiddlewareFunc {
 					}
 				}
 			}
-			w.WriteHeader(401)
+			gohtypes.PanicIfError("Unauthorized user", 401, err)
 		})
 	}
 

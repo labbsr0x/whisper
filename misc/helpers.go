@@ -30,29 +30,35 @@ func GetJSONStr(toEncode interface{}) string {
 
 // GetAccessTokenFromRequest is a helper method to recover an Access Token from a http request
 func GetAccessTokenFromRequest(r *http.Request) (string, error) {
-	auth := r.Header.Get("Authorization")
+	authHeader := r.Header.Get("Authorization")
+	authURLParam := r.URL.Query().Get("token")
 	var t string
 
-	if len(auth) == 0 {
-		return "", fmt.Errorf("No Authorization Header found")
+	if len(authHeader) == 0 && len(authURLParam) == 0 {
+		return "", fmt.Errorf("No Authorization Header or URL Param found")
 	}
 
-	data := strings.Split(auth, " ")
+	if len(authHeader) > 0 {
+		data := strings.Split(authHeader, " ")
 
-	if len(data) != 2 {
-		return "", fmt.Errorf("Bad Authorization Header")
+		if len(data) != 2 {
+			return "", fmt.Errorf("Bad Authorization Header")
+		}
+
+		t = data[0]
+
+		if len(t) == 0 || t != "Bearer" {
+			return "", fmt.Errorf("No Bearer Token found")
+		}
+
+		t = data[1]
+
+	} else {
+		t = authURLParam
 	}
-
-	t = data[0]
-
-	if len(t) == 0 || t != "Bearer" {
-		return "", fmt.Errorf("No Bearer Token found")
-	}
-
-	t = data[1]
 
 	if len(t) == 0 {
-		return "", fmt.Errorf("Bad Authorization Header")
+		return "", fmt.Errorf("Bad Authorization Token")
 	}
 
 	return t, nil

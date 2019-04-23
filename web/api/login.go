@@ -43,7 +43,7 @@ func (dapi *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 		if loginRequest.Password == "foobar" && loginRequest.Username == "foo@bar.com" { // TODO validation BL
 			info := dapi.HydraClient.AcceptLoginRequest(
 				loginRequest.Challenge,
-				hydra.AcceptLoginRequestPayload{ACR: "0", Remember: loginRequest.Remember, RememberFor: 3600, Subject: loginRequest.Username},
+				hydra.AcceptLoginRequestPayload{ACR: "0", Remember: loginRequest.Remember, RememberFor: 3600, Subject: loginRequest.Username}, // TODO store user id on subject
 			)
 			logrus.Debugf("Accept login request info: %v", info)
 			if info != nil {

@@ -84,16 +84,25 @@ func (dapi *DefaultUserCredentialsAPI) GETRegistrationPageHandler(route string) 
 // GETUpdatePageHandler builds the page where credentials will be updated
 func (dapi *DefaultUserCredentialsAPI) GETUpdatePageHandler(route string) http.Handler {
 	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		page := types.UpdatePage{}
+		redirectTo, err := url.QueryUnescape(r.URL.Query().Get("redirect_to"))
+		gohtypes.PanicIfError("Unable to parse the redirect_to parameter", 400, err)
+		page := types.UpdatePage{RedirectTo: redirectTo}
 
 		if token, ok := r.Context().Value(middleware.TokenKey).(hydra.Token); ok {
 			page.Username = token.Subject
+
+			// TODO get usercredential information from DB; token.Subject will store the user id
+
 			buf := new(bytes.Buffer)
 			err := template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "update.html"))).Execute(buf, page)
 			gohtypes.PanicIfError("Error building update page", http.StatusInternalServerError, err)
 
-			err = template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "index.html"))).Execute(w, page)
-			gohtypes.PanicIfError("Error building update page", http.StatusInternalServerError, err)
+			html, _ := ioutil.ReadAll(buf)
+			page.HTML = template.HTML(html)
+
+			template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "index.html"))).Execute(w, page)
+			return
 		}
+		gohtypes.Panic("Unauthorized: token not found", 401)
 	}))
 }

@@ -7,7 +7,7 @@ services:
     build: .
     image: abilioesteves/whisper:0.0.1
     depends_on:
-      - postgresd-whisper
+      - mysqld
       - hydra
     ports:
       - "7070:7070"
@@ -18,14 +18,14 @@ services:
       - WHISPER_HYDRA_PUBLIC_URL=http://hydra:4444/
       - WHISPER_CLIENT_ID=whisper
       - WHISPER_CLIENT_SECRET=whisper
-      - WHISPER_DATABASE_URL=postgres://whisper:secret@postgresd-whisper:5431/whisper?sslmode=disable
+      - WHISPER_DATABASE_URL=mysql://root:secret@tcp(mysqld:3306)/whisper?max_conns=20&max_idle_conns=4&charset=utf8mb4&parseTime=True&loc=Local
 
   hydra-migrate:
     image: oryd/hydra:v1.0.0-rc.8
     depends_on:
-      - postgresd-hydra
+      - mysqld
     environment:
-      - DATABASE_URL=postgres://hydra:secret@postgresd-hydra:5432/hydra?sslmode=disable
+      - DSN=mysql://root:secret@tcp(mysqld:3306)/hydra?max_conns=20&max_idle_conns=4
     command:
       migrate sql -e
     restart: on-failure
@@ -48,31 +48,21 @@ services:
       - OAUTH2_ISSUER_URL=http://localhost:4444
       - OAUTH2_CONSENT_URL=http://localhost:7070/consent
       - OAUTH2_LOGIN_URL=http://localhost:7070/login
-      - DATABASE_URL=postgres://hydra:secret@postgresd-hydra:5432/hydra?sslmode=disable
+      - DSN=mysql://root:secret@tcp(mysqld:3306)/hydra?max_conns=20&max_idle_conns=4
       - SYSTEM_SECRET=youReallyNeedToChangeThis
       - OAUTH2_SHARE_ERROR_DEBUG=1
       - OIDC_SUBJECT_TYPES_SUPPORTED=public,pairwise
       - OIDC_SUBJECT_TYPE_PAIRWISE_SALT=youReallyNeedToChangeThis
       - CORS_ENABLED=true
-#     - OAUTH2_ACCESS_TOKEN_STRATEGY=jwt
 
-  postgresd-hydra:
-    image: postgres:9.6
+  mysqld:
+    image: mysql:5.7
     ports:
-      - "5432:5432"
+      - "3306:3306"
+    volumes:
+      - ./scripts:/docker-entrypoint-initdb.d
     environment:
-      - POSTGRES_USER=hydra
-      - POSTGRES_PASSWORD=secret
-      - POSTGRES_DB=hydra
-
-  postgresd-whisper:
-    image: postgres:9.6
-    ports:
-      - "5431:5432"
-    environment:
-      - POSTGRES_USER=whisper
-      - POSTGRES_PASSWORD=secret
-      - POSTGRES_DB=whisper
+      - MYSQL_ROOT_PASSWORD=secret
 
   prometheus:
     image: abilioesteves/prometheus:1.0.0

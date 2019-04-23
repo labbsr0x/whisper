@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
 	"io/ioutil"
 	"net/http"
@@ -37,7 +38,7 @@ type DefaultUserCredentialsAPI struct {
 // InitFromWebBuilder initializes the default user credentials API from a WebBuilder
 func (dapi *DefaultUserCredentialsAPI) InitFromWebBuilder(builder *config.WebBuilder) *DefaultUserCredentialsAPI {
 	dapi.WebBuilder = builder
-	dapi.UserCredentialsDAO = new(db.DefaultUserCredentialsDAO)
+	dapi.UserCredentialsDAO = new(db.DefaultUserCredentialsDAO).InitFromWebBuilder(builder)
 	return dapi
 }
 
@@ -45,8 +46,12 @@ func (dapi *DefaultUserCredentialsAPI) InitFromWebBuilder(builder *config.WebBui
 func (dapi *DefaultUserCredentialsAPI) POSTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		payload := new(types.AddUserCredentialRequestPayload).InitFromRequest(r)
-		logrus.Debugf("%v", payload)
-		http.Redirect(w, r, "/login?login_challenge="+payload.LoginChallenge, 302)
+
+		userID, err := dapi.UserCredentialsDAO.CreateUserCredential(payload.Username, payload.Password, payload.Email)
+		gohtypes.PanicIfError("Not possible to create user", 500, err)
+		logrus.Infof("User created: %v", userID)
+
+		http.Redirect(w, r, fmt.Sprintf("/login?first_login=true&username=%v&login_challenge=%v", payload.Username, payload.LoginChallenge), 302)
 	})
 }
 

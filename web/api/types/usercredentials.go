@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"regexp"
 
 	"github.com/labbsr0x/goh/gohtypes"
 	"github.com/sirupsen/logrus"
@@ -57,7 +58,7 @@ func (payload *AddUserCredentialRequestPayload) InitFromRequest(r *http.Request)
 			payload.LoginChallenge = r.Form["login-challenge"][0]
 			return payload
 		}
-		panic(gohtypes.Error{Code: 400, Message: "Bad Request", Err: err})
+		gohtypes.Panic(err.Error(), 400)
 	}
 	panic(gohtypes.Error{Code: 400, Message: "Not possible to parse http form", Err: err})
 }
@@ -65,14 +66,14 @@ func (payload *AddUserCredentialRequestPayload) InitFromRequest(r *http.Request)
 // check verifies if the login request payload is ok
 func (payload *AddUserCredentialRequestPayload) check(form url.Values) error {
 	if len(form["username"]) == 0 || len(form["password"]) == 0 || len(form["password-confirmation"]) == 0 || len(form["email"]) == 0 || len(form["login-challenge"]) == 0 {
-		return errors.New("all form fields are required")
+		return errors.New("All form fields are required")
 	}
 
 	if form["password"][0] != form["password-confirmation"][0] {
-		return errors.New("wrong password confirmation")
+		return errors.New("Wrong password confirmation")
 	}
 
-	return nil
+	return verifyEmail(form["email"][0])
 }
 
 // InitFromRequest initializes the update request payload from an http request form
@@ -87,7 +88,7 @@ func (payload *UpdateUserCredentialRequestPayload) InitFromRequest(r *http.Reque
 			payload.OldPassword = r.Form["old-password"][0]
 			return payload
 		}
-		panic(gohtypes.Error{Code: 400, Message: "Bad Request", Err: err})
+		gohtypes.Panic(err.Error(), 400)
 	}
 	panic(gohtypes.Error{Code: 400, Message: "Not possible to parse http form", Err: err})
 }
@@ -95,11 +96,21 @@ func (payload *UpdateUserCredentialRequestPayload) InitFromRequest(r *http.Reque
 // check verifies if the login request payload is ok
 func (payload *UpdateUserCredentialRequestPayload) check(form url.Values) error {
 	if len(form["old-password"]) == 0 || len(form["new-password"]) == 0 || len(form["new-password-confirmation"]) == 0 || len(form["email"]) == 0 {
-		return errors.New("all fields must not be empty")
+		return errors.New("All fields must not be empty")
 	}
 
 	if form["new-password"][0] != form["new-password-confirmation"][0] {
-		return errors.New("wrong password confirmation")
+		return errors.New("Wrong password confirmation")
+	}
+
+	return verifyEmail(form["email"][0])
+}
+
+func verifyEmail(email string) error {
+	re := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+
+	if !re.MatchString(email) {
+		return errors.New("Invalid email")
 	}
 
 	return nil

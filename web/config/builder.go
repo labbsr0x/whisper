@@ -77,7 +77,7 @@ func (b *WebBuilder) InitFromViper(v *viper.Viper) *WebBuilder {
 	b.GrantScopes = b.getGrantScopesFromFile(flags.ScopesFilePath)
 	b.HydraClient = new(hydra.Client).Init(flags.HydraAdminURL, flags.HydraPublicURL, flags.ClientID, flags.ClientSecret, b.GrantScopes.GetScopeListFromGrantScopeMap(), []string{})
 
-	logrus.Infof("Run config: %v", misc.GetJSONStr(b))
+	logrus.Infof("Flags: '%v'; GrantScopes: '%v'", b.Flags, b.GrantScopes)
 	return b
 }
 

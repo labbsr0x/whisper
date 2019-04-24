@@ -40,7 +40,8 @@ func (dapi *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		loginRequest := new(types.RequestLoginPayload).InitFromRequest(r)
 		logrus.Debugf("Login request payload '%v'", loginRequest)
-		if loginRequest.Password == "foobar" && loginRequest.Username == "foo@bar.com" { // TODO validation BL
+		userCredential, err := dapi.UserCredentialsDAO.GetUserCredential(loginRequest.Username)
+		if err == nil && loginRequest.Password == userCredential.Password { // TODO validation BL
 			info := dapi.HydraClient.AcceptLoginRequest(
 				loginRequest.Challenge,
 				hydra.AcceptLoginRequestPayload{ACR: "0", Remember: loginRequest.Remember, RememberFor: 3600, Subject: loginRequest.Username}, // TODO store user id on subject
@@ -51,7 +52,7 @@ func (dapi *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 				return
 			}
 		}
-		panic(gohtypes.Error{Code: 403, Message: "Unable to authenticate user"})
+		gohtypes.PanicIfError("Unable to authenticate user", 403, err)
 	})
 }
 

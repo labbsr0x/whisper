@@ -14,7 +14,6 @@ import (
 	"github.com/labbsr0x/whisper-client/hydra"
 	"github.com/labbsr0x/whisper/web/middleware"
 
-	"github.com/labbsr0x/whisper/db"
 	"github.com/sirupsen/logrus"
 
 	"github.com/labbsr0x/whisper/web/api/types"
@@ -32,13 +31,11 @@ type UserCredentialsAPI interface {
 // DefaultUserCredentialsAPI holds the default implementation of the User API interface
 type DefaultUserCredentialsAPI struct {
 	*config.WebBuilder
-	UserCredentialsDAO db.UserCredentialsDAO
 }
 
 // InitFromWebBuilder initializes the default user credentials API from a WebBuilder
 func (dapi *DefaultUserCredentialsAPI) InitFromWebBuilder(builder *config.WebBuilder) *DefaultUserCredentialsAPI {
 	dapi.WebBuilder = builder
-	dapi.UserCredentialsDAO = new(db.DefaultUserCredentialsDAO).InitFromWebBuilder(builder)
 	return dapi
 }
 

@@ -2,7 +2,13 @@ package db
 
 import (
 	"fmt"
+	"net/url"
+	"strings"
 	"time"
+
+	"github.com/google/uuid"
+
+	"github.com/labbsr0x/goh/gohtypes"
 
 	"github.com/labbsr0x/whisper/web/config"
 
@@ -35,15 +41,30 @@ type DefaultUserCredentialsDAO struct {
 
 // InitFromWebBuilder initializes a defualt user credentials DAO from web builder
 func (dao *DefaultUserCredentialsDAO) InitFromWebBuilder(builder *config.WebBuilder) *DefaultUserCredentialsDAO {
-	dao.DatabaseURL = builder.DatabaseURL
+	u, err := url.Parse(builder.DatabaseURL)
+	gohtypes.PanicIfError("Unable to parse db url", 500, err)
+	dao.DatabaseURL = strings.Replace(u.String(), u.Scheme+"://", "", 1)
+
+	gohtypes.PanicIfError("Not possible to migrate db", 500, dao.Migrate())
+
 	return dao
+}
+
+// Migrate initializes a migration routine to synchronize db and model
+func (dao *DefaultUserCredentialsDAO) Migrate() error {
+	db, err := gorm.Open("mysql", dao.DatabaseURL)
+	if err == nil {
+		db.AutoMigrate(&UserCredential{})
+		db.Close()
+	}
+	return err
 }
 
 // CreateUserCredential creates a user
 func (dao *DefaultUserCredentialsDAO) CreateUserCredential(username, password, email string) (string, error) {
 	db, err := gorm.Open("mysql", dao.DatabaseURL)
 	if err == nil {
-		userCredential := UserCredential{Username: username, Password: password, Email: email, Salt: password}
+		userCredential := UserCredential{ID: uuid.New().String(), Username: username, Password: password, Email: email, Salt: password}
 		db.NewRecord(userCredential)
 
 		db.Create(&userCredential)
@@ -53,6 +74,7 @@ func (dao *DefaultUserCredentialsDAO) CreateUserCredential(username, password, e
 		}
 
 		err = fmt.Errorf("Unable to create an user credential: %v", db.GetErrors())
+		db.Close()
 	}
 	return "", err
 }

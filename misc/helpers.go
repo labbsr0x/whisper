@@ -2,10 +2,12 @@ package misc
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
-	"fmt"
-	"net/http"
-	"strings"
+	"io"
 )
 
 // ConvertInterfaceArrayToStringArray a helper method to perform conversions between []interface{} and []string
@@ -28,32 +30,19 @@ func GetJSONStr(toEncode interface{}) string {
 	return buf.String()
 }
 
-// GetAccessTokenFromRequest is a helper method to recover an Access Token from a http request
-func GetAccessTokenFromRequest(r *http.Request) (string, error) {
-	auth := r.Header.Get("Authorization")
-	var t string
-
-	if len(auth) == 0 {
-		return "", fmt.Errorf("No Authorization Header found")
+// GenerateSalt a salt string with 16 bytes of crypto/rand data.
+func GenerateSalt() string {
+	randomBytes := make([]byte, 16)
+	_, err := rand.Read(randomBytes)
+	if err != nil {
+		return ""
 	}
+	return base64.URLEncoding.EncodeToString(randomBytes)
+}
 
-	data := strings.Split(auth, " ")
-
-	if len(data) != 2 {
-		return "", fmt.Errorf("Bad Authorization Header")
-	}
-
-	t = data[0]
-
-	if len(t) == 0 || t != "Bearer" {
-		return "", fmt.Errorf("No Bearer Token found")
-	}
-
-	t = data[1]
-
-	if len(t) == 0 {
-		return "", fmt.Errorf("Bad Authorization Header")
-	}
-
-	return t, nil
+// GetEncryptedPassword builds an encrypted password with hmac(sha256)
+func GetEncryptedPassword(secretKey, password, salt string) string {
+	hash := hmac.New(sha256.New, []byte(secretKey))
+	io.WriteString(hash, password+salt)
+	return base64.URLEncoding.EncodeToString(hash.Sum(nil))
 }

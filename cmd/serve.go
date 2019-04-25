@@ -36,7 +36,7 @@ var serveCmd = &cobra.Command{
 			}
 		}
 
-		return nil
+		return err
 	},
 }
 

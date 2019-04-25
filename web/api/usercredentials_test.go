@@ -5,12 +5,22 @@ import "net/http"
 type MockUserCredentialsAPI struct {
 }
 
-// AddUserCredentialHandler REST POST api handler for adding new users
-func (u *MockUserCredentialsAPI) AddUserCredentialHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO
+// POSTHandler handles post requests to create user credentials
+func (mock *MockUserCredentialsAPI) POSTHandler() http.Handler {
+	return nil
 }
 
-// RemoveUserCredentialHandler REST POST api handler for removing users
-func (u *MockUserCredentialsAPI) RemoveUserCredentialHandler(w http.ResponseWriter, r *http.Request) {
-	// TODO
+// PUTHandler handles put requests to update user credentials
+func (mock *MockUserCredentialsAPI) PUTHandler() http.Handler {
+	return nil
+}
+
+// GETRegistrationPageHandler builds the page where new credentials will be inserted
+func (mock *MockUserCredentialsAPI) GETRegistrationPageHandler(route string) http.Handler {
+	return nil
+}
+
+// GETUpdatePageHandler builder the page where credentials will be updated
+func (mock *MockUserCredentialsAPI) GETUpdatePageHandler(route string) http.Handler {
+	return nil
 }

@@ -8,10 +8,5 @@
         "Description": "Always Sign in",
         "Scope":       "offline",
         "Details":     "Provides the possibility for the app to be always signed in to your account"
-    },
-    "register-user": {
-        "Description": "Register a new user",
-        "Scope":       "register-user",
-        "Details":     "Provides the possibility for the app to register new Whisper users"
     }
 }

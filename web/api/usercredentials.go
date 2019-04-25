@@ -1,68 +1,118 @@
 package api
 
 import (
-	"encoding/json"
+	"bytes"
+	"fmt"
+	"html/template"
+	"io/ioutil"
 	"net/http"
-
-	"github.com/labbsr0x/whisper-client/hydra"
-
-	"github.com/labbsr0x/whisper/web/middleware"
-
-	"github.com/labbsr0x/whisper/db"
-
-	"github.com/labbsr0x/whisper/web/config"
-
-	"github.com/gorilla/mux"
+	"net/url"
+	"path"
 
 	"github.com/labbsr0x/goh/gohtypes"
 
-	"github.com/labbsr0x/goh/gohserver"
+	"github.com/labbsr0x/whisper-client/hydra"
+	"github.com/labbsr0x/whisper/web/middleware"
+
+	"github.com/sirupsen/logrus"
+
 	"github.com/labbsr0x/whisper/web/api/types"
+	"github.com/labbsr0x/whisper/web/config"
 )
 
 // UserCredentialsAPI defines the available user apis
 type UserCredentialsAPI interface {
-	AddUserCredentialHandler(w http.ResponseWriter, r *http.Request)
-	RemoveUserCredentialHandler(w http.ResponseWriter, r *http.Request)
+	POSTHandler() http.Handler
+	PUTHandler() http.Handler
+	GETRegistrationPageHandler(route string) http.Handler
+	GETUpdatePageHandler(route string) http.Handler
 }
 
 // DefaultUserCredentialsAPI holds the default implementation of the User API interface
 type DefaultUserCredentialsAPI struct {
 	*config.WebBuilder
-	UserCredentialsDAO db.UserCredentialsDAO
 }
 
 // InitFromWebBuilder initializes the default user credentials API from a WebBuilder
-func (api *DefaultUserCredentialsAPI) InitFromWebBuilder(builder *config.WebBuilder) *DefaultUserCredentialsAPI {
-	api.UserCredentialsDAO = new(db.DefaultUserCredentialsDAO)
-	return nil
+func (dapi *DefaultUserCredentialsAPI) InitFromWebBuilder(builder *config.WebBuilder) *DefaultUserCredentialsAPI {
+	dapi.WebBuilder = builder
+	return dapi
 }
 
-// AddUserCredentialHandler REST POST api handler for adding new users
-func (api *DefaultUserCredentialsAPI) AddUserCredentialHandler(w http.ResponseWriter, r *http.Request) {
-	var payload types.AddUserCredentialRequestPayload
-	var ucID string
-	var err error
+// POSTHandler handles post requests to create user credentials
+func (dapi *DefaultUserCredentialsAPI) POSTHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		payload := new(types.AddUserCredentialRequestPayload).InitFromRequest(r)
 
-	decoder := json.NewDecoder(r.Body)
-	if err = decoder.Decode(&payload); err != nil {
-		panic(gohtypes.Error{Code: 400, Err: err, Message: "Unable to decode payload"})
-	}
+		userID, err := dapi.UserCredentialsDAO.CreateUserCredential(payload.Username, payload.Password, payload.Email)
+		gohtypes.PanicIfError("Not possible to create user", 500, err)
+		logrus.Infof("User created: %v", userID)
 
-	if token, ok := r.Context().Value(middleware.TokenKey).(hydra.Token); ok {
-		if ucID, err = api.UserCredentialsDAO.CreateUserCredential(payload.Username, payload.Password, token.ClientID); err == nil {
-			gohserver.WriteJSONResponse(types.AddUserCredentialResponsePayload{UserCredentialID: ucID}, http.StatusOK, w)
+		w.WriteHeader(200)
+	})
+}
+
+// PUTHandler handles put requests to update user credentials
+func (dapi *DefaultUserCredentialsAPI) PUTHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		payload := new(types.UpdateUserCredentialRequestPayload).InitFromRequest(r)
+
+		if token, ok := r.Context().Value(middleware.TokenKey).(hydra.Token); ok {
+			ok, err := dapi.UserCredentialsDAO.CheckCredentials(token.Subject, payload.OldPassword)
+			if ok {
+				err = dapi.UserCredentialsDAO.UpdateUserCredential(token.Subject, payload.Email, payload.NewPassword)
+				gohtypes.PanicIfError("Error updating user credential info", 500, err)
+				w.WriteHeader(200)
+				return
+			}
+			gohtypes.PanicIfError("Unauthorized request", 401, err)
+			gohtypes.Panic("Incorrect password", 400)
 		}
-	}
-
-	panic(err)
+	})
 }
 
-// RemoveUserCredentialHandler REST DELETE api handler for removing users
-func (api *DefaultUserCredentialsAPI) RemoveUserCredentialHandler(w http.ResponseWriter, r *http.Request) {
-	if userCredentialID := mux.Vars(r)["userCredentialID"]; len(userCredentialID) == 0 {
-		panic(gohtypes.Error{Code: 400, Message: "Missing userCredentialID"})
-	}
+// GETRegistrationPageHandler builds the page where new credentials will be inserted
+func (dapi *DefaultUserCredentialsAPI) GETRegistrationPageHandler(route string) http.Handler {
+	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		challenge, err := url.QueryUnescape(r.URL.Query().Get("login_challenge"))
+		gohtypes.PanicIfError("Unable to parse the login_challenge parameter", 400, err)
+		page := types.RegistrationPage{LoginChallenge: challenge}
 
-	gohserver.WriteJSONResponse("RemoveUserCredentialHandler: This is just a test", 200, w)
+		buf := new(bytes.Buffer)
+		template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "registration.html"))).Execute(buf, page)
+		html, _ := ioutil.ReadAll(buf)
+
+		page.HTML = template.HTML(html)
+
+		tmpl := template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "index.html")))
+		tmpl.Execute(w, page)
+	}))
+}
+
+// GETUpdatePageHandler builds the page where credentials will be updated
+func (dapi *DefaultUserCredentialsAPI) GETUpdatePageHandler(route string) http.Handler {
+	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		redirectTo, err := url.QueryUnescape(r.URL.Query().Get("redirect_to"))
+		gohtypes.PanicIfError("Unable to parse the redirect_to parameter", 400, err)
+
+		page := types.UpdatePage{RedirectTo: redirectTo}
+		if token, ok := r.Context().Value(middleware.TokenKey).(hydra.Token); ok {
+			userCredentials, err := dapi.UserCredentialsDAO.GetUserCredential(token.Subject)
+			gohtypes.PanicIfError(fmt.Sprintf("Could not find credentials with username '%v'", token.Subject), 500, err)
+
+			page.Username = userCredentials.Username
+			page.Email = userCredentials.Email
+
+			buf := new(bytes.Buffer)
+			err = template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "update.html"))).Execute(buf, page)
+			gohtypes.PanicIfError("Error building update page", http.StatusInternalServerError, err)
+
+			html, _ := ioutil.ReadAll(buf)
+			page.HTML = template.HTML(html)
+
+			template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "index.html"))).Execute(w, page)
+			return
+		}
+		gohtypes.Panic("Unauthorized: token not found", 401)
+	}))
 }

@@ -1,0 +1,42 @@
+<div class="row">
+    <div class="col-sm-4"></div>
+    <div class="col-sm-4">
+        <div class="alert alert-danger" role="alert" id="credential-registration-alert" hidden="true"></div>
+        <div id="registration-content" class="card container">
+            <span style="display: flex; justify-content: center; align-items: center">
+                <img src="/static/images/spy-black.png" width="30" height="30" class="d-inline-block" alt="">
+                <b>Whisper</b>
+            </span>
+            <hr/>
+            <div class="card-body">
+                <form id="update-form" action="/secure/update" method="PUT">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input disabled type="username" class="form-control" id="update-username" name="username" value="{{.Username}}">
+                    </div>
+                    <div class="form-group">
+                        <label for="email">E-mail</label>
+                        <input type="email" class="form-control" id="update-email" name="email" placeholder="{{.Email}}" value="{{.Email}}"/>
+                    </div>
+                    <div class="form-group">
+                        <label for="old-password">Old Password</label>
+                        <input type="password" class="form-control" id="update-old-password" name="old-password" placeholder="">
+                    </div>
+                    <div class="form-group">
+                            <label for="new-password">New Password</label>
+                            <input type="password" class="form-control" id="update-new-password" name="new-password" placeholder="">
+                        </div>
+                    <div class="form-group">
+                        <label for="new-password-confirmation">New Password Confirmation</label>
+                        <input type="password" class="form-control" id="update-new-password-confirmation" name="new-password-confirmation" placeholder="">
+                    </div>
+                    <div style="display: flex; justify-content: space-between">
+                        <a href="{{.RedirectTo}}" class="btn btn-outline-secondary">Cancel</a>
+                        <button id="update-submit" type="submit" class="btn btn-primary">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-4"></div>
+</div>

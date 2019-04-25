@@ -56,7 +56,18 @@ func (dapi *DefaultUserCredentialsAPI) POSTHandler() http.Handler {
 func (dapi *DefaultUserCredentialsAPI) PUTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		payload := new(types.UpdateUserCredentialRequestPayload).InitFromRequest(r)
-		logrus.Debugf("%v", payload)
+
+		if token, ok := r.Context().Value(middleware.TokenKey).(hydra.Token); ok {
+			ok, err := dapi.UserCredentialsDAO.CheckCredentials(token.Subject, payload.OldPassword)
+			if ok {
+				err = dapi.UserCredentialsDAO.UpdateUserCredential(token.Subject, payload.Email, payload.NewPassword)
+				gohtypes.PanicIfError("Error updating user credential info", 500, err)
+				w.WriteHeader(200)
+				return
+			}
+			gohtypes.PanicIfError("Unauthorized request", 401, err)
+			gohtypes.Panic("Incorrect password", 400)
+		}
 	})
 }
 
@@ -83,15 +94,17 @@ func (dapi *DefaultUserCredentialsAPI) GETUpdatePageHandler(route string) http.H
 	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		redirectTo, err := url.QueryUnescape(r.URL.Query().Get("redirect_to"))
 		gohtypes.PanicIfError("Unable to parse the redirect_to parameter", 400, err)
+
 		page := types.UpdatePage{RedirectTo: redirectTo}
-
 		if token, ok := r.Context().Value(middleware.TokenKey).(hydra.Token); ok {
-			page.Username = token.Subject
+			userCredentials, err := dapi.UserCredentialsDAO.GetUserCredential(token.Subject)
+			gohtypes.PanicIfError(fmt.Sprintf("Could not find credentials with username '%v'", token.Subject), 500, err)
 
-			// TODO get usercredential information from DB; token.Subject will store the user id
+			page.Username = userCredentials.Username
+			page.Email = userCredentials.Email
 
 			buf := new(bytes.Buffer)
-			err := template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "update.html"))).Execute(buf, page)
+			err = template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "update.html"))).Execute(buf, page)
 			gohtypes.PanicIfError("Error building update page", http.StatusInternalServerError, err)
 
 			html, _ := ioutil.ReadAll(buf)

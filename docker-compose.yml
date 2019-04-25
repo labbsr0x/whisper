@@ -59,7 +59,10 @@ services:
     restart: on-failure
 
   mysqld:
-    image: mysql:5.7
+    image: labbsr0x/whisperdb
+    build:
+      context: scripts
+      dockerfile: Dockerfile
     ports:
       - "3306:3306"
     volumes:

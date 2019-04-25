@@ -5,6 +5,7 @@ window.onload = function() {
     setupConsentForm(action);
     setupLoginPage(action);
     setupUpdatePage(action);
+    setupRegistrationPage(action);
 }
 
 function setupLoginPage(action) {
@@ -43,7 +44,6 @@ function setupUpdatePage(action) {
         
         $('#update-submit').on('click', function(event) {
             event.preventDefault()
-            // TODO: validate new password confirmation
             $.ajax({
                 url: "/secure/update",
                 type: "PUT",
@@ -65,6 +65,36 @@ function setupUpdatePage(action) {
                     $("#credential-updated-alert")[0].hidden = false
                     setTimeout(function(){
                         $("#credential-updated-alert")[0].hidden = true
+                    }, 2000);
+                }
+            })
+        })
+    }
+}
+
+function setupRegistrationPage(action) {
+    if (action == "registration") {
+        $('#registration-submit').on('click', function(event) {
+            event.preventDefault()
+
+            $.ajax({
+                url: "/registration",
+                type: "POST",
+                data: JSON.stringify({
+                    username: $("#registration-username").val(),
+                    email: $("#registration-email").val(),
+                    password: $("#registration-password").val(),
+                    passwordConfirmation: $("#registration-password-confirmation").val()
+                }),
+                contentType: "application/json",
+                success: function(data, status, xhr) {
+                    window.location = "/login?first_login=true&username="+$("#registration-username").val()+"&login_challenge="+$("#login-challenge").val()
+                },
+                error: function(xhr, status, error) {
+                    $("#credential-registration-alert")[0].innerHTML = xhr.responseText
+                    $("#credential-registration-alert")[0].hidden = false
+                    setTimeout(function(){
+                        $("#credential-registration-alert")[0].hidden = true
                     }, 2000);
                 }
             })

@@ -48,7 +48,7 @@ func (dapi *DefaultUserCredentialsAPI) POSTHandler() http.Handler {
 		gohtypes.PanicIfError("Not possible to create user", 500, err)
 		logrus.Infof("User created: %v", userID)
 
-		http.Redirect(w, r, fmt.Sprintf("/login?first_login=true&username=%v&login_challenge=%v", payload.Username, payload.LoginChallenge), 302)
+		w.WriteHeader(200)
 	})
 }
 

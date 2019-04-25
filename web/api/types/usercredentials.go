@@ -2,10 +2,8 @@ package types
 
 import (
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"net/http"
-	"net/url"
 	"regexp"
 
 	"github.com/labbsr0x/goh/gohtypes"
@@ -29,11 +27,10 @@ type UpdatePage struct {
 
 // AddUserCredentialRequestPayload defines the payload for adding a user
 type AddUserCredentialRequestPayload struct {
-	Email                string
-	Username             string
-	Password             string
-	PasswordConfirmation string
-	LoginChallenge       string
+	Email                string `json:"email"`
+	Username             string `json:"username"`
+	Password             string `json:"password"`
+	PasswordConfirmation string `json:"passwordConfirmation"`
 }
 
 // AddUserCredentialResponsePayload defines the response payload after adding a user
@@ -51,68 +48,60 @@ type UpdateUserCredentialRequestPayload struct {
 
 // InitFromRequest initializes the login request payload from an http request form
 func (payload *AddUserCredentialRequestPayload) InitFromRequest(r *http.Request) *AddUserCredentialRequestPayload {
-	err := r.ParseForm()
-	if err == nil {
-		logrus.Debugf("Form sent: '%v'", r.Form)
-		if err := payload.check(r.Form); err == nil {
-			payload.Email = r.Form["email"][0]
-			payload.PasswordConfirmation = r.Form["password-confirmation"][0]
-			payload.Password = r.Form["password"][0]
-			payload.Username = r.Form["username"][0]
-			payload.LoginChallenge = r.Form["login-challenge"][0]
-			return payload
-		}
-		gohtypes.Panic(err.Error(), 400)
-	}
-	panic(gohtypes.Error{Code: 400, Message: "Not possible to parse http form", Err: err})
-}
-
-// check verifies if the login request payload is ok
-func (payload *AddUserCredentialRequestPayload) check(form url.Values) error {
-	if len(form["username"]) == 0 || len(form["password"]) == 0 || len(form["password-confirmation"]) == 0 || len(form["email"]) == 0 || len(form["login-challenge"]) == 0 {
-		return errors.New("All form fields are required")
-	}
-
-	if form["password"][0] != form["password-confirmation"][0] {
-		return errors.New("Wrong password confirmation")
-	}
-
-	return verifyEmail(form["email"][0])
-}
-
-// InitFromRequest initializes the update request payload from an http request form
-func (payload *UpdateUserCredentialRequestPayload) InitFromRequest(r *http.Request) *UpdateUserCredentialRequestPayload {
 	data, err := ioutil.ReadAll(r.Body)
-	gohtypes.PanicIfError("Not possible to parse update POST payload", 400, err)
+	gohtypes.PanicIfError("Not possible to parse registration payload", 400, err)
 
 	json.Unmarshal(data, &payload)
 	logrus.Debugf("Payload: '%v'", payload)
 
-	err = payload.check()
-	gohtypes.PanicIfError(err.Error(), 400, err)
+	payload.check()
 
 	return payload
 }
 
 // check verifies if the login request payload is ok
-func (payload *UpdateUserCredentialRequestPayload) check() error {
+func (payload *AddUserCredentialRequestPayload) check() {
+	if len(payload.Username) == 0 || len(payload.Password) == 0 || len(payload.PasswordConfirmation) == 0 || len(payload.Email) == 0 {
+		gohtypes.Panic("All form fields are required", 400)
+	}
+
+	if payload.Password != payload.PasswordConfirmation {
+		gohtypes.Panic("Wrong password confirmation", 400)
+	}
+
+	verifyEmail(payload.Email)
+}
+
+// InitFromRequest initializes the update request payload from an http request form
+func (payload *UpdateUserCredentialRequestPayload) InitFromRequest(r *http.Request) *UpdateUserCredentialRequestPayload {
+	data, err := ioutil.ReadAll(r.Body)
+	gohtypes.PanicIfError("Not possible to parse update payload", 400, err)
+
+	json.Unmarshal(data, &payload)
+	logrus.Debugf("Payload: '%v'", payload)
+
+	payload.check()
+
+	return payload
+}
+
+// check verifies if the login request payload is ok
+func (payload *UpdateUserCredentialRequestPayload) check() {
 	if len(payload.OldPassword) == 0 || len(payload.NewPassword) == 0 || len(payload.NewPasswordConfirmation) == 0 || len(payload.Email) == 0 {
-		return errors.New("All fields must not be empty")
+		gohtypes.Panic("All fields must not be empty", 400)
 	}
 
 	if payload.NewPassword != payload.NewPasswordConfirmation {
-		return errors.New("Wrong password confirmation")
+		gohtypes.Panic("Wrong password confirmation", 400)
 	}
 
-	return verifyEmail(payload.Email)
+	verifyEmail(payload.Email)
 }
 
-func verifyEmail(email string) error {
+func verifyEmail(email string) {
 	re := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
 
 	if !re.MatchString(email) {
-		return errors.New("Invalid email")
+		gohtypes.Panic("Invalid email", 400)
 	}
-
-	return nil
 }

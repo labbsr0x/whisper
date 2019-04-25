@@ -27,7 +27,7 @@ type Server struct {
 // InitFromWebBuilder builds a Server instance
 func (s *Server) InitFromWebBuilder(webBuilder *config.WebBuilder) *Server {
 	s.WebBuilder = webBuilder
-	s.UserCredentialsAPIs = new(api.DefaultUserCredentialsAPI)
+	s.UserCredentialsAPIs = new(api.DefaultUserCredentialsAPI).InitFromWebBuilder(webBuilder)
 	s.LoginAPIs = new(api.DefaultLoginAPI).InitFromWebBuilder(webBuilder)
 	s.ConsentAPIs = new(api.DefaultConsentAPI).InitFromWebBuilder(webBuilder)
 
@@ -44,7 +44,7 @@ func (s *Server) InitFromWebBuilder(webBuilder *config.WebBuilder) *Server {
 // Run initializes the web server and its apis
 func (s *Server) Run() error {
 	router := mux.NewRouter().StrictSlash(true)
-	secureRouter := router.PathPrefix("/api").Subrouter()
+	secureRouter := router.PathPrefix("/secure").Subrouter()
 
 	router.PathPrefix("/static").Handler(ui.Handler(s.BaseUIPath)).Methods("GET")
 	router.Handle("/metrics", promhttp.Handler()).Methods("GET")
@@ -55,8 +55,15 @@ func (s *Server) Run() error {
 	router.Handle("/consent", s.ConsentAPIs.ConsentGETHandler("/consent")).Methods("GET")
 	router.Handle("/consent", s.ConsentAPIs.ConsentPOSTHandler()).Methods("POST")
 
-	secureRouter.HandleFunc("/users", s.UserCredentialsAPIs.AddUserCredentialHandler).Methods("POST")
-	secureRouter.HandleFunc("/users", s.UserCredentialsAPIs.RemoveUserCredentialHandler).Methods("DELETE")
+	logrus.Infof("Setting up UserCredentialAPIs: %v; %v", s.UserCredentialsAPIs, s.UserCredentialsAPIs.GETRegistrationPageHandler("/registration"))
+	router.Handle("/registration", s.UserCredentialsAPIs.GETRegistrationPageHandler("/registration")).Methods("GET")
+	router.Handle("/registration", s.UserCredentialsAPIs.POSTHandler()).Methods("POST")
+
+	secureRouter.Handle("/update", s.UserCredentialsAPIs.GETUpdatePageHandler("/secure/update")).Methods("GET")
+	secureRouter.Handle("/update", s.UserCredentialsAPIs.PUTHandler()).Methods("PUT")
+
+	// secureRouter.HandleFunc("/users", s.UserCredentialsAPIs.AddUserCredentialHandler).Methods("POST")
+	// secureRouter.HandleFunc("/users", s.UserCredentialsAPIs.RemoveUserCredentialHandler).Methods("DELETE")
 	// secureRouter.HandleFunc("/users/{userCredentialID}", s.UserCredentialsAPIs.UpdateUserCredentialHandler).Methods("PUT")
 
 	router.Use(middleware.GetPrometheusMiddleware())

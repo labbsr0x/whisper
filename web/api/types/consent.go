@@ -12,9 +12,11 @@ import (
 
 // ConsentPage defines the data needed to build a consent page
 type ConsentPage struct {
+	Page
 	ClientURI       string
 	ClientName      string
 	RequestedScopes []misc.GrantScope
+	Challenge       string
 }
 
 // ConsentRequestPayload holds the data that defines a consent request to Whisper

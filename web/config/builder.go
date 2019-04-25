@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/labbsr0x/whisper/db"
+
 	"github.com/labbsr0x/whisper/misc"
 
 	"github.com/labbsr0x/whisper-client/hydra"
@@ -41,8 +43,9 @@ type Flags struct {
 // WebBuilder defines the parametric information of a whisper server instance
 type WebBuilder struct {
 	*Flags
-	HydraClient *hydra.Client
-	GrantScopes misc.GrantScopes
+	HydraClient        *hydra.Client
+	GrantScopes        misc.GrantScopes
+	UserCredentialsDAO db.UserCredentialsDAO
 }
 
 // AddFlags adds flags for Builder.
@@ -76,8 +79,9 @@ func (b *WebBuilder) InitFromViper(v *viper.Viper) *WebBuilder {
 	b.Flags = flags
 	b.GrantScopes = b.getGrantScopesFromFile(flags.ScopesFilePath)
 	b.HydraClient = new(hydra.Client).Init(flags.HydraAdminURL, flags.HydraPublicURL, flags.ClientID, flags.ClientSecret, b.GrantScopes.GetScopeListFromGrantScopeMap(), []string{})
+	b.UserCredentialsDAO = new(db.DefaultUserCredentialsDAO).InitFromDatabaseURL(b.DatabaseURL)
 
-	logrus.Infof("Run config: %v", misc.GetJSONStr(b))
+	logrus.Infof("Flags: '%v'; GrantScopes: '%v'", b.Flags, b.GrantScopes)
 	return b
 }
 

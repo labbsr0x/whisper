@@ -4,6 +4,7 @@
 A Login and Consent provider implementation in Go for Ory Hydra
 
 
+
 # Developer
 
 From the project root folder, fire the following commands to execute this project in development mode:

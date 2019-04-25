@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/labbsr0x/whisper/misc"
+
 	"github.com/sirupsen/logrus"
 
 	"github.com/google/uuid"
@@ -34,11 +36,13 @@ type UserCredentialsDAO interface {
 	DeleteUserCredential(userID string) error
 	GetUserCredential(username string) (UserCredential, error)
 	InitFromDatabaseURL(dbURL string) UserCredentialsDAO
+	CheckCredentials(username, password string) (bool, error)
 }
 
 // DefaultUserCredentialsDAO a default UserCredentialsDAO interface implementation
 type DefaultUserCredentialsDAO struct {
 	DatabaseURL string
+	SecretKey   string
 }
 
 // InitFromDatabaseURL initializes a defualt user credentials DAO from web builder
@@ -49,6 +53,7 @@ func (dao *DefaultUserCredentialsDAO) InitFromDatabaseURL(dbURL string) UserCred
 
 	gohtypes.PanicIfError("Not possible to migrate db", 500, dao.migrate())
 
+	dao.SecretKey = "y6VaBTeP5ROoUcPPAThW"
 	return dao
 }
 
@@ -68,7 +73,9 @@ func (dao *DefaultUserCredentialsDAO) CreateUserCredential(username, password, e
 	db, err := gorm.Open("mysql", dao.DatabaseURL)
 	if err == nil {
 		defer db.Close()
-		userCredential := UserCredential{ID: uuid.New().String(), Username: username, Password: password, Email: email, Salt: password}
+		salt := misc.GenerateSalt()
+		hPassword := misc.GetEncryptedPassword(dao.SecretKey, password, salt)
+		userCredential := UserCredential{ID: uuid.New().String(), Username: username, Password: hPassword, Email: email, Salt: salt}
 		db.NewRecord(userCredential)
 
 		db.Create(&userCredential)
@@ -102,4 +109,14 @@ func (dao *DefaultUserCredentialsDAO) GetUserCredential(username string) (UserCr
 		db.Where("username = ?", username).First(&userCredential)
 	}
 	return userCredential, err
+}
+
+// CheckCredentials verifies if the informed credentials are valid
+func (dao *DefaultUserCredentialsDAO) CheckCredentials(username, password string) (bool, error) {
+	userCredential, err := dao.GetUserCredential(username)
+	if err == nil {
+		hPassword := misc.GetEncryptedPassword(dao.SecretKey, password, userCredential.Salt)
+		return hPassword == userCredential.Password, nil
+	}
+	return false, err
 }

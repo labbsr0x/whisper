@@ -2,8 +2,13 @@ package misc
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 )
@@ -62,4 +67,21 @@ func GetAccessTokenFromRequest(r *http.Request) (string, error) {
 	}
 
 	return t, nil
+}
+
+// GenerateSalt a salt string with 16 bytes of crypto/rand data.
+func GenerateSalt() string {
+	randomBytes := make([]byte, 16)
+	_, err := rand.Read(randomBytes)
+	if err != nil {
+		return ""
+	}
+	return base64.URLEncoding.EncodeToString(randomBytes)
+}
+
+// GetEncryptedPassword builds an encrypted password with hmac(sha256)
+func GetEncryptedPassword(secretKey, password, salt string) string {
+	hash := hmac.New(sha256.New, []byte(secretKey))
+	io.WriteString(hash, password+salt)
+	return base64.URLEncoding.EncodeToString(hash.Sum(nil))
 }

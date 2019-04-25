@@ -40,8 +40,9 @@ func (dapi *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		loginRequest := new(types.RequestLoginPayload).InitFromRequest(r)
 		logrus.Debugf("Login request payload '%v'", loginRequest)
-		userCredential, err := dapi.UserCredentialsDAO.GetUserCredential(loginRequest.Username)
-		if err == nil && loginRequest.Password == userCredential.Password { // TODO validation BL
+
+		ok, err := dapi.UserCredentialsDAO.CheckCredentials(loginRequest.Username, loginRequest.Password)
+		if ok {
 			info := dapi.HydraClient.AcceptLoginRequest(
 				loginRequest.Challenge,
 				hydra.AcceptLoginRequestPayload{ACR: "0", Remember: loginRequest.Remember, RememberFor: 3600, Subject: loginRequest.Username}, // TODO store user id on subject
@@ -52,7 +53,9 @@ func (dapi *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 				return
 			}
 		}
-		gohtypes.PanicIfError("Unable to authenticate user", 403, err)
+
+		gohtypes.PanicIfError("Unable to authenticate user", 500, err) // only fires if err != nil
+		gohtypes.Panic("Incorrect password", 401)
 	})
 }
 

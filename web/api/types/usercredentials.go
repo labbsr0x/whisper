@@ -1,7 +1,9 @@
 package types
 
 import (
+	"encoding/json"
 	"errors"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -20,6 +22,8 @@ type RegistrationPage struct {
 type UpdatePage struct {
 	Page
 	Username   string
+	Email      string
+	Token      string
 	RedirectTo string
 }
 
@@ -39,10 +43,10 @@ type AddUserCredentialResponsePayload struct {
 
 // UpdateUserCredentialRequestPayload defines the payload for updating a user
 type UpdateUserCredentialRequestPayload struct {
-	Email                   string
-	NewPassword             string
-	NewPasswordConfirmation string
-	OldPassword             string
+	Email                   string `json:"email"`
+	NewPassword             string `json:"newPassword"`
+	NewPasswordConfirmation string `json:"newPasswordConfirmation"`
+	OldPassword             string `json:"oldPassword"`
 }
 
 // InitFromRequest initializes the login request payload from an http request form
@@ -78,32 +82,29 @@ func (payload *AddUserCredentialRequestPayload) check(form url.Values) error {
 
 // InitFromRequest initializes the update request payload from an http request form
 func (payload *UpdateUserCredentialRequestPayload) InitFromRequest(r *http.Request) *UpdateUserCredentialRequestPayload {
-	err := r.ParseForm()
-	if err == nil {
-		logrus.Debugf("Form sent: '%v'", r.Form)
-		if err := payload.check(r.Form); err == nil {
-			payload.Email = r.Form["email"][0]
-			payload.NewPasswordConfirmation = r.Form["new-password-confirmation"][0]
-			payload.NewPassword = r.Form["new-password"][0]
-			payload.OldPassword = r.Form["old-password"][0]
-			return payload
-		}
-		gohtypes.Panic(err.Error(), 400)
-	}
-	panic(gohtypes.Error{Code: 400, Message: "Not possible to parse http form", Err: err})
+	data, err := ioutil.ReadAll(r.Body)
+	gohtypes.PanicIfError("Not possible to parse update POST payload", 400, err)
+
+	json.Unmarshal(data, &payload)
+	logrus.Debugf("Payload: '%v'", payload)
+
+	err = payload.check()
+	gohtypes.PanicIfError(err.Error(), 400, err)
+
+	return payload
 }
 
 // check verifies if the login request payload is ok
-func (payload *UpdateUserCredentialRequestPayload) check(form url.Values) error {
-	if len(form["old-password"]) == 0 || len(form["new-password"]) == 0 || len(form["new-password-confirmation"]) == 0 || len(form["email"]) == 0 {
+func (payload *UpdateUserCredentialRequestPayload) check() error {
+	if len(payload.OldPassword) == 0 || len(payload.NewPassword) == 0 || len(payload.NewPasswordConfirmation) == 0 || len(payload.Email) == 0 {
 		return errors.New("All fields must not be empty")
 	}
 
-	if form["new-password"][0] != form["new-password-confirmation"][0] {
+	if payload.NewPassword != payload.NewPasswordConfirmation {
 		return errors.New("Wrong password confirmation")
 	}
 
-	return verifyEmail(form["email"][0])
+	return verifyEmail(payload.Email)
 }
 
 func verifyEmail(email string) error {

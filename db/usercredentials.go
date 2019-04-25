@@ -32,8 +32,7 @@ type UserCredential struct {
 // UserCredentialsDAO defines the methods that can be performed
 type UserCredentialsDAO interface {
 	CreateUserCredential(username, password, email string) (string, error)
-	UpdateUserCredential(userID string, email, password string) error
-	DeleteUserCredential(userID string) error
+	UpdateUserCredential(username, email, password string) error
 	GetUserCredential(username string) (UserCredential, error)
 	InitFromDatabaseURL(dbURL string) UserCredentialsDAO
 	CheckCredentials(username, password string) (bool, error)
@@ -90,13 +89,25 @@ func (dao *DefaultUserCredentialsDAO) CreateUserCredential(username, password, e
 }
 
 // UpdateUserCredential updates a user
-func (dao *DefaultUserCredentialsDAO) UpdateUserCredential(userID string, email, password string) error {
-	return nil
-}
+func (dao *DefaultUserCredentialsDAO) UpdateUserCredential(username, email, password string) error {
+	db, err := gorm.Open("mysql", dao.DatabaseURL)
+	if err == nil {
+		defer db.Close()
 
-// DeleteUserCredential deletes the user
-func (dao *DefaultUserCredentialsDAO) DeleteUserCredential(userID string) error {
-	return nil
+		salt := misc.GenerateSalt()
+		hPassword := misc.GetEncryptedPassword(dao.SecretKey, password, salt)
+
+		userCredential := UserCredential{}
+		db.Where("username = ?", username).First(&userCredential)
+
+		userCredential.Password = hPassword
+		userCredential.Salt = salt
+		userCredential.Email = email
+
+		db = db.Save(userCredential)
+		err = db.Error
+	}
+	return err
 }
 
 // GetUserCredential gets an user credential
@@ -106,7 +117,8 @@ func (dao *DefaultUserCredentialsDAO) GetUserCredential(username string) (UserCr
 	if err == nil {
 		defer db.Close()
 
-		db.Where("username = ?", username).First(&userCredential)
+		db = db.Where("username = ?", username).First(&userCredential)
+		err = db.Error
 	}
 	return userCredential, err
 }

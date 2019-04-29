@@ -44,7 +44,6 @@ func init() {
 	rootCmd.AddCommand(serveCmd)
 
 	config.AddFlags(serveCmd.Flags())
-	// db.AddFlags(serveCmd.Flags()) // TODO
 
 	err := viper.GetViper().BindPFlags(serveCmd.Flags())
 	if err != nil {

@@ -22,17 +22,17 @@ services:
     restart: on-failure
 
   hydra-migrate:
-    image: oryd/hydra:v1.0.0-rc.8
+    image: oryd/hydra:v1.0.0-rc.11
     depends_on:
       - mysqld
     environment:
       - DSN=mysql://root:secret@tcp(mysqld:3306)/hydra?max_conns=20&max_idle_conns=4
     command:
-      migrate sql -e
+      migrate sql -e --yes
     restart: on-failure
 
   hydra:
-    image: oryd/hydra:v1.0.0-rc.8
+    image: oryd/hydra:v1.0.0-rc.11
     depends_on:
       - hydra-migrate
     ports:
@@ -59,10 +59,7 @@ services:
     restart: on-failure
 
   mysqld:
-    image: labbsr0x/whisperdb
-    build:
-      context: scripts
-      dockerfile: Dockerfile
+    image: mysql:5.7
     ports:
       - "3306:3306"
     volumes:

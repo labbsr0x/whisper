@@ -5,11 +5,12 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/labbsr0x/whisper-client/client"
+
 	"github.com/labbsr0x/whisper/db"
 
 	"github.com/labbsr0x/whisper/misc"
 
-	"github.com/labbsr0x/whisper-client/hydra"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
@@ -23,8 +24,7 @@ const (
 	logLevel       = "log-level"
 	scopesFilePath = "scopes-file-path"
 	databaseURL    = "database-url"
-	clientID       = "client-id"
-	clientSecret   = "client-secret"
+	secretKey      = "secret-key"
 )
 
 // Flags define the fields that will be passed via cmd
@@ -36,29 +36,27 @@ type Flags struct {
 	HydraAdminURL  string
 	HydraPublicURL string
 	DatabaseURL    string
-	ClientID       string
-	ClientSecret   string
+	SecretKey      string
 }
 
 // WebBuilder defines the parametric information of a whisper server instance
 type WebBuilder struct {
 	*Flags
-	HydraClient        *hydra.Client
+	Self               *client.WhisperClient
 	GrantScopes        misc.GrantScopes
 	UserCredentialsDAO db.UserCredentialsDAO
 }
 
 // AddFlags adds flags for Builder.
 func AddFlags(flags *pflag.FlagSet) {
-	flags.String(baseUIPath, "", "Base path where the 'static' folder will be found with all the UI files")
-	flags.String(port, "7070", "[optional] Custom port for accessing Whisper's services. Defaults to 7070")
-	flags.String(hydraAdminURL, "", "Hydra Admin URL")
-	flags.String(hydraPublicURL, "", "Hydra Public URL")
-	flags.String(logLevel, "info", "[optional] Sets the Log Level to one of seven (trace, debug, info, warn, error, fatal, panic). Defaults to info")
-	flags.String(scopesFilePath, "", "Sets the path to the json file where the available scopes will be found")
-	flags.String(databaseURL, "", "Sets the database url where user credential data will be stored")
-	flags.String(clientID, "", "Sets the oauth2 client id")
-	flags.String(clientSecret, "", "Sets the oauth2 client secret")
+	flags.StringP(baseUIPath, "uip", "", "Base path where the 'static' folder will be found with all the UI files")
+	flags.StringP(port, "p", "7070", "[optional] Custom port for accessing Whisper's services. Defaults to 7070")
+	flags.StringP(hydraAdminURL, "hau", "", "Hydra Admin URL")
+	flags.StringP(hydraPublicURL, "hpu", "", "Hydra Public URL")
+	flags.StringP(logLevel, "ll", "info", "[optional] Sets the Log Level to one of seven (trace, debug, info, warn, error, fatal, panic). Defaults to info")
+	flags.StringP(scopesFilePath, "sfp", "", "Sets the path to the json file where the available scopes will be found")
+	flags.StringP(databaseURL, "dbu", "", "Sets the database url where user credential data will be stored")
+	flags.StringP(secretKey, "sk", "", "Sets the secret key used to hash the stored passwords")
 }
 
 // InitFromViper initializes the web server builder with properties retrieved from Viper.
@@ -70,16 +68,14 @@ func (b *WebBuilder) InitFromViper(v *viper.Viper) *WebBuilder {
 	flags.ScopesFilePath = v.GetString(scopesFilePath)
 	flags.HydraAdminURL = v.GetString(hydraAdminURL)
 	flags.HydraPublicURL = v.GetString(hydraPublicURL)
-	flags.ClientID = v.GetString(clientID)
-	flags.ClientSecret = v.GetString(clientSecret)
 	flags.DatabaseURL = v.GetString(databaseURL)
 
 	flags.check()
 
 	b.Flags = flags
 	b.GrantScopes = b.getGrantScopesFromFile(flags.ScopesFilePath)
-	b.HydraClient = new(hydra.Client).Init(flags.HydraAdminURL, flags.HydraPublicURL, flags.ClientID, flags.ClientSecret, b.GrantScopes.GetScopeListFromGrantScopeMap(), []string{})
-	b.UserCredentialsDAO = new(db.DefaultUserCredentialsDAO).InitFromDatabaseURL(b.DatabaseURL)
+	b.Self = new(client.WhisperClient).InitFromParams(flags.HydraAdminURL, flags.HydraPublicURL, "whisper", "", b.GrantScopes.GetScopeListFromGrantScopeMap(), []string{})
+	b.UserCredentialsDAO = new(db.DefaultUserCredentialsDAO).Init(b.DatabaseURL, b.SecretKey)
 
 	logrus.Infof("Flags: '%v'; GrantScopes: '%v'", b.Flags, b.GrantScopes)
 	return b
@@ -87,12 +83,8 @@ func (b *WebBuilder) InitFromViper(v *viper.Viper) *WebBuilder {
 
 func (flags *Flags) check() {
 
-	if flags.BaseUIPath == "" || flags.HydraAdminURL == "" || flags.HydraPublicURL == "" || flags.ScopesFilePath == "" || flags.ClientID == "" || flags.ClientSecret == "" {
-		panic("base-ui-path, hydra-admin-url, hydra-public-url, scopes-file-path, client-id and client-secret cannot be empty")
-	}
-
-	if len(flags.ClientSecret) < 6 {
-		panic("client-secret must be at least 6 characters long")
+	if flags.BaseUIPath == "" || flags.HydraAdminURL == "" || flags.HydraPublicURL == "" || flags.ScopesFilePath == "" || flags.SecretKey == "" {
+		panic("base-ui-path, hydra-admin-url, hydra-public-url, scopes-file-path and secret-key cannot be empty")
 	}
 }
 

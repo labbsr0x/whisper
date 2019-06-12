@@ -40,10 +40,10 @@ func (dapi *DefaultConsentAPI) ConsentPOSTHandler() http.Handler {
 		consentRequest := new(types.ConsentRequestPayload).InitFromRequest(r)
 		logrus.Debugf("Consent request payload '%v'", consentRequest)
 		if consentRequest.Accept {
-			info := dapi.HydraClient.GetConsentRequestInfo(consentRequest.Challenge)
+			info := dapi.Self.GetConsentRequestInfo(consentRequest.Challenge)
 			logrus.Debugf("Consent request info: '%v'", info)
 			if info != nil {
-				acceptInfo := dapi.HydraClient.AcceptConsentRequest(
+				acceptInfo := dapi.Self.AcceptConsentRequest(
 					consentRequest.Challenge,
 					hydra.AcceptConsentRequestPayload{
 						GrantAccessTokenAudience: misc.ConvertInterfaceArrayToStringArray(info["requested_access_token_audience"].([]interface{})),
@@ -59,7 +59,7 @@ func (dapi *DefaultConsentAPI) ConsentPOSTHandler() http.Handler {
 				}
 			}
 		} else {
-			rejectInfo := dapi.HydraClient.RejectConsentRequest(consentRequest.Challenge, hydra.RejectConsentRequestPayload{Error: "access_denied", ErrorDescription: "The resource owner denied the request"})
+			rejectInfo := dapi.Self.RejectConsentRequest(consentRequest.Challenge, hydra.RejectConsentRequestPayload{Error: "access_denied", ErrorDescription: "The resource owner denied the request"})
 			if rejectInfo != nil {
 				http.Redirect(w, r, rejectInfo["redirect_to"].(string), 302)
 				return
@@ -74,10 +74,10 @@ func (dapi *DefaultConsentAPI) ConsentGETHandler(route string) http.Handler {
 	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		challenge, err := url.QueryUnescape(r.URL.Query().Get("consent_challenge"))
 		gohtypes.PanicIfError("Unable to parse the consent_challenge parameter", 400, err)
-		info := dapi.HydraClient.GetConsentRequestInfo(challenge)
+		info := dapi.Self.GetConsentRequestInfo(challenge)
 		logrus.Debugf("Consent Request Info: '%v'", info)
 		if info["skip"].(bool) {
-			info = dapi.HydraClient.AcceptConsentRequest(
+			info = dapi.Self.AcceptConsentRequest(
 				challenge,
 				hydra.AcceptConsentRequestPayload{
 					GrantScope:               misc.ConvertInterfaceArrayToStringArray(info["requested_scope"].([]interface{})),

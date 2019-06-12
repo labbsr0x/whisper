@@ -31,10 +31,10 @@ type UserCredential struct {
 
 // UserCredentialsDAO defines the methods that can be performed
 type UserCredentialsDAO interface {
+	Init(dbURL, secretKey string) UserCredentialsDAO
 	CreateUserCredential(username, password, email string) (string, error)
 	UpdateUserCredential(username, email, password string) error
 	GetUserCredential(username string) (UserCredential, error)
-	InitFromDatabaseURL(dbURL string) UserCredentialsDAO
 	CheckCredentials(username, password string) (bool, error)
 }
 
@@ -44,15 +44,15 @@ type DefaultUserCredentialsDAO struct {
 	SecretKey   string
 }
 
-// InitFromDatabaseURL initializes a defualt user credentials DAO from web builder
-func (dao *DefaultUserCredentialsDAO) InitFromDatabaseURL(dbURL string) UserCredentialsDAO {
+// Init initializes a defualt user credentials DAO from web builder
+func (dao *DefaultUserCredentialsDAO) Init(dbURL, secretKey string) UserCredentialsDAO {
 	u, err := url.Parse(dbURL)
 	gohtypes.PanicIfError("Unable to parse db url", 500, err)
 	dao.DatabaseURL = strings.Replace(u.String(), u.Scheme+"://", "", 1)
 
 	gohtypes.PanicIfError("Not possible to migrate db", 500, dao.migrate())
 
-	dao.SecretKey = "y6VaBTeP5ROoUcPPAThW"
+	dao.SecretKey = secretKey
 	return dao
 }
 

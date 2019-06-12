@@ -61,13 +61,9 @@ func (s *Server) Run() error {
 	secureRouter.Handle("/update", s.UserCredentialsAPIs.GETUpdatePageHandler("/secure/update")).Methods("GET")
 	secureRouter.Handle("/update", s.UserCredentialsAPIs.PUTHandler()).Methods("PUT")
 
-	// secureRouter.HandleFunc("/users", s.UserCredentialsAPIs.AddUserCredentialHandler).Methods("POST")
-	// secureRouter.HandleFunc("/users", s.UserCredentialsAPIs.RemoveUserCredentialHandler).Methods("DELETE")
-	// secureRouter.HandleFunc("/users/{userCredentialID}", s.UserCredentialsAPIs.UpdateUserCredentialHandler).Methods("PUT")
-
 	router.Use(middleware.GetPrometheusMiddleware())
 	router.Use(middleware.GetErrorMiddleware())
-	secureRouter.Use(middleware.GetSecurityMiddleware(s.HydraClient))
+	secureRouter.Use(s.Self.GetMuxSecurityMiddleware())
 
 	srv := &http.Server{
 		Handler:      router,

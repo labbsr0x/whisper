@@ -78,3 +78,9 @@ services:
       - SCRAPE_TIMEOUT=10s
       - STATIC_SCRAPE_TARGETS=whisper@whisper:7070/metrics
 
+  local:
+    image: busybox
+    depends_on:
+      - hydra
+      - mysqld-whisper
+

@@ -16,8 +16,7 @@ services:
       - WHISPER_LOG_LEVEL=debug
       - WHISPER_HYDRA_ADMIN_URL=http://hydra:4445/
       - WHISPER_HYDRA_PUBLIC_URL=http://hydra:4444/
-      - WHISPER_CLIENT_ID=whisper
-      - WHISPER_CLIENT_SECRET=whisper
+      - WHISPER_SECRET_KEY=uhSunsodnsuBsdjsbds
       - WHISPER_DATABASE_URL=mysql://root:secret@tcp(mysqld-whisper:3306)/whisper?charset=utf8mb4&parseTime=True&loc=Local
     restart: on-failure
 

@@ -43,7 +43,7 @@ func (dapi *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 
 		ok, err := dapi.UserCredentialsDAO.CheckCredentials(loginRequest.Username, loginRequest.Password)
 		if ok {
-			info := dapi.HydraClient.AcceptLoginRequest(
+			info := dapi.Self.AcceptLoginRequest(
 				loginRequest.Challenge,
 				hydra.AcceptLoginRequestPayload{ACR: "0", Remember: loginRequest.Remember, RememberFor: 3600, Subject: loginRequest.Username},
 			)
@@ -64,11 +64,11 @@ func (dapi *DefaultLoginAPI) LoginGETHandler(route string) http.Handler {
 	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		challenge, err := url.QueryUnescape(r.URL.Query().Get("login_challenge"))
 		if err == nil {
-			info := dapi.HydraClient.GetLoginRequestInfo(challenge)
+			info := dapi.Self.GetLoginRequestInfo(challenge)
 			logrus.Debugf("Login Request Info: %v", info)
 			if info["skip"].(bool) {
 				subject := info["subject"].(string)
-				info = dapi.HydraClient.AcceptLoginRequest(
+				info = dapi.Self.AcceptLoginRequest(
 					challenge,
 					hydra.AcceptLoginRequestPayload{Subject: subject},
 				)

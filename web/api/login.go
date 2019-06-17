@@ -8,11 +8,9 @@ import (
 	"net/url"
 	"path"
 
-	"github.com/labbsr0x/whisper-client/hydra"
-
-	"github.com/sirupsen/logrus"
-
 	"github.com/labbsr0x/goh/gohtypes"
+	whisper "github.com/labbsr0x/whisper-client/client"
+	"github.com/sirupsen/logrus"
 
 	"github.com/labbsr0x/whisper/web/api/types"
 	"github.com/labbsr0x/whisper/web/config"
@@ -45,7 +43,7 @@ func (dapi *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 		if ok {
 			info := dapi.Self.AcceptLoginRequest(
 				loginRequest.Challenge,
-				hydra.AcceptLoginRequestPayload{ACR: "0", Remember: loginRequest.Remember, RememberFor: 3600, Subject: loginRequest.Username},
+				whisper.AcceptLoginRequestPayload{ACR: "0", Remember: loginRequest.Remember, RememberFor: 3600, Subject: loginRequest.Username},
 			)
 			logrus.Debugf("Accept login request info: %v", info)
 			if info != nil {
@@ -70,7 +68,7 @@ func (dapi *DefaultLoginAPI) LoginGETHandler(route string) http.Handler {
 				subject := info["subject"].(string)
 				info = dapi.Self.AcceptLoginRequest(
 					challenge,
-					hydra.AcceptLoginRequestPayload{Subject: subject},
+					whisper.AcceptLoginRequestPayload{Subject: subject},
 				)
 				if info != nil {
 					logrus.Debugf("Login request skipped for subject '%v'", subject)

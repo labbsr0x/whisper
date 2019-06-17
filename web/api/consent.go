@@ -8,9 +8,8 @@ import (
 	"net/url"
 	"path"
 
-	"github.com/labbsr0x/whisper-client/hydra"
-
 	"github.com/labbsr0x/goh/gohtypes"
+	whisper "github.com/labbsr0x/whisper-client/client"
 	"github.com/labbsr0x/whisper/misc"
 	"github.com/labbsr0x/whisper/web/api/types"
 	"github.com/labbsr0x/whisper/web/config"
@@ -45,7 +44,7 @@ func (dapi *DefaultConsentAPI) ConsentPOSTHandler() http.Handler {
 			if info != nil {
 				acceptInfo := dapi.Self.AcceptConsentRequest(
 					consentRequest.Challenge,
-					hydra.AcceptConsentRequestPayload{
+					whisper.AcceptConsentRequestPayload{
 						GrantAccessTokenAudience: misc.ConvertInterfaceArrayToStringArray(info["requested_access_token_audience"].([]interface{})),
 						GrantScope:               consentRequest.GrantScope,
 						Remember:                 consentRequest.Remember,
@@ -59,7 +58,7 @@ func (dapi *DefaultConsentAPI) ConsentPOSTHandler() http.Handler {
 				}
 			}
 		} else {
-			rejectInfo := dapi.Self.RejectConsentRequest(consentRequest.Challenge, hydra.RejectConsentRequestPayload{Error: "access_denied", ErrorDescription: "The resource owner denied the request"})
+			rejectInfo := dapi.Self.RejectConsentRequest(consentRequest.Challenge, whisper.RejectConsentRequestPayload{Error: "access_denied", ErrorDescription: "The resource owner denied the request"})
 			if rejectInfo != nil {
 				http.Redirect(w, r, rejectInfo["redirect_to"].(string), 302)
 				return
@@ -79,7 +78,7 @@ func (dapi *DefaultConsentAPI) ConsentGETHandler(route string) http.Handler {
 		if info["skip"].(bool) {
 			info = dapi.Self.AcceptConsentRequest(
 				challenge,
-				hydra.AcceptConsentRequestPayload{
+				whisper.AcceptConsentRequestPayload{
 					GrantScope:               misc.ConvertInterfaceArrayToStringArray(info["requested_scope"].([]interface{})),
 					GrantAccessTokenAudience: misc.ConvertInterfaceArrayToStringArray(info["requested_access_token_audience"].([]interface{}))},
 			)

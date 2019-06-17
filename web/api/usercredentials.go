@@ -12,7 +12,6 @@ import (
 	"github.com/labbsr0x/goh/gohtypes"
 
 	whisper "github.com/labbsr0x/whisper-client/client"
-	"github.com/labbsr0x/whisper-client/hydra"
 
 	"github.com/sirupsen/logrus"
 
@@ -57,7 +56,7 @@ func (dapi *DefaultUserCredentialsAPI) PUTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		payload := new(types.UpdateUserCredentialRequestPayload).InitFromRequest(r)
 
-		if token, ok := r.Context().Value(whisper.TokenKey).(hydra.Token); ok {
+		if token, ok := r.Context().Value(whisper.TokenKey).(whisper.Token); ok {
 			ok, err := dapi.UserCredentialsDAO.CheckCredentials(token.Subject, payload.OldPassword)
 			if ok {
 				err = dapi.UserCredentialsDAO.UpdateUserCredential(token.Subject, payload.Email, payload.NewPassword)
@@ -96,7 +95,7 @@ func (dapi *DefaultUserCredentialsAPI) GETUpdatePageHandler(route string) http.H
 		gohtypes.PanicIfError("Unable to parse the redirect_to parameter", 400, err)
 
 		page := types.UpdatePage{RedirectTo: redirectTo}
-		if token, ok := r.Context().Value(whisper.TokenKey).(hydra.Token); ok {
+		if token, ok := r.Context().Value(whisper.TokenKey).(whisper.Token); ok {
 			userCredentials, err := dapi.UserCredentialsDAO.GetUserCredential(token.Subject)
 			gohtypes.PanicIfError(fmt.Sprintf("Could not find credentials with username '%v'", token.Subject), 500, err)
 

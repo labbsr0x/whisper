@@ -5,7 +5,7 @@ services:
 
   whisper:
     build: .
-    image: abilioesteves/whisper:latest
+    image: labbsr0x/whisper:latest
     depends_on:
       - mysqld-whisper
       - hydra
@@ -65,6 +65,8 @@ services:
 
   mysqld-whisper:
     image: mysql:5.7
+    ports:
+      - 3306:3306
     environment:
       - MYSQL_ROOT_PASSWORD=secret
       - MYSQL_DATABASE=whisper

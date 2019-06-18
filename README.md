@@ -62,7 +62,8 @@ go build
     --hydra-public-url http://localhost:4444 \
     --secret-key uhSunsodnsuBsdjsbds \
     --log-level debug \
-    --scopes-file-path ./scopes.json
+    --scopes-file-path ./scopes.json \
+    --database-url "mysql://root:secret@tcp(localhost:3306)/whisper?charset=utf8mb4&parseTime=True&loc=Local"
 ```
 
 This will serve the auxiliary services (databases and Hydra) and will run Whisper at the `7070` port; endpoints `/login` and `/consent` will display our incredibly simple user interface.

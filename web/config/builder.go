@@ -49,14 +49,14 @@ type WebBuilder struct {
 
 // AddFlags adds flags for Builder.
 func AddFlags(flags *pflag.FlagSet) {
-	flags.StringP(baseUIPath, "uip", "", "Base path where the 'static' folder will be found with all the UI files")
+	flags.StringP(baseUIPath, "u", "", "Base path where the 'static' folder will be found with all the UI files")
 	flags.StringP(port, "p", "7070", "[optional] Custom port for accessing Whisper's services. Defaults to 7070")
-	flags.StringP(hydraAdminURL, "hau", "", "Hydra Admin URL")
-	flags.StringP(hydraPublicURL, "hpu", "", "Hydra Public URL")
-	flags.StringP(logLevel, "ll", "info", "[optional] Sets the Log Level to one of seven (trace, debug, info, warn, error, fatal, panic). Defaults to info")
-	flags.StringP(scopesFilePath, "sfp", "", "Sets the path to the json file where the available scopes will be found")
-	flags.StringP(databaseURL, "dbu", "", "Sets the database url where user credential data will be stored")
-	flags.StringP(secretKey, "sk", "", "Sets the secret key used to hash the stored passwords")
+	flags.StringP(hydraAdminURL, "a", "", "Hydra Admin URL")
+	flags.StringP(hydraPublicURL, "o", "", "Hydra Public URL")
+	flags.StringP(logLevel, "l", "info", "[optional] Sets the Log Level to one of seven (trace, debug, info, warn, error, fatal, panic). Defaults to info")
+	flags.StringP(scopesFilePath, "s", "", "Sets the path to the json file where the available scopes will be found")
+	flags.StringP(databaseURL, "d", "", "Sets the database url where user credential data will be stored")
+	flags.StringP(secretKey, "k", "", "Sets the secret key used to hash the stored passwords")
 }
 
 // InitFromViper initializes the web server builder with properties retrieved from Viper.
@@ -69,6 +69,7 @@ func (b *WebBuilder) InitFromViper(v *viper.Viper) *WebBuilder {
 	flags.HydraAdminURL = v.GetString(hydraAdminURL)
 	flags.HydraPublicURL = v.GetString(hydraPublicURL)
 	flags.DatabaseURL = v.GetString(databaseURL)
+	flags.SecretKey = v.GetString(secretKey)
 
 	flags.check()
 
@@ -77,14 +78,14 @@ func (b *WebBuilder) InitFromViper(v *viper.Viper) *WebBuilder {
 	b.Self = new(client.WhisperClient).InitFromParams(flags.HydraAdminURL, flags.HydraPublicURL, "whisper", "", b.GrantScopes.GetScopeListFromGrantScopeMap(), []string{})
 	b.UserCredentialsDAO = new(db.DefaultUserCredentialsDAO).Init(b.DatabaseURL, b.SecretKey)
 
-	logrus.Infof("Flags: '%v'; GrantScopes: '%v'", b.Flags, b.GrantScopes)
+	logrus.Infof("GrantScopes: '%v'", b.GrantScopes)
 	return b
 }
 
 func (flags *Flags) check() {
-
-	if flags.BaseUIPath == "" || flags.HydraAdminURL == "" || flags.HydraPublicURL == "" || flags.ScopesFilePath == "" || flags.SecretKey == "" {
-		panic("base-ui-path, hydra-admin-url, hydra-public-url, scopes-file-path and secret-key cannot be empty")
+	logrus.Infof("Flags: '%v'", flags)
+	if flags.BaseUIPath == "" || flags.HydraAdminURL == "" || flags.HydraPublicURL == "" || flags.ScopesFilePath == "" || flags.SecretKey == "" || flags.DatabaseURL == "" {
+		panic("base-ui-path, hydra-admin-url, hydra-public-url, scopes-file-path, database-url and secret-key cannot be empty")
 	}
 }
 

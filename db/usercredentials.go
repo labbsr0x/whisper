@@ -8,8 +8,6 @@ import (
 
 	"github.com/labbsr0x/whisper/misc"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/google/uuid"
 
 	"github.com/labbsr0x/goh/gohtypes"
@@ -63,7 +61,6 @@ func (dao *DefaultUserCredentialsDAO) migrate() error {
 		defer db.Close()
 		db.AutoMigrate(&UserCredential{})
 	}
-	logrus.Error(err)
 	return err
 }
 

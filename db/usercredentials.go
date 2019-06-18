@@ -42,7 +42,7 @@ type DefaultUserCredentialsDAO struct {
 	SecretKey   string
 }
 
-// Init initializes a defualt user credentials DAO from web builder
+// Init initializes a default user credentials DAO from web builder
 func (dao *DefaultUserCredentialsDAO) Init(dbURL, secretKey string) UserCredentialsDAO {
 	u, err := url.Parse(dbURL)
 	gohtypes.PanicIfError("Unable to parse db url", 500, err)

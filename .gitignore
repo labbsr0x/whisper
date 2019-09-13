@@ -14,3 +14,8 @@
 whisper
 
 .DS_Store
+
+# Goland IDE
+
+.idea/
+bin/

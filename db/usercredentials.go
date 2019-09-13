@@ -2,7 +2,6 @@ package db
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
 	"time"
 
@@ -44,9 +43,7 @@ type DefaultUserCredentialsDAO struct {
 
 // Init initializes a default user credentials DAO from web builder
 func (dao *DefaultUserCredentialsDAO) Init(dbURL, secretKey string) UserCredentialsDAO {
-	u, err := url.Parse(dbURL)
-	gohtypes.PanicIfError("Unable to parse db url", 500, err)
-	dao.DatabaseURL = strings.Replace(u.String(), u.Scheme+"://", "", 1)
+	dao.DatabaseURL = strings.Replace(dbURL, "mysql://", "", 1)
 
 	gohtypes.PanicIfError("Not possible to migrate db", 500, dao.migrate())
 

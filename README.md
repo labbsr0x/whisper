@@ -16,7 +16,7 @@ To easily integrate with Whisper, client applications can make use of a special 
 Passwords are cryptographically stored with a salt and secret-key with the help of the following equation:
 
 ```
-HMAC(SHA256(password+salt), secret-key)
+HMAC(SHA512(password+salt), secret-key)
 ```
 
 Salts are generated randomically each time a password is stored.

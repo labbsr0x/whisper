@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"crypto/hmac"
 	"crypto/rand"
-	"crypto/sha256"
+	"crypto/sha512"
 	"encoding/base64"
 	"encoding/json"
 	"io"
@@ -40,9 +40,9 @@ func GenerateSalt() string {
 	return base64.URLEncoding.EncodeToString(randomBytes)
 }
 
-// GetEncryptedPassword builds an encrypted password with hmac(sha256)
+// GetEncryptedPassword builds an encrypted password with hmac(sha512)
 func GetEncryptedPassword(secretKey, password, salt string) string {
-	hash := hmac.New(sha256.New, []byte(secretKey))
+	hash := hmac.New(sha512.New, []byte(secretKey))
 	io.WriteString(hash, password+salt)
 	return base64.URLEncoding.EncodeToString(hash.Sum(nil))
 }

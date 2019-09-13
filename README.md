@@ -45,32 +45,63 @@ All this operations can be more easily accomplished using the whisper-client lib
 
 # Try it yourself
 
-From the project root folder, fire the following commands to execute this project in development mode:
+From the project root folder, fire the following commands to execute this project in development mode.
 
-```
-docker-compose up -d local
-```
+1. Up the applications that whisper need
 
-```
-go build
-```
+    ```bash
+    docker-compose up -d local
+    ```
 
-```
-./whisper serve --port 7070 \
-    --base-ui-path ./web/ui/www \
-    --hydra-admin-url http://localhost:4445 \
-    --hydra-public-url http://localhost:4444 \
-    --secret-key uhSunsodnsuBsdjsbds \
-    --log-level debug \
-    --scopes-file-path ./scopes.json \
-    --database-url "mysql://root:secret@tcp(localhost:3306)/whisper?charset=utf8mb4&parseTime=True&loc=Local"
-```
+2. Compile the local version
 
-This will serve the auxiliary services (databases and Hydra) and will run Whisper at the `7070` port; endpoints `/login` and `/consent` will display our incredibly simple user interface.
+    ```bash
+    go build
+    ```
 
-The only way to access this endpoints is through a valid authorization url.
+3. Serve whisper locally
 
-**With some small Dockerfile trickery, it is possible to override the provided UI files to use your custom page layout and icons.**
+    This will serve the auxiliary services (databases and Hydra) and will run Whisper at the `7070` port; endpoints `/login` and `/consent` will display our incredibly simple user interface.
+
+    The only way to access this endpoints is through a valid authorization url.
+
+    **With some small Dockerfile trickery, it is possible to override the provided UI files to use your custom page layout and icons.**
+
+    ```bash
+    ./whisper serve --port 7070 \
+        --base-ui-path ./web/ui/www \
+        --hydra-admin-url http://localhost:4445 \
+        --hydra-public-url http://localhost:4444 \
+        --secret-key uhSunsodnsuBsdjsbds \
+        --log-level debug \
+        --scopes-file-path ./scopes.json \
+        --database-url "mysql://root:secret@tcp(localhost:3306)/whisper?charset=utf8mb4&parseTime=True&loc=Local"
+    ```
+ 
+4. Create the endpoint with hydra for testing
+    
+    They only work once! It will be necessary to run again.
+    
+    ```bash
+    docker-compose exec hydra \                                    
+        hydra clients create \  
+            --endpoint http://localhost:4445 \
+            --id auth-code-client \
+            --secret secret \
+            --grant-types authorization_code,refresh_token \
+            --response-types code,id_token \
+            --scope openid,offline \
+            --callbacks http://127.0.0.1:5555/callback
+           
+    docker-compose exec hydra \ 
+        hydra token user \      
+            --client-id auth-code-client \    
+            --client-secret secret \
+            --endpoint http://localhost:4444/ \
+            --port 5555 \                                   
+            --scope openid,offline
+    ```
+
 
 # Credential Update
 

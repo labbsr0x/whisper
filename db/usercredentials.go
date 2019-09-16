@@ -17,13 +17,14 @@ import (
 
 // UserCredential holds the information from a user credential
 type UserCredential struct {
-	ID        string `gorm:"primary_key;not null;"`
-	Username  string `gorm:"unique_index;not null;"`
-	Email     string `gorm:"unique_index;"`
-	Password  string `gorm:"not null;"`
-	Salt      string `gorm:"not null;"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID            string `gorm:"primary_key;not null;"`
+	Username      string `gorm:"unique_index;not null;"`
+	Email         string `gorm:"unique_index;not null;"`
+	Password      string `gorm:"not null;"`
+	Salt          string `gorm:"not null;"`
+	Authenticated bool   `gorm:"not null;"`
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
 }
 
 // BeforeCreate will set a UUID rather than numeric ID.

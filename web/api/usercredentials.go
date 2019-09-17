@@ -43,7 +43,7 @@ func (dapi *DefaultUserCredentialsAPI) POSTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		payload := new(types.AddUserCredentialRequestPayload).InitFromRequest(r)
 
-		userID, err := dapi.UserCredentialsDAO.CreateUserCredential(payload.Username, payload.Password, payload.Email)
+		userID, err := dapi.UserCredentialsDAO.CreateUserCredential(payload.Username, payload.Password, payload.Email, false)
 		gohtypes.PanicIfError("Not possible to create user", 500, err)
 		logrus.Infof("User created: %v", userID)
 
@@ -57,15 +57,16 @@ func (dapi *DefaultUserCredentialsAPI) PUTHandler() http.Handler {
 		payload := new(types.UpdateUserCredentialRequestPayload).InitFromRequest(r)
 
 		if token, ok := r.Context().Value(whisper.TokenKey).(whisper.Token); ok {
-			ok, err := dapi.UserCredentialsDAO.CheckCredentials(token.Subject, payload.OldPassword)
-			if ok {
-				err = dapi.UserCredentialsDAO.UpdateUserCredential(token.Subject, payload.Email, payload.NewPassword)
-				gohtypes.PanicIfError("Error updating user credential info", 500, err)
-				w.WriteHeader(200)
-				return
+			err := dapi.UserCredentialsDAO.CheckCredentials(token.Subject, payload.OldPassword)
+
+			if e, ok := err.(*gohtypes.Error); ok {
+				gohtypes.Panic(e.Message, e.Code)
 			}
-			gohtypes.PanicIfError("Unauthorized request", 401, err)
-			gohtypes.Panic("Incorrect password", 400)
+
+			err = dapi.UserCredentialsDAO.UpdateUserCredential(token.Subject, payload.Email, payload.NewPassword, true)
+			gohtypes.PanicIfError("Error updating user credential info", 500, err)
+
+			w.WriteHeader(200)
 		}
 	})
 }

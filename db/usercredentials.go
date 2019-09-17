@@ -35,10 +35,10 @@ func (user *UserCredential) BeforeCreate(scope *gorm.Scope) error {
 // UserCredentialsDAO defines the methods that can be performed
 type UserCredentialsDAO interface {
 	Init(dbURL, secretKey string) UserCredentialsDAO
-	CreateUserCredential(username, password, email string) (string, error)
-	UpdateUserCredential(username, email, password string) error
+	CreateUserCredential(username, password, email string, authenticated bool) (string, error)
+	UpdateUserCredential(username, email, password string, authenticated bool) error
 	GetUserCredential(username string) (UserCredential, error)
-	CheckCredentials(username, password string) (bool, error)
+	CheckCredentials(username, password string) error
 }
 
 // DefaultUserCredentialsDAO a default UserCredentialsDAO interface implementation
@@ -69,7 +69,7 @@ func (dao *DefaultUserCredentialsDAO) migrate() error {
 }
 
 // CreateUserCredential creates a user
-func (dao *DefaultUserCredentialsDAO) CreateUserCredential(username, password, email string) (string, error) {
+func (dao *DefaultUserCredentialsDAO) CreateUserCredential(username, password, email string, authenticated bool) (string, error) {
 	db, err := gorm.Open("mysql", dao.DatabaseURL)
 
 	if err != nil {
@@ -101,6 +101,7 @@ func (dao *DefaultUserCredentialsDAO) CreateUserCredential(username, password, e
 		Password: hPassword,
 		Email:    email,
 		Salt:     salt,
+		Authenticated: authenticated,
 	}
 
 	if res := db.Create(&userCredential); res.Error != nil {
@@ -111,7 +112,7 @@ func (dao *DefaultUserCredentialsDAO) CreateUserCredential(username, password, e
 }
 
 // UpdateUserCredential updates a user
-func (dao *DefaultUserCredentialsDAO) UpdateUserCredential(username, email, password string) error {
+func (dao *DefaultUserCredentialsDAO) UpdateUserCredential(username, email, password string, authenticated bool) error {
 	db, err := gorm.Open("mysql", dao.DatabaseURL)
 	if err == nil {
 		defer db.Close()
@@ -125,6 +126,7 @@ func (dao *DefaultUserCredentialsDAO) UpdateUserCredential(username, email, pass
 		userCredential.Password = hPassword
 		userCredential.Salt = salt
 		userCredential.Email = email
+		userCredential.Authenticated = authenticated
 
 		db = db.Save(userCredential)
 		err = db.Error
@@ -146,11 +148,22 @@ func (dao *DefaultUserCredentialsDAO) GetUserCredential(username string) (UserCr
 }
 
 // CheckCredentials verifies if the informed credentials are valid
-func (dao *DefaultUserCredentialsDAO) CheckCredentials(username, password string) (bool, error) {
+func (dao *DefaultUserCredentialsDAO) CheckCredentials(username, password string) error {
 	userCredential, err := dao.GetUserCredential(username)
-	if err == nil {
-		hPassword := misc.GetEncryptedPassword(dao.SecretKey, password, userCredential.Salt)
-		return hPassword == userCredential.Password, nil
+
+	if err != nil {
+		return &gohtypes.Error{Message: "Unable to authenticate user", Code: http.StatusInternalServerError, Err: err}
 	}
-	return false, err
+
+	hPassword := misc.GetEncryptedPassword(dao.SecretKey, password, userCredential.Salt)
+
+	if hPassword != userCredential.Password {
+		return &gohtypes.Error{Message: "Incorrect password", Code: http.StatusUnauthorized}
+	}
+
+	if !userCredential.Authenticated {
+		return &gohtypes.Error{Message: "This account email is not authenticated", Code: http.StatusUnauthorized}
+	}
+
+	return nil
 }

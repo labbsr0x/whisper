@@ -40,6 +40,7 @@ func (dapi *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 		loginRequest := new(types.RequestLoginPayload).InitFromRequest(r)
 		logrus.Debugf("Login request payload '%v'", loginRequest)
 
+<<<<<<< HEAD
 		ok, err := dapi.UserCredentialsDAO.CheckCredentials(loginRequest.Username, loginRequest.Password)
 		if ok {
 			info := dapi.Self.AcceptLoginRequest(
@@ -53,10 +54,23 @@ func (dapi *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 				}, 200, w)
 				return
 			}
+=======
+		err := dapi.UserCredentialsDAO.CheckCredentials(loginRequest.Username, loginRequest.Password)
+
+		if e, ok := err.(*gohtypes.Error); ok {
+			gohtypes.Panic(e.Message, e.Code)
+>>>>>>> Handling if the user is authenticated
 		}
 
-		gohtypes.PanicIfError("Unable to authenticate user", 500, err) // only fires if err != nil
-		gohtypes.Panic("Incorrect password", 401)                      // only fires if err == nil
+		info := dapi.Self.AcceptLoginRequest(
+			loginRequest.Challenge,
+			whisper.AcceptLoginRequestPayload{ACR: "0", Remember: loginRequest.Remember, RememberFor: 3600, Subject: loginRequest.Username},
+		)
+		logrus.Debugf("Accept login request info: %v", info)
+		if info != nil {
+			http.Redirect(w, r, info["redirect_to"].(string), 302)
+			return
+		}
 	})
 }
 

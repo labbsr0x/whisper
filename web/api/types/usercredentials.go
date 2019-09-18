@@ -62,7 +62,7 @@ func (payload *AddUserCredentialRequestPayload) InitFromRequest(r *http.Request)
 // check verifies if the login request payload is ok
 func (payload *AddUserCredentialRequestPayload) check() {
 	if len(payload.Username) == 0 || len(payload.Password) == 0 || len(payload.PasswordConfirmation) == 0 || len(payload.Email) == 0 {
-		gohtypes.Panic("All form fields are required", 400)
+		gohtypes.Panic("All fields are required", 400)
 	}
 
 	if payload.Password != payload.PasswordConfirmation {

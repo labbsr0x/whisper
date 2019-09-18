@@ -77,7 +77,6 @@ func (dapi *DefaultLoginAPI) LoginGETHandler(route string) http.Handler {
 			} else {
 				templ, info := dapi.getLoginPageTemplateAndInfo(challenge)
 				templ.Execute(w, info)
-
 			}
 			return
 		}

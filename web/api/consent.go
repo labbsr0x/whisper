@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"github.com/labbsr0x/goh/gohserver"
 	"html/template"
 	"io/ioutil"
 	"net/http"
@@ -53,7 +54,9 @@ func (dapi *DefaultConsentAPI) ConsentPOSTHandler() http.Handler {
 
 				logrus.Debugf("Consent Accept Info: '%v'", acceptInfo)
 				if acceptInfo != nil {
-					http.Redirect(w, r, acceptInfo["redirect_to"].(string), 302)
+					gohserver.WriteJSONResponse(map[string]interface{}{
+						"redirect_to": acceptInfo["redirect_to"],
+					}, 200, w)
 					return
 				}
 			}
@@ -88,15 +91,15 @@ func (dapi *DefaultConsentAPI) ConsentGETHandler(route string) http.Handler {
 				http.Redirect(w, r, info["redirect_to"].(string), 302)
 			}
 		} else {
-			templ, consentPageInfo := dapi.getConsentPageTemplateAndInfo(info, challenge)
+			templ, consentPageInfo := dapi.getConsentPageTemplateAndInfo(info)
 			templ.Execute(w, consentPageInfo)
 		}
 	}))
 }
 
 // getConsentPageInfo builds the data structure for a consent page
-func (dapi *DefaultConsentAPI) getConsentPageTemplateAndInfo(consentRequestInfo map[string]interface{}, challenge string) (*template.Template, types.ConsentPage) {
-	consentPageInfo := types.ConsentPage{ClientName: "Unknown", ClientURI: "#", RequestedScopes: make([]misc.GrantScope, 0), Challenge: challenge}
+func (dapi *DefaultConsentAPI) getConsentPageTemplateAndInfo(consentRequestInfo map[string]interface{}) (*template.Template, types.ConsentPage) {
+	consentPageInfo := types.ConsentPage{ClientName: "Unknown", ClientURI: "#", RequestedScopes: make([]misc.GrantScope, 0)}
 
 	if clientName, ok := consentRequestInfo["client_name"].(string); ok {
 		consentPageInfo.ClientName = clientName

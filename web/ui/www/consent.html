@@ -1,5 +1,6 @@
 <div style="display: flex; justify-content: center;">
     <div style="width: 400px;">
+        <div id="notification" role="alert" hidden="true"></div>
         <div id="consent-content" class="card container">
             <span style="display: flex; justify-content: center; align-items: center">
                 <img src="/static/images/spy-black.png" width="30" height="30" class="d-inline-block" alt="">
@@ -7,17 +8,14 @@
             </span>
             <hr/>
             <div class="card-body">
-                <form id="consent-form" action="/consent" method="POST">
-                    <input id="accept-consent" type="hidden" name="accept" value="false"></input>
-                    <input id="consent-challenge" type="hidden" name="challenge" value="{{.Challenge}}"></input>
-
+                <form id="consent-form">
                     <div style="display: flex; justify-content: center; margin-bottom: 30px">
                         <h5>The app <a href="{{.ClientURI}}">{{.ClientName}}</a> wants access to your Whisper account</h5>
                     </div>
 
                     <div style="display: flex; flex-direction: column; justify-content: center; padding: 0px 15px 0px 15px;">
                         {{range .RequestedScopes}}
-                            <input type="hidden" name="grant-scope" value="{{.Scope}}"/>
+                            <input type="hidden" class="consent-grant-scope" value="{{.Scope}}"/>
                             <div>
                                 <div style="display: flex; justify-content: space-between">
                                     <div>
@@ -40,10 +38,10 @@
 
                     <div style="display: flex; align-items: center; justify-content: space-around; margin-top: 30px;">
                         <div class="deny">
-                            <h6 ><span class="deny" id="consent-deny" onclick="acceptConsent(false);">Deny</span></h6>
+                            <h6 ><span class="deny" id="consent-deny">Deny</span></h6>
                         </div>
                         <div>
-                            <button id="consent-allow" type="submit" onclick="acceptConsent(true);" class="btn btn-primary">Allow</button>
+                            <button id="consent-allow" type="submit" class="btn btn-primary">Allow</button>
                         </div>
                     </div>
                 </form>

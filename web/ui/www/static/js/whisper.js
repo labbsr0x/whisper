@@ -8,6 +8,40 @@ window.onload = function() {
     setupRegistrationPage(action);
 }
 
+function startSubmitting (obj) {
+    obj.prop("disabled", true)
+
+    obj.html(
+        `<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>`
+    );
+}
+
+function finishSubmitting (obj) {
+    obj.prop("disabled", false)
+    obj.html("Submit");
+}
+
+function notify (type, text) {
+    var id = "#notification"
+    var notificationTimeOut = 5000 // 5s
+
+    $(id).html(text)
+    $(id).attr("hidden", false)
+    $(id).removeClass().addClass("alert alert-" + type)
+
+    setTimeout(function(){
+        $(id).attr("hidden", true)
+    }, notificationTimeOut);
+}
+
+function notifyError (text) {
+    notify("danger", text)
+}
+
+function notifySuccess (text) {
+    notify("success", text)
+}
+
 function setupLoginPage(action) {
     if (action == "login") {
         
@@ -24,26 +58,36 @@ function setupLoginPage(action) {
 }
 
 function setupConsentForm(action) {
-    if (action == "consent") {
+    if (action != "consent") {
+        return;
+    }
+
         buttons = [{id: "consent-allow", value: "true"}, {id: "consent-deny", value: "false"}];
+
         for (i = 0; i < buttons.length; i++) {
             button = buttons[i];
             document.getElementById(button.id).addEventListener("click", function(value){
                 return function(ev) {
-                    ev.preventDefault()
+                ev.preventDefault();
                     document.getElementById("accept-consent").value = value;
                     document.getElementById("consent-form").submit();
                 }
             }(button.value));
         }
     }
-}
 
 function setupUpdatePage(action) {
-    if (action == "secure/update") {
+    if (action != "secure/update") {
+        return;
+    }
         
         $('#update-submit').on('click', function(event) {
-            event.preventDefault()
+        event.preventDefault();
+
+        var $this = $(this);
+
+        startSubmitting($this);
+
             $.ajax({
                 url: "/secure/update",
                 type: "PUT",
@@ -58,24 +102,28 @@ function setupUpdatePage(action) {
                     "Authorization": "Bearer " + params.get("token")
                 },
                 success: function(data, status, xhr) {
-                    window.location = params.get("redirect_to")
+                finishSubmitting($this);
+                window.location = params.get("redirect_to");
                 },
                 error: function(xhr, status, error) {
-                    $("#credential-updated-alert")[0].innerHTML = xhr.responseText
-                    $("#credential-updated-alert")[0].hidden = false
-                    setTimeout(function(){
-                        $("#credential-updated-alert")[0].hidden = true
-                    }, 2000);
+                finishSubmitting($this);
+                notifyError(xhr.responseText);
                 }
             })
         })
     }
-}
 
 function setupRegistrationPage(action) {
-    if (action == "registration") {
+    if (action != "registration") {
+        return;
+    }
+
         $('#registration-submit').on('click', function(event) {
-            event.preventDefault()
+        event.preventDefault();
+
+        var $this = $(this);
+
+        startSubmitting($this);
 
             $.ajax({
                 url: "/registration",
@@ -88,16 +136,13 @@ function setupRegistrationPage(action) {
                 }),
                 contentType: "application/json",
                 success: function(data, status, xhr) {
-                    window.location = "/login?first_login=true&username="+$("#registration-username").val()+"&login_challenge="+$("#login-challenge").val()
+                finishSubmitting($(this));
+                window.location = "/login?first_login=true&username="+$("#registration-username").val()+"&login_challenge="+$("#login-challenge").val();
                 },
                 error: function(xhr, status, error) {
-                    $("#credential-registration-alert")[0].innerHTML = xhr.responseText
-                    $("#credential-registration-alert")[0].hidden = false
-                    setTimeout(function(){
-                        $("#credential-registration-alert")[0].hidden = true
-                    }, 2000);
+                finishSubmitting($this);
+                notifyError(xhr.responseText);
                 }
             })
         })
     }
-}

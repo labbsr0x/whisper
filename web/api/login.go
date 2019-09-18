@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"github.com/labbsr0x/goh/gohserver"
 	"html/template"
 	"io/ioutil"
 	"net/http"
@@ -47,7 +48,9 @@ func (dapi *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 			)
 			logrus.Debugf("Accept login request info: %v", info)
 			if info != nil {
-				http.Redirect(w, r, info["redirect_to"].(string), 302)
+				gohserver.WriteJSONResponse(map[string]interface{}{
+					"redirect_to": info["redirect_to"],
+				}, 200, w)
 				return
 			}
 		}

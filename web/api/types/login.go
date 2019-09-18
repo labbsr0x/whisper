@@ -1,13 +1,13 @@
 package types
 
 import (
+	"encoding/json"
 	"fmt"
-	"net/http"
-	"net/url"
-
 	"github.com/labbsr0x/goh/gohtypes"
 	"github.com/labbsr0x/whisper/misc"
 	"github.com/sirupsen/logrus"
+	"io/ioutil"
+	"net/http"
 )
 
 // LoginPage defines the data needed to build a consent page
@@ -29,26 +29,21 @@ type RequestLoginPayload struct {
 
 // InitFromRequest initializes the login request payload from an http request form
 func (payload *RequestLoginPayload) InitFromRequest(r *http.Request) *RequestLoginPayload {
-	err := r.ParseForm()
-	if err == nil {
-		logrus.Debugf("Form sent: '%v'", r.Form)
-		if err := payload.check(r.Form); err == nil {
-			payload.Challenge = r.Form["challenge"][0]
-			payload.Password = r.Form["password"][0]
-			payload.Username = r.Form["username"][0]
-			payload.Remember = len(r.Form["remember"]) > 0 && r.Form["remember"][0] == "on"
+	data, err := ioutil.ReadAll(r.Body)
+	gohtypes.PanicIfError("Not possible to parse registration payload", 400, err)
 
-			return payload
-		}
-		panic(gohtypes.Error{Code: 400, Message: "Bad Request", Err: err})
-	}
-	panic(gohtypes.Error{Code: 400, Message: "Not possible to parse http form", Err: err})
+	json.Unmarshal(data, &payload)
+	logrus.Debugf("Payload: '%v'", payload)
+
+	payload.check()
+
+	return payload
 }
 
 // check verifies if the login request payload is ok
-func (payload *RequestLoginPayload) check(form url.Values) error {
-	if len(form["challenge"]) == 0 || len(form["password"]) == 0 || len(form["username"]) == 0 {
-		return fmt.Errorf("Incomplete form data")
+func (payload *RequestLoginPayload) check() error {
+	if len(payload.Challenge) == 0 || len(payload.Password) == 0 || len(payload.Username) == 0 {
+		return fmt.Errorf("Incomplete fields")
 	}
 
 	return nil

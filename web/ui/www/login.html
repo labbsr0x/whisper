@@ -1,6 +1,5 @@
-<div class="row">
-    <div class="col-sm-4"></div>
-    <div class="col-sm-4">
+<div style="display: flex; justify-content: center;">
+    <div style="width: 400px;">
         <div id="notification" role="alert" hidden="true"></div>
         <div id="login-content" class="card container">
             <span style="display: flex; justify-content: center; align-items: center">
@@ -9,7 +8,7 @@
             </span>
             <hr/>
             <div class="card-body">
-                <form id="login-form" action="/login" method="POST">
+                <form id="login-form">
                     <input id="login-challenge" type="hidden" name="challenge" value="{{.Challenge}}"></input>
                     <div class="form-group">
                         <label for="username">Username</label>
@@ -31,5 +30,4 @@
             </div>
         </div>
     </div>
-    <div class="col-sm-4"></div>
 </div>

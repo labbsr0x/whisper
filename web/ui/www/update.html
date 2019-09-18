@@ -1,6 +1,5 @@
-<div class="row">
-    <div class="col-sm-4"></div>
-    <div class="col-sm-4">
+<div style="display: flex; justify-content: center;">
+    <div style="width: 400px;">
         <div id="notification" role="alert" hidden="true"></div>
         <div id="registration-content" class="card container">
             <span style="display: flex; justify-content: center; align-items: center">
@@ -9,7 +8,7 @@
             </span>
             <hr/>
             <div class="card-body">
-                <form id="update-form" action="/secure/update" method="PUT">
+                <form id="update-form">
                     <div class="form-group">
                         <label for="username">Username</label>
                         <input disabled type="username" class="form-control" id="update-username" name="username" value="{{.Username}}">
@@ -38,5 +37,4 @@
             </div>
         </div>
     </div>
-    <div class="col-sm-4"></div>
 </div>

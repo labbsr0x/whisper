@@ -16,9 +16,9 @@ function startSubmitting (obj) {
     );
 }
 
-function finishSubmitting (obj) {
+function finishSubmitting (obj, text) {
     obj.prop("disabled", false);
-    obj.html("Submit");
+    obj.html(text ? text : "Submit");
 }
 
 function notify (type, text) {
@@ -77,7 +77,7 @@ function setupLoginPage(action) {
             }),
             contentType: "application/json",
             success: function(data, status, xhr) {
-                finishSubmitting($(this));
+                finishSubmitting($this);
                 window.location = data.redirect_to;
             },
             error: function(xhr, status, error) {
@@ -93,18 +93,41 @@ function setupConsentForm(action) {
         return;
     }
 
-    buttons = [{id: "consent-allow", value: "true"}, {id: "consent-deny", value: "false"}];
+    var challenge = params.get("consent_challenge");
 
-    for (i = 0; i < buttons.length; i++) {
-        button = buttons[i];
-        document.getElementById(button.id).addEventListener("click", function(value){
-            return function(ev) {
-                ev.preventDefault();
-                document.getElementById("accept-consent").value = value;
-                document.getElementById("consent-form").submit();
-            }
-        }(button.value));
+    function consent (answer) {
+        return function (event) {
+            event.preventDefault();
+
+            var $this = $(this);
+            var buttonText = answer ? "Allow" : "Deny";
+
+            startSubmitting($this);
+
+            $.ajax({
+                url: "/consent",
+                type: "POST",
+                data: JSON.stringify({
+                    accept: answer,
+                    challenge: challenge,
+                    grantScope: $(".consent-grant-scope").toArray().map(function (item) { return item.value; }),
+                    remember: true
+                }),
+                contentType: "application/json",
+                success: function (data, status, xhr) {
+                    finishSubmitting($this, buttonText);
+                    window.location = data.redirect_to;
+                },
+                error: function (xhr, status, error) {
+                    finishSubmitting($this, buttonText);
+                    notifyError(xhr.responseText);
+                }
+            });
+        }
     }
+
+    $('#consent-allow').on('click', consent(true));
+    $('#consent-deny').on('click', consent(false));
 }
 
 function setupUpdatePage(action) {

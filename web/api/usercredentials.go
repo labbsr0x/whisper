@@ -9,12 +9,15 @@ import (
 	"net/url"
 	"path"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/labbsr0x/goh/gohtypes"
+	"github.com/spf13/viper"
 
 	whisper "github.com/labbsr0x/whisper-client/client"
 
 	"github.com/sirupsen/logrus"
 
+	"github.com/labbsr0x/whisper/mail"
 	"github.com/labbsr0x/whisper/web/api/types"
 	"github.com/labbsr0x/whisper/web/config"
 )
@@ -38,14 +41,43 @@ func (dapi *DefaultUserCredentialsAPI) InitFromWebBuilder(builder *config.WebBui
 	return dapi
 }
 
+func generateToken(data jwt.MapClaims) (string, error) {
+	secret := viper.GetString("secret-key")
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, data)
+
+	return token.SignedString([]byte(secret))
+}
+
 // POSTHandler handles post requests to create user credentials
+// TODO: should I remove the user in case it fails to send the email?
 func (dapi *DefaultUserCredentialsAPI) POSTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		payload := new(types.AddUserCredentialRequestPayload).InitFromRequest(r)
-
 		userID, err := dapi.UserCredentialsDAO.CreateUserCredential(payload.Username, payload.Password, payload.Email, false)
-		gohtypes.PanicIfError("Not possible to create user", 500, err)
+
+		gohtypes.PanicIfError("Not possible to create user", http.StatusInternalServerError, err)
 		logrus.Infof("User created: %v", userID)
+
+		claim := jwt.MapClaims{"EmailConfirmation": true}
+		token, err := generateToken(claim)
+
+		gohtypes.PanicIfError("Not possible to create token", http.StatusInternalServerError, err)
+		logrus.Infof("Email confirmation token created: %v", token)
+
+		challenge, err := url.QueryUnescape(r.URL.Query().Get("login_challenge"))
+		gohtypes.PanicIfError("Unable to parse the login_challenge parameter", http.StatusInternalServerError, err)
+
+		loginPath := "http://localhost:7070/login"
+		link := loginPath + "?login_challenge=" + challenge + "&email_confirmation_token=" + token
+
+		to := []string{payload.Email}
+		message := fmt.Sprintf("Hi %v,\nClick on the link below to authenticate your email.\n\n %v\n\nThanks,\nWhisper Developers\n", payload.Username, link)
+
+		err = mail.Send(to, []byte(message))
+
+		gohtypes.PanicIfError("Not possible to send email", http.StatusInternalServerError, err)
+		logrus.Infof("Email confirmation token sent")
 
 		w.WriteHeader(200)
 	})

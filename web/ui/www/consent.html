@@ -1,6 +1,5 @@
-<div class="row">
-    <div class="col-sm-4"></div>
-    <div class="col-sm-4">
+<div style="display: flex; justify-content: center;">
+    <div style="width: 400px;">
         <div id="consent-content" class="card container">
             <span style="display: flex; justify-content: center; align-items: center">
                 <img src="/static/images/spy-black.png" width="30" height="30" class="d-inline-block" alt="">
@@ -11,48 +10,44 @@
                 <form id="consent-form" action="/consent" method="POST">
                     <input id="accept-consent" type="hidden" name="accept" value="false"></input>
                     <input id="consent-challenge" type="hidden" name="challenge" value="{{.Challenge}}"></input>
-                    <div class="row">
-                        <div class="col-sm-1"></div>
-                        <div class="col-sm-10">
-                            <h5>The app <a href="{{.ClientURI}}">{{.ClientName}}</a> wants access to your Whisper account</h5>
-                        </div>
-                        <div class="col-sm-1"></div>
+
+                    <div style="display: flex; justify-content: center; margin-bottom: 30px">
+                        <h5>The app <a href="{{.ClientURI}}">{{.ClientName}}</a> wants access to your Whisper account</h5>
                     </div>
-                    <br/>
-                    
-                    {{range .RequestedScopes}}
-                        <input type="hidden" name="grant-scope" value="{{.Scope}}"/>
-                        <div class="row">
-                            <div class="col-sm-1"></div>
-                            <div class="col-sm-10">
-                                {{.Description}}
-                                <a href="#consent-details-{{.Scope}}" role="button" style="float: right; cursor: pointer;" data-toggle="collapse" aria-expanded="false" aria-controls="consent-details-{{.Scope}}">
-                                    <img src="static/images/info.svg"  height="20px" width="20px"/>
-                                </a>
+
+                    <div style="display: flex; flex-direction: column; justify-content: center; padding: 0px 15px 0px 15px;">
+                        {{range .RequestedScopes}}
+                            <input type="hidden" name="grant-scope" value="{{.Scope}}"/>
+                            <div>
+                                <div style="display: flex; justify-content: space-between">
+                                    <div>
+                                        {{.Description}}
+                                    </div>
+                                    <div>
+                                        <a href="#consent-details-{{.Scope}}" role="button" data-toggle="collapse" aria-expanded="false" aria-controls="consent-details-{{.Scope}}">
+                                            <img src="static/images/info.svg"  height="20px" width="20px"/>
+                                        </a>
+                                    </div>
+                                </div>
+
                                 <div class="collapse multi-collapse" id="consent-details-{{.Scope}}">
                                     <span style="font-size: 0.7em">{{.Details}}</span>
                                 </div>
                                 <hr/>
                             </div>
-                            <div class="col-sm-1"></div>
-                        </div>
-                    {{end}}
-                    
-                    <br/>
-                    <div class="row" style="display: flex; align-items: center;">
-                        <div class="col-sm-3"></div>
-                        <div class="col-sm-2 deny">
+                        {{end}}
+                    </div>
+
+                    <div style="display: flex; align-items: center; justify-content: space-around; margin-top: 30px;">
+                        <div class="deny">
                             <h6 ><span class="deny" id="consent-deny" onclick="acceptConsent(false);">Deny</span></h6>
                         </div>
-                        <div class="col-sm-2"></div>
-                        <div class="col-sm-2" >
+                        <div>
                             <button id="consent-allow" type="submit" onclick="acceptConsent(true);" class="btn btn-primary">Allow</button>
                         </div>
-                        <div class="col-sm-3"></div>
                     </div>
                 </form>
             </div>
         </div>
     </div>
-    <div class="col-sm-4"></div>
 </div>

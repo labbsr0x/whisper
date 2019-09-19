@@ -43,38 +43,53 @@ function notifySuccess (text) {
 }
 
 function setupLoginPage(action) {
-    if (action != "login") {
+    if (action !== "login") {
         return;
     }
 
     var username = params.get("username");
-    var challenge = params.get("login_challenge");
     var firstLogin = params.get("first_login");
-
-    if (firstLogin) {
-        notifySuccess("Whisper credential created successfully!")
-    }
 
     if (username) {
         document.getElementById("login-username").value = username;
+    }
+
+    if (firstLogin) {
+        notifySuccess("Whisper credential created successfully!")
     }
 
     $('#login-submit').on('click', function(event) {
         event.preventDefault();
 
         var $this = $(this);
+        var request = {
+            username: $("#login-username").val(),
+            password: $("#login-password").val(),
+            remember: $("#login-remember").is(":checked"),
+            challenge: params.get("login_challenge")
+        };
+
+        if (!request.username) {
+            notifyError("Username is missing");
+            return;
+        }
+
+        if (!request.password) {
+            notifyError("Password is missing");
+            return;
+        }
+
+        if (!request.challenge) {
+            notifyError("Challenge is missing");
+            return;
+        }
 
         startSubmitting($this);
 
         $.ajax({
             url: "/login",
             type: "POST",
-            data: JSON.stringify({
-                username: $("#login-username").val(),
-                password: $("#login-password").val(),
-                remember: $("#login-remember").is(":checked"),
-                challenge: challenge
-            }),
+            data: JSON.stringify(request),
             contentType: "application/json",
             success: function(data, status, xhr) {
                 finishSubmitting($this);
@@ -89,11 +104,9 @@ function setupLoginPage(action) {
 }
 
 function setupConsentForm(action) {
-    if (action != "consent") {
+    if (action !== "consent") {
         return;
     }
-
-    var challenge = params.get("consent_challenge");
 
     function consent (answer) {
         return function (event) {
@@ -101,18 +114,29 @@ function setupConsentForm(action) {
 
             var $this = $(this);
             var buttonText = answer ? "Allow" : "Deny";
+            var request = {
+                accept: answer,
+                challenge: params.get("consent_challenge"),
+                grantScope: $(".consent-grant-scope").toArray().map(function (item) { return item.value; }),
+                remember: true
+            };
+
+            if (!request.challenge) {
+                notifyError("Challenge is missing");
+                return;
+            }
+
+            if (!request.grantScope) {
+                notifyError("Grant Scopes are missing");
+                return;
+            }
 
             startSubmitting($this);
 
             $.ajax({
                 url: "/consent",
                 type: "POST",
-                data: JSON.stringify({
-                    accept: answer,
-                    challenge: challenge,
-                    grantScope: $(".consent-grant-scope").toArray().map(function (item) { return item.value; }),
-                    remember: true
-                }),
+                data: JSON.stringify(request),
                 contentType: "application/json",
                 success: function (data, status, xhr) {
                     finishSubmitting($this, buttonText);
@@ -131,7 +155,7 @@ function setupConsentForm(action) {
 }
 
 function setupUpdatePage(action) {
-    if (action != "secure/update") {
+    if (action !== "secure/update") {
         return;
     }
 
@@ -139,18 +163,44 @@ function setupUpdatePage(action) {
         event.preventDefault();
 
         var $this = $(this);
+        var request = {
+            email: $("#update-email").val(),
+            newPassword: $("#update-new-password").val(),
+            newPasswordConfirmation: $("#update-new-password-confirmation").val(),
+            oldPassword: $("#update-old-password").val()
+        };
+
+        if (!request.email) {
+            notifyError("Email is missing");
+            return;
+        }
+
+        if (!request.newPassword) {
+            notifyError("Invalid new password");
+            return;
+        }
+
+        if (!request.oldPassword) {
+            notifyError("Invalid old password");
+            return;
+        }
+
+        if (request.newPassword !== request.newPasswordConfirmation) {
+            notifyError("Invalid password confirmation");
+            return;
+        }
+
+        if (!request.grantScope) {
+            notifyError("Grant Scopes are missing");
+            return;
+        }
 
         startSubmitting($this);
 
         $.ajax({
             url: "/secure/update",
             type: "PUT",
-            data: JSON.stringify({
-                email: $("#update-email").val(),
-                newPassword: $("#update-new-password").val(),
-                newPasswordConfirmation: $("#update-new-password-confirmation").val(),
-                oldPassword: $("#update-old-password").val()
-            }),
+            data: JSON.stringify(request),
             contentType: "application/json",
             headers: {
                 "Authorization": "Bearer " + params.get("token")
@@ -168,7 +218,7 @@ function setupUpdatePage(action) {
 }
 
 function setupRegistrationPage(action) {
-    if (action != "registration") {
+    if (action !== "registration") {
         return;
     }
 
@@ -176,18 +226,39 @@ function setupRegistrationPage(action) {
         event.preventDefault();
 
         var $this = $(this);
+        var request = {
+            username: $("#registration-username").val(),
+            email: $("#registration-email").val(),
+            password: $("#registration-password").val(),
+            passwordConfirmation: $("#registration-password-confirmation").val()
+        };
+
+        if (!request.username) {
+            notifyError("Username is missing");
+            return;
+        }
+
+        if (!request.email) {
+            notifyError("Email is missing");
+            return;
+        }
+
+        if (!request.password) {
+            notifyError("Password is missing");
+            return;
+        }
+
+        if (request.password !== request.passwordConfirmation) {
+            notifyError("Invalid password confirmation");
+            return;
+        }
 
         startSubmitting($this);
 
         $.ajax({
             url: "/registration",
             type: "POST",
-            data: JSON.stringify({
-                username: $("#registration-username").val(),
-                email: $("#registration-email").val(),
-                password: $("#registration-password").val(),
-                passwordConfirmation: $("#registration-password-confirmation").val()
-            }),
+            data: JSON.stringify(request),
             contentType: "application/json",
             success: function(data, status, xhr) {
                 finishSubmitting($(this));

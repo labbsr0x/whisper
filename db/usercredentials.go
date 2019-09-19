@@ -19,11 +19,16 @@ import (
 type UserCredential struct {
 	ID        string `gorm:"primary_key;not null;"`
 	Username  string `gorm:"unique_index;not null;"`
-	Email     string `gorm:"index"`
+	Email     string `gorm:"unique_index;"`
 	Password  string `gorm:"not null;"`
 	Salt      string `gorm:"not null;"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
+}
+
+// BeforeCreate will set a UUID rather than numeric ID.
+func (user *UserCredential) BeforeCreate(scope *gorm.Scope) error {
+	return scope.SetColumn("ID",  uuid.New().String())
 }
 
 // UserCredentialsDAO defines the methods that can be performed
@@ -56,7 +61,8 @@ func (dao *DefaultUserCredentialsDAO) migrate() error {
 	db, err := gorm.Open("mysql", dao.DatabaseURL)
 	if err == nil {
 		defer db.Close()
-		db.AutoMigrate(&UserCredential{})
+		db.LogMode(true)
+		err = db.AutoMigrate(&UserCredential{}).Error
 	}
 	return err
 }
@@ -64,21 +70,22 @@ func (dao *DefaultUserCredentialsDAO) migrate() error {
 // CreateUserCredential creates a user
 func (dao *DefaultUserCredentialsDAO) CreateUserCredential(username, password, email string) (string, error) {
 	db, err := gorm.Open("mysql", dao.DatabaseURL)
+
 	if err == nil {
 		defer db.Close()
 		salt := misc.GenerateSalt()
 		hPassword := misc.GetEncryptedPassword(dao.SecretKey, password, salt)
-		userCredential := UserCredential{ID: uuid.New().String(), Username: username, Password: hPassword, Email: email, Salt: salt}
-		db.NewRecord(userCredential)
+		userCredential := UserCredential{Username: username, Password: hPassword, Email: email, Salt: salt}
 
-		db.Create(&userCredential)
+		dbc := db.Create(&userCredential)
 
-		if !db.NewRecord(userCredential) {
+		if dbc.Error == nil && !db.NewRecord(userCredential) {
 			return userCredential.ID, nil
 		}
 
-		err = fmt.Errorf("Unable to create an user credential: %v", db.GetErrors())
+		err = fmt.Errorf("Unable to create an user credential.\nDbcError: %v\nDbError: %v", dbc.Error, db.Error)
 	}
+
 	return "", err
 }
 

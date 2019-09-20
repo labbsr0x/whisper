@@ -1,7 +1,7 @@
 package db
 
 import (
-	"fmt"
+	"net/http"
 	"strings"
 	"time"
 
@@ -28,7 +28,7 @@ type UserCredential struct {
 
 // BeforeCreate will set a UUID rather than numeric ID.
 func (user *UserCredential) BeforeCreate(scope *gorm.Scope) error {
-	return scope.SetColumn("ID",  uuid.New().String())
+	return scope.SetColumn("ID", uuid.New().String())
 }
 
 // UserCredentialsDAO defines the methods that can be performed
@@ -48,11 +48,11 @@ type DefaultUserCredentialsDAO struct {
 
 // Init initializes a default user credentials DAO from web builder
 func (dao *DefaultUserCredentialsDAO) Init(dbURL, secretKey string) UserCredentialsDAO {
+	dao.SecretKey = secretKey
 	dao.DatabaseURL = strings.Replace(dbURL, "mysql://", "", 1)
 
 	gohtypes.PanicIfError("Not possible to migrate db", 500, dao.migrate())
 
-	dao.SecretKey = secretKey
 	return dao
 }
 
@@ -71,22 +71,42 @@ func (dao *DefaultUserCredentialsDAO) migrate() error {
 func (dao *DefaultUserCredentialsDAO) CreateUserCredential(username, password, email string) (string, error) {
 	db, err := gorm.Open("mysql", dao.DatabaseURL)
 
-	if err == nil {
-		defer db.Close()
-		salt := misc.GenerateSalt()
-		hPassword := misc.GetEncryptedPassword(dao.SecretKey, password, salt)
-		userCredential := UserCredential{Username: username, Password: hPassword, Email: email, Salt: salt}
-
-		dbc := db.Create(&userCredential)
-
-		if dbc.Error == nil && !db.NewRecord(userCredential) {
-			return userCredential.ID, nil
-		}
-
-		err = fmt.Errorf("Unable to create an user credential.\nDbcError: %v\nDbError: %v", dbc.Error, db.Error)
+	if err != nil {
+		return "", err
 	}
 
-	return "", err
+	defer db.Close()
+
+	var users []UserCredential
+
+	if res := db.Model(&UserCredential{}).Where("username = ?", username).Or("email = ?", email).Find(&users); res.Error != nil {
+		return "", res.Error
+	}
+
+	for _, user := range users {
+		if user.Username == username {
+			gohtypes.Panic("Username already taken", http.StatusConflict)
+		}
+
+		if user.Email == email {
+			gohtypes.Panic("Email already taken", http.StatusConflict)
+		}
+	}
+
+	salt := misc.GenerateSalt()
+	hPassword := misc.GetEncryptedPassword(dao.SecretKey, password, salt)
+	userCredential := UserCredential{
+		Username: username,
+		Password: hPassword,
+		Email:    email,
+		Salt:     salt,
+	}
+
+	if res := db.Create(&userCredential); res.Error != nil {
+		return "", res.Error
+	}
+
+	return userCredential.ID, nil
 }
 
 // UpdateUserCredential updates a user

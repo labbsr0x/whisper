@@ -223,6 +223,38 @@ function setupRegistrationPage(action) {
         return;
     }
 
+    function isPasswordValid (password, username, email) {
+        var minCharacters = 12;
+        var maxCharacters = 30;
+        var minUnique = 7;
+
+        if (!password || password.length < minCharacters) {
+            return "Your password should have at least " + minCharacters + " characters";
+        }
+
+        if (!password || password.length > maxCharacters) {
+            return "Your password should have at most " + maxCharacters + " characters";
+        }
+
+        if (username.toLowerCase().contains(password.toLowerCase())) {
+            return "Your password should not be contained in your username";
+        }
+
+        if (email.toLowerCase().contains(password.toLowerCase())) {
+            return "Your password should not be contained in your email";
+        }
+
+        distinct = password.filter(function (value, index, self) {
+            return self.indexOf(value) === index;
+        })
+
+        if (!distinct || distinct.lenght < minUnique) {
+            return "Your password should have at least " + minUnique + " unique characters";
+        }
+
+        return;
+    }
+
     $('#registration-submit').on('click', function(event) {
         event.preventDefault();
 
@@ -252,6 +284,13 @@ function setupRegistrationPage(action) {
 
         if (request.password !== request.passwordConfirmation) {
             notifyError("Invalid password confirmation");
+            return;
+        }
+
+        var err = isPasswordValid(request.password)
+
+        if (!err) {
+            notifyError(err);
             return;
         }
 

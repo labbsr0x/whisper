@@ -36,6 +36,7 @@ func (user *UserCredential) BeforeCreate(scope *gorm.Scope) error {
 type UserCredentialsDAO interface {
 	Init(dbURL, secretKey string) UserCredentialsDAO
 	CreateUserCredential(username, password, email string, authenticated bool) (string, error)
+	AuthenticateUserCredential(username string)
 	UpdateUserCredential(username, email, password string, authenticated bool) error
 	GetUserCredential(username string) (UserCredential, error)
 	CheckCredentials(username, password string) error
@@ -97,10 +98,10 @@ func (dao *DefaultUserCredentialsDAO) CreateUserCredential(username, password, e
 	salt := misc.GenerateSalt()
 	hPassword := misc.GetEncryptedPassword(dao.SecretKey, password, salt)
 	userCredential := UserCredential{
-		Username: username,
-		Password: hPassword,
-		Email:    email,
-		Salt:     salt,
+		Username:      username,
+		Password:      hPassword,
+		Email:         email,
+		Salt:          salt,
 		Authenticated: authenticated,
 	}
 
@@ -109,6 +110,14 @@ func (dao *DefaultUserCredentialsDAO) CreateUserCredential(username, password, e
 	}
 
 	return userCredential.ID, nil
+}
+
+func (dao *DefaultUserCredentialsDAO) AuthenticateUserCredential(username string) {
+	userCredential, err := dao.GetUserCredential(username)
+	gohtypes.PanicIfError("Unable to retrieve user", http.StatusInternalServerError, err)
+
+	err = dao.UpdateUserCredential(userCredential.Username, userCredential.Email, userCredential.Password, true)
+	gohtypes.PanicIfError("Unable to update user", http.StatusInternalServerError, err)
 }
 
 // UpdateUserCredential updates a user

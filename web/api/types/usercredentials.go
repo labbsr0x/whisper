@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"html/template"
 	"io/ioutil"
 	"net/http"
 	"regexp"
@@ -16,7 +17,18 @@ type RegistrationPage struct {
 	LoginChallenge string
 }
 
-// UpdatePage defins the information needed to load a update user credentials page
+type EmailConfirmationPage struct {
+	Page
+	Successful bool
+	Message    string
+	RedirectTo string
+}
+
+func (p *EmailConfirmationPage) SetHTML(html template.HTML) {
+	p.HTML = html
+}
+
+// UpdatePage defines the information needed to load a update user credentials page
 type UpdatePage struct {
 	Page
 	Username   string
@@ -31,6 +43,7 @@ type AddUserCredentialRequestPayload struct {
 	Username             string `json:"username"`
 	Password             string `json:"password"`
 	PasswordConfirmation string `json:"passwordConfirmation"`
+	Challenge            string `json:"challenge"`
 }
 
 // AddUserCredentialResponsePayload defines the response payload after adding a user

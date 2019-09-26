@@ -1,53 +1,79 @@
-package mail_worker
+package workers
 
 import (
 	"github.com/labbsr0x/whisper/web/config"
+	"github.com/sirupsen/logrus"
 	"net/smtp"
 )
 
+// MailWorkerAPI defines what a mail worker should expose
 type MailWorkerAPI interface {
-	Send(to []string, message []byte) error
+	Start()
+	Send (to []string, content []byte)
+	Stop()
 }
 
-type MailWorkerMessage struct {
-	to []string
+// MailWork defines the email
+type MailWork struct {
+	to      []string
 	content []byte
 }
 
-// MailWorker holds the default implementation of the Worker interface
-type MailWorker struct {
+// DefaultMailWorkerAPI holds the default implementation of the Mail Worker interface
+type DefaultMailWorkerAPI struct {
 	*config.WebBuilder
+	JobChannel chan MailWork
+	EndChannel chan bool
 }
 
+var MailWorker DefaultMailWorkerAPI
+
 // InitFromWebBuilder initializes a default login api instance
-func (w *MailWorker) InitFromWebBuilder(webBuilder *config.WebBuilder) *MailWorker {
+func (w *DefaultMailWorkerAPI) InitFromWebBuilder(webBuilder *config.WebBuilder) *DefaultMailWorkerAPI {
 	w.WebBuilder = webBuilder
 	return w
 }
 
+// Start inits a goroutine that awaits for MailWorkerMessages
+func (w *DefaultMailWorkerAPI) Start() {
+	logrus.Info("Worker is starting")
 
-
-//type smtpServer struct {
-//	host string
-//	port string
-//}
-//
-//var (
-//	server = smtpServer{host: "smtp.gmail.com", port: "587"}
-//	from   = "alfredcoinworth@gmail.com"
-//	pass   = "tudosemprepioraantesdemelhorar"
-//)
-
-func (w *MailWorker) InitWorker (ch chan MailWorkerMessage) {
-	auth := smtp.PlainAuth("", w.MailUser, w.MailPassword, w.MailHost)
+	auth := smtp.PlainAuth(w.MailIdentity, w.MailUser, w.MailPassword, w.MailHost)
 	address := w.MailHost + ":" + w.MailPort
 
-	
+	go serve(w.MailUser, address, auth, w.JobChannel, w.EndChannel)
 }
 
-// Send use a smtp server to send an email
-func (w *MailWorker) Send(to []string, message []byte) error {
-
-
-	return smtp.SendMail(address, auth, w.MailUser, to, message)
+// Send pass some work to the worker
+func (w *DefaultMailWorkerAPI) Send (to []string, content []byte) {
+	logrus.Info("Worker is being required to perform some work")
+	w.JobChannel <- MailWork{to: to, content: content}
 }
+
+// Stop interrupts the worker
+func (w *DefaultMailWorkerAPI) Stop() {
+	logrus.Info("Worker is stopping")
+	w.EndChannel <- true
+}
+
+func serve(user string, address string, auth smtp.Auth, ch chan MailWork, cancel chan bool) {
+	for {
+		select {
+		case job := <-ch:
+			err := smtp.SendMail(address, auth, user, job.to, job.content)
+
+			if err != nil {
+				logrus.Error(err)
+			}
+		case <-cancel:
+			return
+		}
+	}
+}
+
+// valores default
+// mail-user "alfredcoinworth@gmail.com"
+// mail-password "tudosemprepioraantesdemelhorar"
+// mail-host "smtp.gmail.com"
+// mail-port "587"
+// mail-identiy ""

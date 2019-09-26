@@ -3,21 +3,22 @@ package api
 import (
 	"bytes"
 	"fmt"
+	"github.com/labbsr0x/whisper/misc"
+	"github.com/labbsr0x/whisper/web/ui"
+	"github.com/labbsr0x/whisper/workers"
 	"html/template"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labbsr0x/goh/gohtypes"
-	"github.com/spf13/viper"
-
 	whisper "github.com/labbsr0x/whisper-client/client"
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/labbsr0x/whisper/mail"
 	"github.com/labbsr0x/whisper/web/api/types"
 	"github.com/labbsr0x/whisper/web/config"
 )
@@ -26,31 +27,42 @@ import (
 type UserCredentialsAPI interface {
 	POSTHandler() http.Handler
 	PUTHandler() http.Handler
+	GETEmailConfirmationPageHandler(route string) http.Handler
 	GETRegistrationPageHandler(route string) http.Handler
 	GETUpdatePageHandler(route string) http.Handler
 }
 
-// DefaultUserCredentialsAPI holds the default implementation of the User API interface
+// DefaultUserCredentialsAPI holds the default implementation of the User MailWorkerAPI interface
 type DefaultUserCredentialsAPI struct {
 	*config.WebBuilder
 }
 
-// InitFromWebBuilder initializes the default user credentials API from a WebBuilder
+// InitFromWebBuilder initializes the default user credentials MailWorkerAPI from a WebBuilder
 func (dapi *DefaultUserCredentialsAPI) InitFromWebBuilder(builder *config.WebBuilder) *DefaultUserCredentialsAPI {
 	dapi.WebBuilder = builder
 	return dapi
 }
 
-func generateToken(data jwt.MapClaims) (string, error) {
-	secret := viper.GetString("secret-key")
+func sendConfirmationEmail(r *http.Request, payload *types.AddUserCredentialRequestPayload, baseUIPath string) {
+	token, err := misc.GenerateToken(jwt.MapClaims{
+		"sub":       payload.Username,                        // Subject
+		"exp":       time.Now().Add(10 * time.Minute).Unix(), // Expiration
+		"challenge": payload.Challenge,                       // Login Challenge
+		"emt":       true,                                    // Email Confirmation Token
+		"iat":       time.Now().Unix(),
+	})
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, data)
+	gohtypes.PanicIfError("Not possible to create token", http.StatusInternalServerError, err)
+	logrus.Infof("Email confirmation token created: %v", token)
 
-	return token.SignedString([]byte(secret))
+	to := []string{payload.Email}
+	link := "localhost:7070/email-confirmation?email_confirmation_token=" + token
+	content := fmt.Sprintf("Hi %v,\nClick on the link below to authenticate your email.\n\n %v\n\nThanks,\nWhisper Developers\n", payload.Username, link)
+
+	workers.Mail.Send(to, []byte(content))
 }
 
 // POSTHandler handles post requests to create user credentials
-// TODO: should I remove the user in case it fails to send the email?
 func (dapi *DefaultUserCredentialsAPI) POSTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		payload := new(types.AddUserCredentialRequestPayload).InitFromRequest(r)
@@ -59,25 +71,7 @@ func (dapi *DefaultUserCredentialsAPI) POSTHandler() http.Handler {
 		gohtypes.PanicIfError("Not possible to create user", http.StatusInternalServerError, err)
 		logrus.Infof("User created: %v", userID)
 
-		claim := jwt.MapClaims{"EmailConfirmation": true}
-		token, err := generateToken(claim)
-
-		gohtypes.PanicIfError("Not possible to create token", http.StatusInternalServerError, err)
-		logrus.Infof("Email confirmation token created: %v", token)
-
-		challenge, err := url.QueryUnescape(r.URL.Query().Get("login_challenge"))
-		gohtypes.PanicIfError("Unable to parse the login_challenge parameter", http.StatusInternalServerError, err)
-
-		loginPath := "http://localhost:7070/login"
-		link := loginPath + "?login_challenge=" + challenge + "&email_confirmation_token=" + token
-
-		to := []string{payload.Email}
-		message := fmt.Sprintf("Hi %v,\nClick on the link below to authenticate your email.\n\n %v\n\nThanks,\nWhisper Developers\n", payload.Username, link)
-
-		err = mail.Send(to, []byte(message))
-
-		gohtypes.PanicIfError("Not possible to send email", http.StatusInternalServerError, err)
-		logrus.Infof("Email confirmation token sent")
+		go sendConfirmationEmail(r, payload, dapi.BaseUIPath)
 
 		w.WriteHeader(200)
 	})
@@ -111,13 +105,70 @@ func (dapi *DefaultUserCredentialsAPI) GETRegistrationPageHandler(route string) 
 		page := types.RegistrationPage{LoginChallenge: challenge}
 
 		buf := new(bytes.Buffer)
-		template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "registration.html"))).Execute(buf, page)
+		_ = template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "registration.html"))).Execute(buf, page)
 		html, _ := ioutil.ReadAll(buf)
 
 		page.HTML = template.HTML(html)
 
 		tmpl := template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "index.html")))
-		tmpl.Execute(w, page)
+		_ = tmpl.Execute(w, page)
+	}))
+}
+
+func extractInfoFromEmailConfirmationToken(claims jwt.MapClaims) (challenge string, username string) {
+	emt, ok := claims["emt"].(bool)
+	if !ok || !emt {
+		gohtypes.Panic("Email confirmation token not valid", http.StatusNotAcceptable)
+	}
+
+	username, ok = claims["sub"].(string)
+	if !ok {
+		gohtypes.Panic("Unable to find the user", http.StatusNotFound)
+	}
+
+	challenge, ok = claims["challenge"].(string)
+	if !ok {
+		gohtypes.Panic("Unable to find the login challenge", http.StatusNotFound)
+	}
+
+	return
+}
+
+func getRedirectionLink(challenge, username string, api *DefaultUserCredentialsAPI) string {
+	if len(challenge) > 0 {
+		payload := whisper.AcceptLoginRequestPayload{ACR: "0", Remember: false, Subject: username}
+		info := api.Self.AcceptLoginRequest(challenge, payload)
+		if info == nil {
+			gohtypes.Panic("Unable to accept token login request", http.StatusInternalServerError)
+		}
+
+		return info["redirect_to"].(string)
+	}
+
+	return "/login"
+}
+
+// GETEmailConfirmationPageHandler builds the page where new credentials will be inserted
+func (dapi *DefaultUserCredentialsAPI) GETEmailConfirmationPageHandler(route string) http.Handler {
+	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		LoadErrorPage := func() {
+			if rec := recover(); rec != nil {
+				errorPage := types.EmailConfirmationPage{Successful: false, Message: rec.(gohtypes.Error).Message}
+				ui.LoadPage(dapi.BaseUIPath, "email_confirmation.html", &errorPage, w)
+			}
+		}
+
+		defer LoadErrorPage()
+
+		claims := misc.ExtractTokenFromRequest(r)
+		challenge, username := extractInfoFromEmailConfirmationToken(claims)
+
+		dapi.UserCredentialsDAO.AuthenticateUserCredential(username)
+
+		link := getRedirectionLink(challenge, username, dapi)
+		page := types.EmailConfirmationPage{Successful: true, Message: "Your email has been confirmed", RedirectTo: link}
+
+		ui.LoadPage(dapi.BaseUIPath, "email_confirmation.html", &page, w)
 	}))
 }
 

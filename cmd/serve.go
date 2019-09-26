@@ -3,6 +3,7 @@ package cmd
 import (
 	"github.com/labbsr0x/whisper/web"
 	"github.com/labbsr0x/whisper/web/config"
+	"github.com/labbsr0x/whisper/workers"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -14,13 +15,21 @@ var serveCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		webBuilder := new(config.WebBuilder).InitFromViper(viper.GetViper())
 		server := new(web.Server).InitFromWebBuilder(webBuilder)
-		_, err := server.Self.CheckCredentials()
 
-		if err == nil {
-			err = server.Run()
+		_, err := server.Self.CheckCredentials()
+		if err != nil {
+			return err
 		}
 
-		return err
+		err = server.Run()
+		if err != nil {
+			return err
+		}
+
+		workers.InitFromWebBuilder(webBuilder)
+		workers.Run()
+
+		return nil
 	},
 }
 

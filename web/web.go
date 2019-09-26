@@ -58,6 +58,8 @@ func (s *Server) Run() error {
 	router.Handle("/registration", s.UserCredentialsAPIs.GETRegistrationPageHandler("/registration")).Methods("GET")
 	router.Handle("/registration", s.UserCredentialsAPIs.POSTHandler()).Methods("POST")
 
+	router.Handle("/email-confirmation", s.UserCredentialsAPIs.GETEmailConfirmationPageHandler("/email-confirmation")).Methods("GET")
+
 	secureRouter.Handle("/update", s.UserCredentialsAPIs.GETUpdatePageHandler("/secure/update")).Methods("GET")
 	secureRouter.Handle("/update", s.UserCredentialsAPIs.PUTHandler()).Methods("PUT")
 

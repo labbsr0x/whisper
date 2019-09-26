@@ -68,14 +68,20 @@ From the project root folder, fire the following commands to execute this projec
     **With some small Dockerfile trickery, it is possible to override the provided UI files to use your custom page layout and icons.**
 
     ```bash
-    ./whisper serve --port 7070 \
-        --base-ui-path ./web/ui/www \
-        --hydra-admin-url http://localhost:4445 \
+    ./whisper serve \
+        --port             7070 \
+        --base-ui-path     ./web/ui/www \
+        --hydra-admin-url  http://localhost:4445 \
         --hydra-public-url http://localhost:4444 \
-        --secret-key uhSunsodnsuBsdjsbds \
-        --log-level debug \
+        --secret-key       uhSunsodnsuBsdjsbds \
+        --log-level        debug \
         --scopes-file-path ./scopes.json \
-        --database-url "mysql://root:secret@tcp(localhost:3306)/whisper?charset=utf8mb4&parseTime=True&loc=Local"
+        --database-url     "mysql://root:secret@tcp(localhost:3306)/whisper?charset=utf8mb4&parseTime=True&loc=Local" \
+        --mail-user        "acount@gmail.com" \
+        --mail-password    "password" \
+        --mail-host        "smtp.gmail.com" \
+        --mail-port        "587" \
+        --mail-identiy     ""
     ```
  
 4. Authorize application on hydra

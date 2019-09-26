@@ -6,6 +6,7 @@ window.onload = function() {
     setupLoginPage(action);
     setupUpdatePage(action);
     setupRegistrationPage(action);
+    setupEmailConfirmationPage(action);
 };
 
 function startSubmitting (obj) {
@@ -230,7 +231,8 @@ function setupRegistrationPage(action) {
             username: $("#registration-username").val(),
             email: $("#registration-email").val(),
             password: $("#registration-password").val(),
-            passwordConfirmation: $("#registration-password-confirmation").val()
+            passwordConfirmation: $("#registration-password-confirmation").val(),
+            challenge: params.get("login_challenge")
         };
 
         if (!request.username) {
@@ -270,4 +272,20 @@ function setupRegistrationPage(action) {
             }
         })
     })
+}
+
+function setupEmailConfirmationPage(action) {
+    if (action !== "email-confirmation") {
+        return;
+    }
+
+    var waitTime = 5000; // 5s
+    var link = $("#redirect-to").val();
+    var redirect = function () {
+        window.location.href = link;
+    };
+
+    if (link) {
+        setTimeout(redirect, waitTime)
+    }
 }

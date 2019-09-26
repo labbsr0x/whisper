@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -25,6 +26,11 @@ const (
 	scopesFilePath = "scopes-file-path"
 	databaseURL    = "database-url"
 	secretKey      = "secret-key"
+	mailUser       = "mail-user"
+	mailPassword   = "mail-password"
+	mailIdentity   = "mail-identity"
+	mailHost       = "mail-host"
+	mailPort       = "mail-port"
 )
 
 // Flags define the fields that will be passed via cmd
@@ -37,6 +43,11 @@ type Flags struct {
 	HydraPublicURL string
 	DatabaseURL    string
 	SecretKey      string
+	MailUser       string
+	MailPassword   string
+	MailIdentity   string
+	MailHost       string
+	MailPort       string
 }
 
 // WebBuilder defines the parametric information of a whisper server instance
@@ -57,6 +68,11 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.StringP(scopesFilePath, "s", "", "Sets the path to the json file where the available scopes will be found")
 	flags.StringP(databaseURL, "d", "", "Sets the database url where user credential data will be stored")
 	flags.StringP(secretKey, "k", "", "Sets the secret key used to hash the stored passwords")
+	flags.StringP(mailUser, "", "", "Sets the mail worker user")
+	flags.StringP(mailPassword, "", "", "Sets the mail worker user's password")
+	flags.StringP(mailIdentity, "", "", "Sets the mail worker user's identity")
+	flags.StringP(mailHost, "", "", "Sets the mail worker host")
+	flags.StringP(mailPort, "", "", "Sets the mail worker port")
 }
 
 // InitFromViper initializes the web server builder with properties retrieved from Viper.
@@ -70,6 +86,11 @@ func (b *WebBuilder) InitFromViper(v *viper.Viper) *WebBuilder {
 	flags.HydraPublicURL = v.GetString(hydraPublicURL)
 	flags.DatabaseURL = v.GetString(databaseURL)
 	flags.SecretKey = v.GetString(secretKey)
+	flags.MailUser = v.GetString(mailUser)
+	flags.MailPassword = v.GetString(mailPassword)
+	flags.MailIdentity = v.GetString(mailIdentity)
+	flags.MailHost = v.GetString(mailHost)
+	flags.MailPort = v.GetString(mailPort)
 
 	flags.check()
 
@@ -84,8 +105,32 @@ func (b *WebBuilder) InitFromViper(v *viper.Viper) *WebBuilder {
 
 func (flags *Flags) check() {
 	logrus.Infof("Flags: '%v'", flags)
-	if flags.BaseUIPath == "" || flags.HydraAdminURL == "" || flags.HydraPublicURL == "" || flags.ScopesFilePath == "" || flags.SecretKey == "" || flags.DatabaseURL == "" {
-		panic("base-ui-path, hydra-admin-url, hydra-public-url, scopes-file-path, database-url and secret-key cannot be empty")
+
+	haveEmptyRequiredFlags := flags.BaseUIPath == "" ||
+		flags.HydraAdminURL == "" ||
+		flags.HydraPublicURL == "" ||
+		flags.ScopesFilePath == "" ||
+		flags.SecretKey == "" ||
+		flags.DatabaseURL == "" ||
+		flags.MailUser == "" ||
+		flags.MailPassword == "" ||
+		flags.MailHost == "" ||
+		flags.MailPort == ""
+
+	if haveEmptyRequiredFlags {
+		msg := fmt.Sprintf("The following flags cannot be empty:\n\n\t%v\n\t%v\n\t%v\n\t%v\n\t%v\n\t%v\n\t%v\n\t%v\n\t%v\n\t%v\n",
+			baseUIPath,
+			hydraAdminURL,
+			hydraPublicURL,
+			scopesFilePath,
+			secretKey,
+			databaseURL,
+			mailUser,
+			mailPassword,
+			mailHost,
+			mailPort)
+
+		panic(msg)
 	}
 }
 
@@ -95,11 +140,20 @@ func (b *WebBuilder) getGrantScopesFromFile(scopesFilePath string) misc.GrantSco
 	if err != nil {
 		panic(err)
 	}
+
 	defer jsonFile.Close()
 
 	var grantScopes misc.GrantScopes
-	bytes, _ := ioutil.ReadAll(jsonFile)
-	json.Unmarshal(bytes, &grantScopes)
+
+	bytes, err := ioutil.ReadAll(jsonFile)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	err = json.Unmarshal(bytes, &grantScopes)
+	if err != nil {
+		panic(err.Error())
+	}
 
 	return grantScopes
 }

@@ -1,0 +1,21 @@
+<div style="display: flex; justify-content: center;">
+    <div style="width: 400px;">
+        <div id="notification" role="alert" hidden="true"></div>
+        <div id="registration-content" class="card container">
+            <span style="display: flex; justify-content: center; align-items: center">
+                <img src="/static/images/spy-black.png" width="30" height="30" class="d-inline-block" alt="">
+                <b>Whisper</b>
+            </span>
+            <hr/>
+            <div class="card-body">
+                {{if .Successful}}
+                    <h2> {{.Message}} </h2>
+                    <input id="redirect-to" type="hidden" value="{{.RedirectTo}}"/>
+                    <br><p> Please wait a little, you are being redirected! If not, click in this <a href="{{.RedirectTo}}">link</a>.</p>
+                {{else}}
+                    <h2> This link is invalid or has expired </h2>
+                {{end}}
+            </div>
+        </div>
+    </div>
+</div>

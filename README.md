@@ -81,7 +81,7 @@ From the project root folder, fire the following commands to execute this projec
         --mail-password    "password" \
         --mail-host        "smtp.gmail.com" \
         --mail-port        "587" \
-        --mail-identiy     ""
+        --mail-identity    ""
     ```
  
 4. Authorize application on hydra

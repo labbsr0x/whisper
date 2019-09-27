@@ -18,12 +18,12 @@ var serveCmd = &cobra.Command{
 
 		resources.Outbox = mailChannel
 
-		webBuilder := new(config.WebBuilder).InitFromViper(viper.GetViper())
+		builder := new(config.WebBuilder).InitFromViper(viper.GetViper())
 
-		mailHandler := new(mail.DefaultApi).Init(webBuilder, mailChannel)
+		mailHandler := new(mail.DefaultApi).Init(builder.MailUser, builder.MailPassword, builder.MailHost, builder.MailPort, builder.MailIdentity, mailChannel)
 		mailHandler.Run()
 
-		server := new(web.Server).InitFromWebBuilder(webBuilder)
+		server := new(web.Server).InitFromWebBuilder(builder)
 
 		_, err := server.Self.CheckCredentials()
 		if err != nil {

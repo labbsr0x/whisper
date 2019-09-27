@@ -3,21 +3,17 @@ package api
 import (
 	"bytes"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/labbsr0x/goh/gohtypes"
 	whisper "github.com/labbsr0x/whisper-client/client"
-	"github.com/labbsr0x/whisper/resources"
-	"github.com/labbsr0x/whisper/mail"
 	"github.com/labbsr0x/whisper/misc"
+	"github.com/labbsr0x/whisper/resources"
 	"github.com/labbsr0x/whisper/web/ui"
+	"github.com/sirupsen/logrus"
 	"html/template"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path"
-	"time"
-
-	"github.com/sirupsen/logrus"
 
 	"github.com/labbsr0x/whisper/web/api/types"
 	"github.com/labbsr0x/whisper/web/config"
@@ -43,21 +39,6 @@ func (dapi *DefaultUserCredentialsAPI) InitFromWebBuilder(builder *config.WebBui
 	return dapi
 }
 
-func generateEmailConfirmationToken(username, challenge string) string {
-	claims := jwt.MapClaims{
-		"sub":       username,                                // Subject
-		"exp":       time.Now().Add(10 * time.Minute).Unix(), // Expiration
-		"challenge": challenge,                               // Login Challenge
-		"emt":       true,                                    // Email Confirmation Token
-		"iat":       time.Now().Unix(),                       // Issued At
-	}
-
-	token, err := misc.GenerateToken(claims)
-	gohtypes.PanicIfError("Not possible to create token", http.StatusInternalServerError, err)
-
-	return token
-}
-
 // POSTHandler handles post requests to create user credentials
 func (dapi *DefaultUserCredentialsAPI) POSTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -66,12 +47,7 @@ func (dapi *DefaultUserCredentialsAPI) POSTHandler() http.Handler {
 		gohtypes.PanicIfError("Not possible to create user", http.StatusInternalServerError, err)
 		logrus.Infof("User created: %v", userID)
 
-		to := []string{payload.Email}
-		token := generateEmailConfirmationToken(payload.Username, payload.Challenge)
-		link := "localhost:7070/email-confirmation?email_confirmation_token=" + token
-		content := fmt.Sprintf("Hi %v,\nClick on the link below to authenticate your email.\n\n %v\n\nThanks,\nWhisper Developers\n", payload.Username, link)
-
-		resources.Outbox <- mail.Mail{To: to, Content: []byte(content)}
+		resources.Outbox <- misc.GetEmailConfirmationMail(payload.Username, payload.Email, payload.Challenge)
 
 		w.WriteHeader(200)
 	})
@@ -83,13 +59,9 @@ func (dapi *DefaultUserCredentialsAPI) PUTHandler() http.Handler {
 		payload := new(types.UpdateUserCredentialRequestPayload).InitFromRequest(r)
 
 		if token, ok := r.Context().Value(whisper.TokenKey).(whisper.Token); ok {
-			err := dapi.UserCredentialsDAO.CheckCredentials(token.Subject, payload.OldPassword)
+			dapi.UserCredentialsDAO.CheckCredentials(token.Subject, payload.OldPassword, "")
 
-			if e, ok := err.(*gohtypes.Error); ok {
-				gohtypes.Panic(e.Message, e.Code)
-			}
-
-			err = dapi.UserCredentialsDAO.UpdateUserCredential(token.Subject, payload.Email, payload.NewPassword, true)
+			err := dapi.UserCredentialsDAO.UpdateUserCredential(token.Subject, payload.Email, payload.NewPassword, true)
 			gohtypes.PanicIfError("Error updating user credential info", 500, err)
 
 			w.WriteHeader(200)
@@ -113,25 +85,6 @@ func (dapi *DefaultUserCredentialsAPI) GETRegistrationPageHandler(route string) 
 		tmpl := template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "index.html")))
 		_ = tmpl.Execute(w, page)
 	}))
-}
-
-func extractInfoFromEmailConfirmationToken(claims jwt.MapClaims) (challenge string, username string) {
-	emt, ok := claims["emt"].(bool)
-	if !ok || !emt {
-		gohtypes.Panic("Email confirmation token not valid", http.StatusNotAcceptable)
-	}
-
-	username, ok = claims["sub"].(string)
-	if !ok {
-		gohtypes.Panic("Unable to find the user", http.StatusNotFound)
-	}
-
-	challenge, ok = claims["challenge"].(string)
-	if !ok {
-		gohtypes.Panic("Unable to find the login challenge", http.StatusNotFound)
-	}
-
-	return
 }
 
 func getRedirectionLink(challenge, username string, api *DefaultUserCredentialsAPI) string {
@@ -160,8 +113,8 @@ func (dapi *DefaultUserCredentialsAPI) GETEmailConfirmationPageHandler(route str
 
 		defer LoadErrorPage()
 
-		claims := misc.ExtractTokenFromRequest(r)
-		challenge, username := extractInfoFromEmailConfirmationToken(claims)
+		claims := misc.ExtractClaimsTokenFromRequest(r)
+		challenge, username := misc.UnmarshalEmailConfirmationToken(claims)
 
 		dapi.UserCredentialsDAO.AuthenticateUserCredential(username)
 

@@ -37,38 +37,20 @@ func (dapi *DefaultLoginAPI) InitFromWebBuilder(webBuilder *config.WebBuilder) *
 // LoginPOSTHandler post form handler for logging in users
 func (dapi *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		loginRequest := new(types.RequestLoginPayload).InitFromRequest(r)
-		logrus.Debugf("Login request payload '%v'", loginRequest)
+		req := new(types.RequestLoginPayload).InitFromRequest(r)
+		logrus.Debugf("Login request payload '%v'", req)
 
-<<<<<<< HEAD
-		ok, err := dapi.UserCredentialsDAO.CheckCredentials(loginRequest.Username, loginRequest.Password)
-		if ok {
-			info := dapi.Self.AcceptLoginRequest(
-				loginRequest.Challenge,
-				whisper.AcceptLoginRequestPayload{ACR: "0", Remember: loginRequest.Remember, RememberFor: 3600, Subject: loginRequest.Username},
-			)
-			logrus.Debugf("Accept login request info: %v", info)
-			if info != nil {
-				gohserver.WriteJSONResponse(map[string]interface{}{
-					"redirect_to": info["redirect_to"],
-				}, 200, w)
-				return
-			}
-=======
-		err := dapi.UserCredentialsDAO.CheckCredentials(loginRequest.Username, loginRequest.Password)
-
-		if e, ok := err.(*gohtypes.Error); ok {
-			gohtypes.Panic(e.Message, e.Code)
->>>>>>> Handling if the user is authenticated
-		}
+		dapi.UserCredentialsDAO.CheckCredentials(req.Username, req.Password, req.Challenge)
 
 		info := dapi.Self.AcceptLoginRequest(
-			loginRequest.Challenge,
-			whisper.AcceptLoginRequestPayload{ACR: "0", Remember: loginRequest.Remember, RememberFor: 3600, Subject: loginRequest.Username},
+			req.Challenge,
+			whisper.AcceptLoginRequestPayload{ACR: "0", Remember: req.Remember, RememberFor: 3600, Subject: req.Username},
 		)
 		logrus.Debugf("Accept login request info: %v", info)
 		if info != nil {
-			http.Redirect(w, r, info["redirect_to"].(string), 302)
+			gohserver.WriteJSONResponse(map[string]interface{}{
+				"redirect_to": info["redirect_to"],
+			}, 200, w)
 			return
 		}
 	})

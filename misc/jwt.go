@@ -19,8 +19,8 @@ func GenerateToken(data jwt.MapClaims) (string, error) {
 	return token.SignedString([]byte(secret))
 }
 
-// ExtractTokenFromRequest extract a jwt token from a given request
-func ExtractTokenFromRequest(r *http.Request) jwt.MapClaims {
+// ExtractClaimsTokenFromRequest extract a jwt token from a given request
+func ExtractClaimsTokenFromRequest(r *http.Request) jwt.MapClaims {
 	secret := viper.GetString("secret-key")
 	keyFunc := func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {

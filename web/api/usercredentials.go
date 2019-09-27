@@ -3,19 +3,19 @@ package api
 import (
 	"bytes"
 	"fmt"
+	"github.com/dgrijalva/jwt-go"
+	"github.com/labbsr0x/goh/gohtypes"
+	whisper "github.com/labbsr0x/whisper-client/client"
+	"github.com/labbsr0x/whisper/resources"
+	"github.com/labbsr0x/whisper/mail"
 	"github.com/labbsr0x/whisper/misc"
 	"github.com/labbsr0x/whisper/web/ui"
-	"github.com/labbsr0x/whisper/workers"
 	"html/template"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"path"
 	"time"
-
-	"github.com/dgrijalva/jwt-go"
-	"github.com/labbsr0x/goh/gohtypes"
-	whisper "github.com/labbsr0x/whisper-client/client"
 
 	"github.com/sirupsen/logrus"
 
@@ -32,34 +32,30 @@ type UserCredentialsAPI interface {
 	GETUpdatePageHandler(route string) http.Handler
 }
 
-// DefaultUserCredentialsAPI holds the default implementation of the User MailWorkerAPI interface
+// DefaultUserCredentialsAPI holds the default implementation of the User Api interface
 type DefaultUserCredentialsAPI struct {
 	*config.WebBuilder
 }
 
-// InitFromWebBuilder initializes the default user credentials MailWorkerAPI from a WebBuilder
+// InitFromWebBuilder initializes the default user credentials Api from a WebBuilder
 func (dapi *DefaultUserCredentialsAPI) InitFromWebBuilder(builder *config.WebBuilder) *DefaultUserCredentialsAPI {
 	dapi.WebBuilder = builder
 	return dapi
 }
 
-func sendConfirmationEmail(r *http.Request, payload *types.AddUserCredentialRequestPayload, baseUIPath string) {
-	token, err := misc.GenerateToken(jwt.MapClaims{
-		"sub":       payload.Username,                        // Subject
+func generateEmailConfirmationToken(username, challenge string) string {
+	claims := jwt.MapClaims{
+		"sub":       username,                                // Subject
 		"exp":       time.Now().Add(10 * time.Minute).Unix(), // Expiration
-		"challenge": payload.Challenge,                       // Login Challenge
+		"challenge": challenge,                               // Login Challenge
 		"emt":       true,                                    // Email Confirmation Token
-		"iat":       time.Now().Unix(),
-	})
+		"iat":       time.Now().Unix(),                       // Issued At
+	}
 
+	token, err := misc.GenerateToken(claims)
 	gohtypes.PanicIfError("Not possible to create token", http.StatusInternalServerError, err)
-	logrus.Infof("Email confirmation token created: %v", token)
 
-	to := []string{payload.Email}
-	link := "localhost:7070/email-confirmation?email_confirmation_token=" + token
-	content := fmt.Sprintf("Hi %v,\nClick on the link below to authenticate your email.\n\n %v\n\nThanks,\nWhisper Developers\n", payload.Username, link)
-
-	workers.Mail.Send(to, []byte(content))
+	return token
 }
 
 // POSTHandler handles post requests to create user credentials
@@ -67,11 +63,15 @@ func (dapi *DefaultUserCredentialsAPI) POSTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		payload := new(types.AddUserCredentialRequestPayload).InitFromRequest(r)
 		userID, err := dapi.UserCredentialsDAO.CreateUserCredential(payload.Username, payload.Password, payload.Email, false)
-
 		gohtypes.PanicIfError("Not possible to create user", http.StatusInternalServerError, err)
 		logrus.Infof("User created: %v", userID)
 
-		go sendConfirmationEmail(r, payload, dapi.BaseUIPath)
+		to := []string{payload.Email}
+		token := generateEmailConfirmationToken(payload.Username, payload.Challenge)
+		link := "localhost:7070/email-confirmation?email_confirmation_token=" + token
+		content := fmt.Sprintf("Hi %v,\nClick on the link below to authenticate your email.\n\n %v\n\nThanks,\nWhisper Developers\n", payload.Username, link)
+
+		resources.Outbox <- mail.Mail{To: to, Content: []byte(content)}
 
 		w.WriteHeader(200)
 	})

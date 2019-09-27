@@ -1,9 +1,10 @@
 package cmd
 
 import (
+	"github.com/labbsr0x/whisper/mail"
+	"github.com/labbsr0x/whisper/resources"
 	"github.com/labbsr0x/whisper/web"
 	"github.com/labbsr0x/whisper/web/config"
-	"github.com/labbsr0x/whisper/workers"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -13,7 +14,15 @@ var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Starts the HTTP REST APIs server",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		mailChannel := make(chan mail.Mail)
+
+		resources.Outbox = mailChannel
+
 		webBuilder := new(config.WebBuilder).InitFromViper(viper.GetViper())
+
+		mailHandler := new(mail.DefaultApi).Init(webBuilder, mailChannel)
+		mailHandler.Run()
+
 		server := new(web.Server).InitFromWebBuilder(webBuilder)
 
 		_, err := server.Self.CheckCredentials()
@@ -25,9 +34,6 @@ var serveCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-
-		workers.InitFromWebBuilder(webBuilder)
-		workers.Run()
 
 		return nil
 	},

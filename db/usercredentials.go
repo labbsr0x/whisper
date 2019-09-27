@@ -1,6 +1,7 @@
 package db
 
 import (
+	"github.com/labbsr0x/whisper/resources"
 	"net/http"
 	"strings"
 	"time"
@@ -39,7 +40,7 @@ type UserCredentialsDAO interface {
 	AuthenticateUserCredential(username string)
 	UpdateUserCredential(username, email, password string, authenticated bool) error
 	GetUserCredential(username string) (UserCredential, error)
-	CheckCredentials(username, password string) error
+	CheckCredentials(username, password, challenge string)
 }
 
 // DefaultUserCredentialsDAO a default UserCredentialsDAO interface implementation
@@ -157,22 +158,25 @@ func (dao *DefaultUserCredentialsDAO) GetUserCredential(username string) (UserCr
 }
 
 // CheckCredentials verifies if the informed credentials are valid
-func (dao *DefaultUserCredentialsDAO) CheckCredentials(username, password string) error {
+func (dao *DefaultUserCredentialsDAO) CheckCredentials(username, password, challenge string) {
 	userCredential, err := dao.GetUserCredential(username)
 
 	if err != nil {
-		return &gohtypes.Error{Message: "Unable to authenticate user", Code: http.StatusInternalServerError, Err: err}
+		gohtypes.PanicIfError("Unable to authenticate user", http.StatusInternalServerError, err)
 	}
 
 	hPassword := misc.GetEncryptedPassword(dao.SecretKey, password, userCredential.Salt)
 
 	if hPassword != userCredential.Password {
-		return &gohtypes.Error{Message: "Incorrect password", Code: http.StatusUnauthorized}
+		gohtypes.Panic("Incorrect password", http.StatusUnauthorized)
 	}
 
 	if !userCredential.Authenticated {
-		return &gohtypes.Error{Message: "This account email is not authenticated", Code: http.StatusUnauthorized}
+		if len(challenge) > 0 {
+			resources.Outbox <- misc.GetEmailConfirmationMail(userCredential.Username, userCredential.Email, challenge)
+			gohtypes.Panic("This account email is not authenticated, an email was sent to you confirm your email", http.StatusUnauthorized)
+		} else {
+			gohtypes.Panic("This account email is not authenticated", http.StatusUnauthorized)
+		}
 	}
-
-	return nil
 }

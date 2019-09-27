@@ -6,6 +6,7 @@ import (
 	"github.com/labbsr0x/goh/gohtypes"
 	"github.com/labbsr0x/whisper/misc"
 	"github.com/sirupsen/logrus"
+	"html/template"
 	"io/ioutil"
 	"net/http"
 )
@@ -19,6 +20,10 @@ type LoginPage struct {
 	Challenge       string
 }
 
+func (p *LoginPage) SetHTML(html template.HTML) {
+	p.HTML = html
+}
+
 // RequestLoginPayload holds the data that defines a login request to Whisper
 type RequestLoginPayload struct {
 	Username  string
@@ -30,7 +35,7 @@ type RequestLoginPayload struct {
 // InitFromRequest initializes the login request payload from an http request form
 func (payload *RequestLoginPayload) InitFromRequest(r *http.Request) *RequestLoginPayload {
 	data, err := ioutil.ReadAll(r.Body)
-	gohtypes.PanicIfError("Not possible to parse registration payload", 400, err)
+	gohtypes.PanicIfError("Not possible to parse registration payload", http.StatusBadRequest, err)
 
 	json.Unmarshal(data, &payload)
 	logrus.Debugf("Payload: '%v'", payload)

@@ -1,22 +1,17 @@
 package api
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/labbsr0x/goh/gohtypes"
 	whisper "github.com/labbsr0x/whisper-client/client"
 	"github.com/labbsr0x/whisper/misc"
 	"github.com/labbsr0x/whisper/resources"
-	"github.com/labbsr0x/whisper/web/ui"
-	"github.com/sirupsen/logrus"
-	"html/template"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"path"
-
 	"github.com/labbsr0x/whisper/web/api/types"
 	"github.com/labbsr0x/whisper/web/config"
+	"github.com/labbsr0x/whisper/web/ui"
+	"github.com/sirupsen/logrus"
+	"net/http"
+	"net/url"
 )
 
 // UserCredentialsAPI defines the available user apis
@@ -49,7 +44,7 @@ func (dapi *DefaultUserCredentialsAPI) POSTHandler() http.Handler {
 
 		resources.Outbox <- misc.GetEmailConfirmationMail(payload.Username, payload.Email, payload.Challenge)
 
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusOK)
 	})
 }
 
@@ -62,9 +57,9 @@ func (dapi *DefaultUserCredentialsAPI) PUTHandler() http.Handler {
 			dapi.UserCredentialsDAO.CheckCredentials(token.Subject, payload.OldPassword, "")
 
 			err := dapi.UserCredentialsDAO.UpdateUserCredential(token.Subject, payload.Email, payload.NewPassword, true)
-			gohtypes.PanicIfError("Error updating user credential info", 500, err)
+			gohtypes.PanicIfError("Error updating user credential info", http.StatusInternalServerError, err)
 
-			w.WriteHeader(200)
+			w.WriteHeader(http.StatusOK)
 		}
 	})
 }
@@ -73,17 +68,9 @@ func (dapi *DefaultUserCredentialsAPI) PUTHandler() http.Handler {
 func (dapi *DefaultUserCredentialsAPI) GETRegistrationPageHandler(route string) http.Handler {
 	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		challenge, err := url.QueryUnescape(r.URL.Query().Get("login_challenge"))
-		gohtypes.PanicIfError("Unable to parse the login_challenge parameter", 400, err)
-		page := types.RegistrationPage{LoginChallenge: challenge}
+		gohtypes.PanicIfError("Unable to parse the login_challenge parameter", http.StatusBadRequest, err)
 
-		buf := new(bytes.Buffer)
-		_ = template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "registration.html"))).Execute(buf, page)
-		html, _ := ioutil.ReadAll(buf)
-
-		page.HTML = template.HTML(html)
-
-		tmpl := template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "index.html")))
-		_ = tmpl.Execute(w, page)
+		ui.LoadPage(dapi.BaseUIPath, ui.Registration, &types.RegistrationPage{LoginChallenge: challenge}, w)
 	}))
 }
 
@@ -107,7 +94,7 @@ func (dapi *DefaultUserCredentialsAPI) GETEmailConfirmationPageHandler(route str
 		LoadErrorPage := func() {
 			if rec := recover(); rec != nil {
 				errorPage := types.EmailConfirmationPage{Successful: false, Message: rec.(gohtypes.Error).Message}
-				ui.LoadPage(dapi.BaseUIPath, "email_confirmation.html", &errorPage, w)
+				ui.LoadPage(dapi.BaseUIPath, ui.EmailConfirmation, &errorPage, w)
 			}
 		}
 
@@ -121,7 +108,7 @@ func (dapi *DefaultUserCredentialsAPI) GETEmailConfirmationPageHandler(route str
 		link := getRedirectionLink(challenge, username, dapi)
 		page := types.EmailConfirmationPage{Successful: true, Message: "Your email has been confirmed", RedirectTo: link}
 
-		ui.LoadPage(dapi.BaseUIPath, "email_confirmation.html", &page, w)
+		ui.LoadPage(dapi.BaseUIPath, ui.EmailConfirmation, &page, w)
 	}))
 }
 
@@ -129,26 +116,19 @@ func (dapi *DefaultUserCredentialsAPI) GETEmailConfirmationPageHandler(route str
 func (dapi *DefaultUserCredentialsAPI) GETUpdatePageHandler(route string) http.Handler {
 	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		redirectTo, err := url.QueryUnescape(r.URL.Query().Get("redirect_to"))
-		gohtypes.PanicIfError("Unable to parse the redirect_to parameter", 400, err)
+		gohtypes.PanicIfError("Unable to parse the redirect_to parameter", http.StatusBadRequest, err)
 
 		page := types.UpdatePage{RedirectTo: redirectTo}
 		if token, ok := r.Context().Value(whisper.TokenKey).(whisper.Token); ok {
 			userCredentials, err := dapi.UserCredentialsDAO.GetUserCredential(token.Subject)
-			gohtypes.PanicIfError(fmt.Sprintf("Could not find credentials with username '%v'", token.Subject), 500, err)
+			gohtypes.PanicIfError(fmt.Sprintf("Could not find credentials with username '%v'", token.Subject), http.StatusInternalServerError, err)
 
 			page.Username = userCredentials.Username
 			page.Email = userCredentials.Email
 
-			buf := new(bytes.Buffer)
-			err = template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "update.html"))).Execute(buf, page)
-			gohtypes.PanicIfError("Error building update page", http.StatusInternalServerError, err)
-
-			html, _ := ioutil.ReadAll(buf)
-			page.HTML = template.HTML(html)
-
-			template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "index.html"))).Execute(w, page)
+			ui.LoadPage(dapi.BaseUIPath, ui.Update, &page, w)
 			return
 		}
-		gohtypes.Panic("Unauthorized: token not found", 401)
+		gohtypes.Panic("Unauthorized: token not found", http.StatusUnauthorized)
 	}))
 }

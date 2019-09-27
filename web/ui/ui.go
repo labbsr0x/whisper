@@ -10,6 +10,16 @@ import (
 	"path"
 )
 
+// Enum
+const (
+	Consent           = "consent.html"
+	EmailConfirmation = "email_confirmation.html"
+	Layout            = "index.html"
+	Login             = "login.html"
+	Registration      = "registration.html"
+	Update            = "update.html"
+)
+
 // Handler defines the handler for ui requests
 func Handler(baseUIPath string) http.Handler {
 	uiPath := path.Join(baseUIPath, "")
@@ -29,7 +39,7 @@ func LoadPage(baseUIPath string, htmlFile string, page types.IPage, w http.Respo
 
 	page.SetHTML(template.HTML(html))
 
-	layout := template.Must(template.ParseFiles(path.Join(baseUIPath, "index.html")))
+	layout := template.Must(template.ParseFiles(path.Join(baseUIPath, Layout)))
 	err = layout.Execute(w, page)
 	gohtypes.PanicIfError("Unable to load layout", http.StatusInternalServerError, err)
 }

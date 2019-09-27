@@ -54,7 +54,7 @@ func (dao *DefaultUserCredentialsDAO) Init(dbURL, secretKey string) UserCredenti
 	dao.SecretKey = secretKey
 	dao.DatabaseURL = strings.Replace(dbURL, "mysql://", "", 1)
 
-	gohtypes.PanicIfError("Not possible to migrate db", 500, dao.migrate())
+	gohtypes.PanicIfError("Not possible to migrate db", http.StatusInternalServerError, dao.migrate())
 
 	return dao
 }

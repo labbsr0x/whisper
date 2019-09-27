@@ -172,11 +172,7 @@ func (dao *DefaultUserCredentialsDAO) CheckCredentials(username, password, chall
 	}
 
 	if !userCredential.Authenticated {
-		if len(challenge) > 0 {
-			resources.Outbox <- misc.GetEmailConfirmationMail(userCredential.Username, userCredential.Email, challenge)
-			gohtypes.Panic("This account email is not authenticated, an email was sent to you confirm your email", http.StatusUnauthorized)
-		} else {
-			gohtypes.Panic("This account email is not authenticated", http.StatusUnauthorized)
-		}
+		resources.Outbox <- misc.GetEmailConfirmationMail(userCredential.Username, userCredential.Email, challenge)
+		gohtypes.Panic("This account email is not authenticated, an email was sent to you confirm your email", http.StatusUnauthorized)
 	}
 }

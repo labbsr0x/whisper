@@ -1,13 +1,12 @@
 package mail
 
 import (
-	"github.com/labbsr0x/whisper/web/config"
 	"github.com/sirupsen/logrus"
 	"net/smtp"
 )
 
 type Api interface {
-	Init(b *config.WebBuilder, inbox <-chan Mail) Api
+	Init(user, password, host, port, identity string, inbox <-chan Mail) Api
 	Run()
 }
 
@@ -25,10 +24,10 @@ type DefaultApi struct {
 }
 
 // InitFromWebBuilder initializes a default email api instance
-func (mh *DefaultApi) Init(b *config.WebBuilder, inbox <-chan Mail) Api {
-	mh.user = b.MailUser
-	mh.address = b.MailHost + ":" + b.MailPort
-	mh.auth = smtp.PlainAuth(b.MailIdentity, b.MailUser, b.MailPassword, b.MailHost)
+func (mh *DefaultApi) Init(user, password, host, port, identity string, inbox <-chan Mail) Api {
+	mh.user = user
+	mh.address = host + ":" + port
+	mh.auth = smtp.PlainAuth(identity, user, password, host)
 	mh.Inbox = inbox
 
 	return mh

@@ -6,6 +6,7 @@ import (
 	"github.com/labbsr0x/goh/gohtypes"
 	"github.com/labbsr0x/whisper/misc"
 	"github.com/sirupsen/logrus"
+	"html/template"
 	"io/ioutil"
 	"net/http"
 )
@@ -16,6 +17,10 @@ type ConsentPage struct {
 	ClientURI       string
 	ClientName      string
 	RequestedScopes []misc.GrantScope
+}
+
+func (p *ConsentPage) SetHTML(html template.HTML) {
+	p.HTML = html
 }
 
 // ConsentRequestPayload holds the data that defines a consent request to Whisper
@@ -29,7 +34,7 @@ type ConsentRequestPayload struct {
 // InitFromRequest initializes the consent payload from an http request
 func (payload *ConsentRequestPayload) InitFromRequest(r *http.Request) *ConsentRequestPayload {
 	data, err := ioutil.ReadAll(r.Body)
-	gohtypes.PanicIfError("Not possible to parse registration payload", 400, err)
+	gohtypes.PanicIfError("Not possible to parse registration payload", http.StatusBadRequest, err)
 
 	err = json.Unmarshal(data, &payload)
 	logrus.Debugf("Payload: '%v' Error: %v", payload, err)

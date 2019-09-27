@@ -1,20 +1,16 @@
 package api
 
 import (
-	"bytes"
 	"github.com/labbsr0x/goh/gohserver"
-	"html/template"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"path"
-
 	"github.com/labbsr0x/goh/gohtypes"
 	whisper "github.com/labbsr0x/whisper-client/client"
 	"github.com/labbsr0x/whisper/misc"
 	"github.com/labbsr0x/whisper/web/api/types"
 	"github.com/labbsr0x/whisper/web/config"
+	"github.com/labbsr0x/whisper/web/ui"
 	"github.com/sirupsen/logrus"
+	"net/http"
+	"net/url"
 )
 
 // ConsentAPI defines the available user apis
@@ -56,18 +52,18 @@ func (dapi *DefaultConsentAPI) ConsentPOSTHandler() http.Handler {
 				if acceptInfo != nil {
 					gohserver.WriteJSONResponse(map[string]interface{}{
 						"redirect_to": acceptInfo["redirect_to"],
-					}, 200, w)
+					}, http.StatusOK, w)
 					return
 				}
 			}
 		} else {
 			rejectInfo := dapi.Self.RejectConsentRequest(consentRequest.Challenge, whisper.RejectConsentRequestPayload{Error: "access_denied", ErrorDescription: "The resource owner denied the request"})
 			if rejectInfo != nil {
-				http.Redirect(w, r, rejectInfo["redirect_to"].(string), 302)
+				http.Redirect(w, r, rejectInfo["redirect_to"].(string), http.StatusFound)
 				return
 			}
 		}
-		panic(gohtypes.Error{Code: 500, Message: "Unable to process consent request"})
+		panic(gohtypes.Error{Code: http.StatusInternalServerError, Message: "Unable to process consent request"})
 	})
 }
 
@@ -75,7 +71,7 @@ func (dapi *DefaultConsentAPI) ConsentPOSTHandler() http.Handler {
 func (dapi *DefaultConsentAPI) ConsentGETHandler(route string) http.Handler {
 	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		challenge, err := url.QueryUnescape(r.URL.Query().Get("consent_challenge"))
-		gohtypes.PanicIfError("Unable to parse the consent_challenge parameter", 400, err)
+		gohtypes.PanicIfError("Unable to parse the consent_challenge parameter", http.StatusBadRequest, err)
 		info := dapi.Self.GetConsentRequestInfo(challenge)
 		logrus.Debugf("Consent Request Info: '%v'", info)
 		if info["skip"].(bool) {
@@ -88,17 +84,17 @@ func (dapi *DefaultConsentAPI) ConsentGETHandler(route string) http.Handler {
 
 			if info != nil {
 				logrus.Debugf("Consent request skipped for '%v'", info)
-				http.Redirect(w, r, info["redirect_to"].(string), 302)
+				http.Redirect(w, r, info["redirect_to"].(string), http.StatusFound)
 			}
 		} else {
-			templ, consentPageInfo := dapi.getConsentPageTemplateAndInfo(info)
-			templ.Execute(w, consentPageInfo)
+			page := getConsentPage(info, dapi.GrantScopes)
+			ui.LoadPage(dapi.BaseUIPath, ui.Consent, &page, w)
 		}
 	}))
 }
 
 // getConsentPageInfo builds the data structure for a consent page
-func (dapi *DefaultConsentAPI) getConsentPageTemplateAndInfo(consentRequestInfo map[string]interface{}) (*template.Template, types.ConsentPage) {
+func getConsentPage(consentRequestInfo map[string]interface{}, scopes misc.GrantScopes) types.ConsentPage {
 	consentPageInfo := types.ConsentPage{ClientName: "Unknown", ClientURI: "#", RequestedScopes: make([]misc.GrantScope, 0)}
 
 	if clientName, ok := consentRequestInfo["client_name"].(string); ok {
@@ -113,15 +109,9 @@ func (dapi *DefaultConsentAPI) getConsentPageTemplateAndInfo(consentRequestInfo 
 		requestedScopes := misc.ConvertInterfaceArrayToStringArray(i)
 
 		for _, scope := range requestedScopes {
-			consentPageInfo.RequestedScopes = append(consentPageInfo.RequestedScopes, dapi.GrantScopes[scope])
+			consentPageInfo.RequestedScopes = append(consentPageInfo.RequestedScopes, scopes[scope])
 		}
 	}
 
-	buf := new(bytes.Buffer)
-	template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "consent.html"))).Execute(buf, consentPageInfo)
-	html, _ := ioutil.ReadAll(buf)
-
-	consentPageInfo.HTML = template.HTML(html)
-
-	return template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "index.html"))), consentPageInfo
+	return consentPageInfo
 }

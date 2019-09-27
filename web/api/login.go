@@ -1,17 +1,13 @@
 package api
 
 import (
-	"bytes"
 	"github.com/labbsr0x/goh/gohserver"
-	"html/template"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"path"
-
 	"github.com/labbsr0x/goh/gohtypes"
 	whisper "github.com/labbsr0x/whisper-client/client"
+	"github.com/labbsr0x/whisper/web/ui"
 	"github.com/sirupsen/logrus"
+	"net/http"
+	"net/url"
 
 	"github.com/labbsr0x/whisper/web/api/types"
 	"github.com/labbsr0x/whisper/web/config"
@@ -50,7 +46,7 @@ func (dapi *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 		if info != nil {
 			gohserver.WriteJSONResponse(map[string]interface{}{
 				"redirect_to": info["redirect_to"],
-			}, 200, w)
+			}, http.StatusOK, w)
 			return
 		}
 	})
@@ -71,27 +67,13 @@ func (dapi *DefaultLoginAPI) LoginGETHandler(route string) http.Handler {
 				)
 				if info != nil {
 					logrus.Debugf("Login request skipped for subject '%v'", subject)
-					http.Redirect(w, r, info["redirect_to"].(string), 302)
+					http.Redirect(w, r, info["redirect_to"].(string), http.StatusFound)
 				}
 			} else {
-				templ, info := dapi.getLoginPageTemplateAndInfo(challenge)
-				templ.Execute(w, info)
+				ui.LoadPage(dapi.BaseUIPath, ui.Login, &types.LoginPage{Challenge: challenge}, w)
 			}
 			return
 		}
-		panic(gohtypes.Error{Code: 400, Err: err, Message: "Unable to parse the login_challenge"})
+		panic(gohtypes.Error{Code: http.StatusBadRequest, Err: err, Message: "Unable to parse the login_challenge"})
 	}))
-}
-
-// getLoginPageTemplateAndInfo gets the login page html and its defining payload
-func (dapi *DefaultLoginAPI) getLoginPageTemplateAndInfo(challenge string) (*template.Template, types.LoginPage) {
-	loginPage := types.LoginPage{Challenge: challenge}
-
-	buf := new(bytes.Buffer)
-	template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "login.html"))).Execute(buf, loginPage)
-	html, _ := ioutil.ReadAll(buf)
-
-	loginPage.HTML = template.HTML(html)
-
-	return template.Must(template.ParseFiles(path.Join(dapi.BaseUIPath, "index.html"))), loginPage
 }

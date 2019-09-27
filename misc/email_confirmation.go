@@ -28,14 +28,14 @@ func UnmarshalEmailConfirmationToken(claims jwt.MapClaims) (username, challenge 
 	return
 }
 
-func GetEmailConfirmationMail (username, email, challenge string) mail.Mail {
+func GetEmailConfirmationMail(username, email, challenge string) mail.Mail {
 	to := []string{email}
 	content := GetEmailConfirmationMailContent(username, challenge)
 
 	return mail.Mail{To: to, Content: content}
 }
 
-func GetEmailConfirmationMailContent (username, challenge string) []byte {
+func GetEmailConfirmationMailContent(username, challenge string) []byte {
 	token := GetEmailConfirmationToken(username, challenge)
 	link := GetEmailConfirmationLink(token)
 	content := GetEmailConfirmationMessage(username, link)
@@ -62,6 +62,6 @@ func GetEmailConfirmationLink(token string) string {
 	return "localhost:7070/email-confirmation?email_confirmation_token=" + token
 }
 
-func GetEmailConfirmationMessage (username, redirect_to string) string {
+func GetEmailConfirmationMessage(username, redirect_to string) string {
 	return fmt.Sprintf("Hi %v,\nClick on the link below to authenticate your email.\n\n %v\n\nThanks,\nWhisper Developers\n", username, redirect_to)
 }

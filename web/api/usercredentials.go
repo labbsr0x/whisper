@@ -114,7 +114,7 @@ func (dapi *DefaultUserCredentialsAPI) GETEmailConfirmationPageHandler(route str
 		defer LoadErrorPage()
 
 		claims := misc.ExtractClaimsTokenFromRequest(r)
-		challenge, username := misc.UnmarshalEmailConfirmationToken(claims)
+		username, challenge := misc.UnmarshalEmailConfirmationToken(claims)
 
 		dapi.UserCredentialsDAO.AuthenticateUserCredential(username)
 

@@ -88,7 +88,8 @@ func (dapi *DefaultConsentAPI) ConsentGETHandler(route string) http.Handler {
 			}
 		} else {
 			page := getConsentPage(info, dapi.GrantScopes)
-			ui.LoadPage(dapi.BaseUIPath, ui.Consent, &page, w)
+			view := ui.BuildPage(ui.Consent, &page)
+			Render(w, view)
 		}
 	}))
 }

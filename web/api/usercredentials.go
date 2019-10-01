@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/labbsr0x/goh/gohtypes"
 	whisper "github.com/labbsr0x/whisper-client/client"
+	"github.com/labbsr0x/whisper/mail"
 	"github.com/labbsr0x/whisper/misc"
 	"github.com/labbsr0x/whisper/resources"
 	"github.com/labbsr0x/whisper/web/api/types"
@@ -42,7 +43,9 @@ func (dapi *DefaultUserCredentialsAPI) POSTHandler() http.Handler {
 		gohtypes.PanicIfError("Not possible to create user", http.StatusInternalServerError, err)
 		logrus.Infof("User created: %v", userID)
 
-		resources.Outbox <- misc.GetEmailConfirmationMail(payload.Username, payload.Email, payload.Challenge)
+		to, content := misc.GetEmailConfirmationMail(payload.Username, payload.Email, payload.Challenge)
+
+		resources.Outbox <- mail.Mail{To: to, Content: content}
 
 		w.WriteHeader(http.StatusOK)
 	})
@@ -70,7 +73,9 @@ func (dapi *DefaultUserCredentialsAPI) GETRegistrationPageHandler(route string) 
 		challenge, err := url.QueryUnescape(r.URL.Query().Get("login_challenge"))
 		gohtypes.PanicIfError("Unable to parse the login_challenge parameter", http.StatusBadRequest, err)
 
-		ui.LoadPage(dapi.BaseUIPath, ui.Registration, &types.RegistrationPage{LoginChallenge: challenge}, w)
+		page := types.RegistrationPage{LoginChallenge: challenge}
+		view := ui.BuildPage(ui.Registration, &page)
+		Render(w, view)
 	}))
 }
 
@@ -93,8 +98,9 @@ func (dapi *DefaultUserCredentialsAPI) GETEmailConfirmationPageHandler(route str
 	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		LoadErrorPage := func() {
 			if rec := recover(); rec != nil {
-				errorPage := types.EmailConfirmationPage{Successful: false, Message: rec.(gohtypes.Error).Message}
-				ui.LoadPage(dapi.BaseUIPath, ui.EmailConfirmation, &errorPage, w)
+				page := types.EmailConfirmationPage{Successful: false, Message: rec.(gohtypes.Error).Message}
+				view := ui.BuildPage(ui.EmailConfirmation, &page)
+				Render(w, view)
 			}
 		}
 
@@ -107,8 +113,8 @@ func (dapi *DefaultUserCredentialsAPI) GETEmailConfirmationPageHandler(route str
 
 		link := getRedirectionLink(challenge, username, dapi)
 		page := types.EmailConfirmationPage{Successful: true, Message: "Your email has been confirmed", RedirectTo: link}
-
-		ui.LoadPage(dapi.BaseUIPath, ui.EmailConfirmation, &page, w)
+		view := ui.BuildPage(ui.EmailConfirmation, &page)
+		Render(w, view)
 	}))
 }
 
@@ -118,15 +124,14 @@ func (dapi *DefaultUserCredentialsAPI) GETUpdatePageHandler(route string) http.H
 		redirectTo, err := url.QueryUnescape(r.URL.Query().Get("redirect_to"))
 		gohtypes.PanicIfError("Unable to parse the redirect_to parameter", http.StatusBadRequest, err)
 
-		page := types.UpdatePage{RedirectTo: redirectTo}
 		if token, ok := r.Context().Value(whisper.TokenKey).(whisper.Token); ok {
 			userCredentials, err := dapi.UserCredentialsDAO.GetUserCredential(token.Subject)
 			gohtypes.PanicIfError(fmt.Sprintf("Could not find credentials with username '%v'", token.Subject), http.StatusInternalServerError, err)
 
-			page.Username = userCredentials.Username
-			page.Email = userCredentials.Email
+			page := types.UpdatePage{RedirectTo: redirectTo, Username: userCredentials.Username, Email: userCredentials.Email}
+			view := ui.BuildPage(ui.Update, &page)
+			Render(w, view)
 
-			ui.LoadPage(dapi.BaseUIPath, ui.Update, &page, w)
 			return
 		}
 		gohtypes.Panic("Unauthorized: token not found", http.StatusUnauthorized)

@@ -70,7 +70,9 @@ func (dapi *DefaultLoginAPI) LoginGETHandler(route string) http.Handler {
 					http.Redirect(w, r, info["redirect_to"].(string), http.StatusFound)
 				}
 			} else {
-				ui.LoadPage(dapi.BaseUIPath, ui.Login, &types.LoginPage{Challenge: challenge}, w)
+				page := types.LoginPage{Challenge: challenge}
+				view := ui.BuildPage(ui.Login, &page)
+				Render(w, view)
 			}
 			return
 		}

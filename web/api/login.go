@@ -33,14 +33,14 @@ func (dapi *DefaultLoginAPI) InitFromWebBuilder(webBuilder *config.WebBuilder) *
 // LoginPOSTHandler post form handler for logging in users
 func (dapi *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		req := new(types.RequestLoginPayload).InitFromRequest(r)
-		logrus.Debugf("Login request payload '%v'", req)
+		loginRequest := new(types.RequestLoginPayload).InitFromRequest(r)
+		logrus.Debugf("Login request payload '%v'", loginRequest)
 
-		dapi.UserCredentialsDAO.CheckCredentials(req.Username, req.Password, req.Challenge)
+		dapi.UserCredentialsDAO.CheckCredentials(loginRequest.Username, loginRequest.Password, loginRequest.Challenge)
 
 		info := dapi.Self.AcceptLoginRequest(
-			req.Challenge,
-			whisper.AcceptLoginRequestPayload{ACR: "0", Remember: req.Remember, RememberFor: 3600, Subject: req.Username},
+			loginRequest.Challenge,
+			whisper.AcceptLoginRequestPayload{ACR: "0", Remember: loginRequest.Remember, RememberFor: 3600, Subject: loginRequest.Username},
 		)
 		logrus.Debugf("Accept login request info: %v", info)
 		if info != nil {

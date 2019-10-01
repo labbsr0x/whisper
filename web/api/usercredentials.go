@@ -24,12 +24,12 @@ type UserCredentialsAPI interface {
 	GETUpdatePageHandler(route string) http.Handler
 }
 
-// DefaultUserCredentialsAPI holds the default implementation of the User Api interface
+// DefaultUserCredentialsAPI holds the default implementation of the User API interface
 type DefaultUserCredentialsAPI struct {
 	*config.WebBuilder
 }
 
-// InitFromWebBuilder initializes the default user credentials Api from a WebBuilder
+// InitFromWebBuilder initializes the default user credentials API from a WebBuilder
 func (dapi *DefaultUserCredentialsAPI) InitFromWebBuilder(builder *config.WebBuilder) *DefaultUserCredentialsAPI {
 	dapi.WebBuilder = builder
 	return dapi

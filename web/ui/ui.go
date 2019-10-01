@@ -16,7 +16,7 @@ import (
 // Enum
 const (
 	Consent           = "consent.html"
-	EmailConfirmation = "email_confirmation_mail.html"
+	EmailConfirmation = "email_confirmation.html"
 	Layout            = "index.html"
 	Login             = "login.html"
 	Registration      = "registration.html"
@@ -70,14 +70,15 @@ func BuildMail(htmlFile string, mailContent interface{}) []byte {
 	body.WriteString(getHTMLBytes(htmlFile, mailContent))
 
 	// Embed logo
-	logoName := "spyblack"
+	logoFile := "spy-black.png"
+	logoName := "logo"
 	body.WriteString("\n\n--" + boundary + "\n")
-	body.WriteString("Content-Type: image/png; name=\"" + logoName + ".png\"\n")
+	body.WriteString("Content-Type: image/png; name=\"" + logoFile + "\"\n")
 	body.WriteString("Content-Transfer-Encoding: base64\n")
 	body.WriteString("Content-ID: <" + logoName + ">\n")
-	body.WriteString("Content-Disposition: inline; filename=\"" + logoName + ".png\"\n")
+	body.WriteString("Content-Disposition: inline; filename=\"" + logoFile + "\"\n")
 	body.WriteString("X-Attachment-Id: " + logoName + "\n\n")
-	body.Write(getLogoBytes(logoName + ".png"))
+	body.Write(getLogoBytes(logoFile))
 
 	// End multiple parts
 	body.WriteString("\n\n--" + boundary + "--\n")

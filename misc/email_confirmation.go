@@ -1,14 +1,24 @@
 package misc
 
 import (
-	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labbsr0x/goh/gohtypes"
-	"github.com/labbsr0x/whisper/mail"
+	"github.com/labbsr0x/whisper/web/ui"
 	"net/http"
 	"time"
 )
 
+// Enum
+const (
+	emailConfirmationMail = "email_confirmation_mail.html"
+)
+
+type emailConfirmationMailContent struct {
+	Link     string
+	Username string
+}
+
+// UnmarshalEmailConfirmationToken verify it is an email confirmation token and extract the main confirmation
 func UnmarshalEmailConfirmationToken(claims jwt.MapClaims) (username, challenge string) {
 	emt, ok := claims["emt"].(bool)
 	if !ok || !emt {
@@ -28,22 +38,22 @@ func UnmarshalEmailConfirmationToken(claims jwt.MapClaims) (username, challenge 
 	return
 }
 
-func GetEmailConfirmationMail(username, email, challenge string) mail.Mail {
-	to := []string{email}
-	content := GetEmailConfirmationMailContent(username, challenge)
+// GetEmailConfirmationMail build the mail for email confirmation
+func GetEmailConfirmationMail(username, email, challenge string) (to []string, content []byte) {
+	to = []string{email}
+	content = getEmailConfirmationMailContent(username, challenge)
 
-	return mail.Mail{To: to, Content: content}
+	return
 }
 
-func GetEmailConfirmationMailContent(username, challenge string) []byte {
-	token := GetEmailConfirmationToken(username, challenge)
-	link := GetEmailConfirmationLink(token)
-	content := GetEmailConfirmationMessage(username, link)
+func getEmailConfirmationMailContent(username, challenge string) []byte {
+	token := getEmailConfirmationToken(username, challenge)
+	link := "http://localhost:7070/email-confirmation?email_confirmation_token=" + token
 
-	return []byte(content)
+	return ui.BuildMail(emailConfirmationMail, emailConfirmationMailContent{Link: link, Username: username})
 }
 
-func GetEmailConfirmationToken(username, challenge string) string {
+func getEmailConfirmationToken(username, challenge string) string {
 	claims := jwt.MapClaims{
 		"sub":       username,                                // Subject
 		"exp":       time.Now().Add(10 * time.Minute).Unix(), // Expiration
@@ -56,12 +66,4 @@ func GetEmailConfirmationToken(username, challenge string) string {
 	gohtypes.PanicIfError("Not possible to create token", http.StatusInternalServerError, err)
 
 	return token
-}
-
-func GetEmailConfirmationLink(token string) string {
-	return "localhost:7070/email-confirmation?email_confirmation_token=" + token
-}
-
-func GetEmailConfirmationMessage(username, redirect_to string) string {
-	return fmt.Sprintf("Hi %v,\nClick on the link below to authenticate your email.\n\n %v\n\nThanks,\nWhisper Developers\n", username, redirect_to)
 }

@@ -16,9 +16,10 @@ var serveCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		mailChannel := make(chan mail.Mail)
 
-		resources.Outbox = mailChannel
-
 		builder := new(config.WebBuilder).InitFromViper(viper.GetViper())
+
+		resources.Outbox = mailChannel
+		resources.BaseUIPath = builder.BaseUIPath
 
 		mailHandler := new(mail.DefaultApi).Init(builder.MailUser, builder.MailPassword, builder.MailHost, builder.MailPort, builder.MailIdentity, mailChannel)
 		mailHandler.Run()

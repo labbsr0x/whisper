@@ -4,4 +4,7 @@ import (
 	"github.com/labbsr0x/whisper/mail"
 )
 
-var Outbox chan<- mail.Mail
+var (
+	Outbox     chan<- mail.Mail
+	BaseUIPath string
+)

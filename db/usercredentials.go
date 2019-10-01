@@ -1,6 +1,7 @@
 package db
 
 import (
+	"github.com/labbsr0x/whisper/mail"
 	"github.com/labbsr0x/whisper/resources"
 	"net/http"
 	"strings"
@@ -172,7 +173,8 @@ func (dao *DefaultUserCredentialsDAO) CheckCredentials(username, password, chall
 	}
 
 	if !userCredential.Authenticated {
-		resources.Outbox <- misc.GetEmailConfirmationMail(userCredential.Username, userCredential.Email, challenge)
+		to, content := misc.GetEmailConfirmationMail(userCredential.Username, userCredential.Email, challenge)
+		resources.Outbox <- mail.Mail{To: to, Content: content}
 		gohtypes.Panic("This account email is not authenticated, an email was sent to you confirm your email", http.StatusUnauthorized)
 	}
 }

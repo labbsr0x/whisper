@@ -37,11 +37,11 @@ func (user *UserCredential) BeforeCreate(scope *gorm.Scope) error {
 // UserCredentialsDAO defines the methods that can be performed
 type UserCredentialsDAO interface {
 	Init(dbURL, secretKey string) UserCredentialsDAO
-	CreateUserCredential(username, password, email string, authenticated bool) (string, error)
-	AuthenticateUserCredential(username string)
-	UpdateUserCredential(username, email, password string, authenticated bool) error
+	CreateUserCredential(username, password, email string) (string, error)
+	UpdateUserCredential(username, email, password string) error
 	GetUserCredential(username string) (UserCredential, error)
 	CheckCredentials(username, password, challenge string)
+	AuthenticateUserCredential(username string)
 }
 
 // DefaultUserCredentialsDAO a default UserCredentialsDAO interface implementation
@@ -72,9 +72,8 @@ func (dao *DefaultUserCredentialsDAO) migrate() error {
 }
 
 // CreateUserCredential creates a user
-func (dao *DefaultUserCredentialsDAO) CreateUserCredential(username, password, email string, authenticated bool) (string, error) {
+func (dao *DefaultUserCredentialsDAO) CreateUserCredential(username, password, email string) (string, error) {
 	db, err := gorm.Open("mysql", dao.DatabaseURL)
-
 	if err != nil {
 		return "", err
 	}
@@ -104,7 +103,7 @@ func (dao *DefaultUserCredentialsDAO) CreateUserCredential(username, password, e
 		Password:      hPassword,
 		Email:         email,
 		Salt:          salt,
-		Authenticated: authenticated,
+		Authenticated: false,
 	}
 
 	if res := db.Create(&userCredential); res.Error != nil {
@@ -118,12 +117,18 @@ func (dao *DefaultUserCredentialsDAO) AuthenticateUserCredential(username string
 	userCredential, err := dao.GetUserCredential(username)
 	gohtypes.PanicIfError("Unable to retrieve user", http.StatusInternalServerError, err)
 
-	err = dao.UpdateUserCredential(userCredential.Username, userCredential.Email, userCredential.Password, true)
-	gohtypes.PanicIfError("Unable to update user", http.StatusInternalServerError, err)
+	userCredential.Authenticated = true
+
+	db, err := gorm.Open("mysql", dao.DatabaseURL)
+	gohtypes.PanicIfError("Unable to connect with database", http.StatusInternalServerError, err)
+
+	if db := db.Save(userCredential); db.Error != nil {
+		gohtypes.Panic("Unable to authenticate user", http.StatusInternalServerError)
+	}
 }
 
 // UpdateUserCredential updates a user
-func (dao *DefaultUserCredentialsDAO) UpdateUserCredential(username, email, password string, authenticated bool) error {
+func (dao *DefaultUserCredentialsDAO) UpdateUserCredential(username, email, password string) error {
 	db, err := gorm.Open("mysql", dao.DatabaseURL)
 	if err == nil {
 		defer db.Close()
@@ -137,7 +142,6 @@ func (dao *DefaultUserCredentialsDAO) UpdateUserCredential(username, email, pass
 		userCredential.Password = hPassword
 		userCredential.Salt = salt
 		userCredential.Email = email
-		userCredential.Authenticated = authenticated
 
 		db = db.Save(userCredential)
 		err = db.Error
@@ -151,7 +155,6 @@ func (dao *DefaultUserCredentialsDAO) GetUserCredential(username string) (UserCr
 	db, err := gorm.Open("mysql", dao.DatabaseURL)
 	if err == nil {
 		defer db.Close()
-
 		db = db.Where("username = ?", username).First(&userCredential)
 		err = db.Error
 	}

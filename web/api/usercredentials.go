@@ -39,7 +39,7 @@ func (dapi *DefaultUserCredentialsAPI) InitFromWebBuilder(builder *config.WebBui
 func (dapi *DefaultUserCredentialsAPI) POSTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		payload := new(types.AddUserCredentialRequestPayload).InitFromRequest(r)
-		userID, err := dapi.UserCredentialsDAO.CreateUserCredential(payload.Username, payload.Password, payload.Email, false)
+		userID, err := dapi.UserCredentialsDAO.CreateUserCredential(payload.Username, payload.Password, payload.Email)
 		gohtypes.PanicIfError("Not possible to create user", http.StatusInternalServerError, err)
 		logrus.Infof("User created: %v", userID)
 
@@ -59,7 +59,7 @@ func (dapi *DefaultUserCredentialsAPI) PUTHandler() http.Handler {
 		if token, ok := r.Context().Value(whisper.TokenKey).(whisper.Token); ok {
 			dapi.UserCredentialsDAO.CheckCredentials(token.Subject, payload.OldPassword, "")
 
-			err := dapi.UserCredentialsDAO.UpdateUserCredential(token.Subject, payload.Email, payload.NewPassword, true)
+			err := dapi.UserCredentialsDAO.UpdateUserCredential(token.Subject, payload.Email, payload.NewPassword)
 			gohtypes.PanicIfError("Error updating user credential info", http.StatusInternalServerError, err)
 
 			w.WriteHeader(http.StatusOK)

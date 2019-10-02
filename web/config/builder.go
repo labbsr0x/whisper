@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/labbsr0x/whisper/mail"
 	"io/ioutil"
 	"os"
 
@@ -56,6 +57,7 @@ type WebBuilder struct {
 	Self               *client.WhisperClient
 	GrantScopes        misc.GrantScopes
 	UserCredentialsDAO db.UserCredentialsDAO
+	Outbox             chan<- mail.Mail
 }
 
 // AddFlags adds flags for Builder.
@@ -75,8 +77,8 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.StringP(mailPort, "", "", "Sets the mail worker port")
 }
 
-// InitFromViper initializes the web server builder with properties retrieved from Viper.
-func (b *WebBuilder) InitFromViper(v *viper.Viper) *WebBuilder {
+// Init initializes the web server builder with properties retrieved from Viper.
+func (b *WebBuilder) Init(v *viper.Viper, outbox chan<- mail.Mail) *WebBuilder {
 	flags := new(Flags)
 	flags.Port = v.GetString(port)
 	flags.BaseUIPath = v.GetString(baseUIPath)
@@ -97,7 +99,8 @@ func (b *WebBuilder) InitFromViper(v *viper.Viper) *WebBuilder {
 	b.Flags = flags
 	b.GrantScopes = b.getGrantScopesFromFile(flags.ScopesFilePath)
 	b.Self = new(client.WhisperClient).InitFromParams(flags.HydraAdminURL, flags.HydraPublicURL, "whisper", "", b.GrantScopes.GetScopeListFromGrantScopeMap(), []string{})
-	b.UserCredentialsDAO = new(db.DefaultUserCredentialsDAO).Init(b.DatabaseURL, b.SecretKey)
+	b.UserCredentialsDAO = new(db.DefaultUserCredentialsDAO).Init(b.DatabaseURL, b.SecretKey, outbox)
+	b.Outbox = outbox
 
 	logrus.Infof("GrantScopes: '%v'", b.GrantScopes)
 	return b

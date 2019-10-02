@@ -16,7 +16,7 @@ type Mail struct {
 	Content []byte
 }
 
-type DefaultApi struct {
+type DefaultHandler struct {
 	user    string
 	address string
 	auth    smtp.Auth
@@ -24,7 +24,7 @@ type DefaultApi struct {
 }
 
 // InitFromWebBuilder initializes a default email api instance
-func (mh *DefaultApi) Init(user, password, host, port, identity string, inbox <-chan Mail) Api {
+func (mh *DefaultHandler) Init(user, password, host, port, identity string, inbox <-chan Mail) Api {
 	mh.user = user
 	mh.address = host + ":" + port
 	mh.auth = smtp.PlainAuth(identity, user, password, host)
@@ -33,7 +33,7 @@ func (mh *DefaultApi) Init(user, password, host, port, identity string, inbox <-
 	return mh
 }
 
-func (mh *DefaultApi) Run() {
+func (mh *DefaultHandler) Run() {
 	go func() {
 		for mail := range mh.Inbox {
 			err := smtp.SendMail(mh.address, mh.auth, mh.user, mail.To, mail.Content)

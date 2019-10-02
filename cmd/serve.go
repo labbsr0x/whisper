@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"github.com/labbsr0x/whisper/mail"
-	"github.com/labbsr0x/whisper/resources"
 	"github.com/labbsr0x/whisper/web"
 	"github.com/labbsr0x/whisper/web/config"
 	"github.com/spf13/cobra"
@@ -16,12 +15,9 @@ var serveCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		mailChannel := make(chan mail.Mail)
 
-		builder := new(config.WebBuilder).InitFromViper(viper.GetViper())
+		builder := new(config.WebBuilder).Init(viper.GetViper(), mailChannel)
 
-		resources.Outbox = mailChannel
-		resources.BaseUIPath = builder.BaseUIPath
-
-		mailHandler := new(mail.DefaultApi).Init(builder.MailUser, builder.MailPassword, builder.MailHost, builder.MailPort, builder.MailIdentity, mailChannel)
+		mailHandler := new(mail.DefaultHandler).Init(builder.MailUser, builder.MailPassword, builder.MailHost, builder.MailPort, builder.MailIdentity, mailChannel)
 		mailHandler.Run()
 
 		server := new(web.Server).InitFromWebBuilder(builder)

@@ -65,7 +65,9 @@ From the project root folder, fire the following commands to execute this projec
 
     The only way to access this endpoints is through a valid authorization url.
 
-    **With some small Dockerfile trickery, it is possible to override the provided UI files to use your custom page layout and icons.**
+    **OBS1: Pay attention that you should provide the smtp account for the whisper mail service.**
+
+    **OBS2: With some small Dockerfile trickery, it is possible to override the provided UI files to use your custom page layout and icons.**
 
     ```bash
     ./whisper serve \
@@ -77,13 +79,13 @@ From the project root folder, fire the following commands to execute this projec
         --log-level        debug \
         --scopes-file-path ./scopes.json \
         --database-url     "mysql://root:secret@tcp(localhost:3306)/whisper?charset=utf8mb4&parseTime=True&loc=Local" \
-        --mail-user        "acount@gmail.com" \
-        --mail-password    "password" \
-        --mail-host        "smtp.gmail.com" \
-        --mail-port        "587" \
-        --mail-identity    ""
+        --mail-user        "<your smtp account>" \
+        --mail-password    "<your smtp account password>" \
+        --mail-host        "<your smtp server address>" \
+        --mail-port        "<your smtp server port>" \
+        --mail-identity    "<your smtp server identity>"
     ```
- 
+
 4. Authorize application on hydra
     
     This command will register to Hydra a client application that is authorized to perform a authorization code flow.

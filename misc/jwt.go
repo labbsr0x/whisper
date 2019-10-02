@@ -52,3 +52,38 @@ func ExtractClaimsTokenFromRequest(r *http.Request) jwt.MapClaims {
 
 	return claims
 }
+
+// UnmarshalEmailConfirmationToken verify it is an email confirmation token and extract the main confirmation
+func UnmarshalEmailConfirmationToken(claims jwt.MapClaims) (username, challenge string) {
+	emt, ok := claims["emt"].(bool)
+	if !ok || !emt {
+		gohtypes.Panic("Email confirmation token not valid", http.StatusNotAcceptable)
+	}
+
+	username, ok = claims["sub"].(string)
+	if !ok {
+		gohtypes.Panic("Unable to find the user", http.StatusNotFound)
+	}
+
+	challenge, ok = claims["challenge"].(string)
+	if !ok {
+		gohtypes.Panic("Unable to find the login challenge", http.StatusNotFound)
+	}
+
+	return
+}
+
+func GetEmailConfirmationToken(username, challenge string) string {
+	claims := jwt.MapClaims{
+		"sub":       username,                                // Subject
+		"exp":       time.Now().Add(10 * time.Minute).Unix(), // Expiration
+		"challenge": challenge,                               // Login Challenge
+		"emt":       true,                                    // Email Confirmation Token
+		"iat":       time.Now().Unix(),                       // Issued At
+	}
+
+	token, err := GenerateToken(claims)
+	gohtypes.PanicIfError("Not possible to create token", http.StatusInternalServerError, err)
+
+	return token
+}

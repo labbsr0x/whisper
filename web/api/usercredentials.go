@@ -6,7 +6,6 @@ import (
 	whisper "github.com/labbsr0x/whisper-client/client"
 	"github.com/labbsr0x/whisper/mail"
 	"github.com/labbsr0x/whisper/misc"
-	"github.com/labbsr0x/whisper/resources"
 	"github.com/labbsr0x/whisper/web/api/types"
 	"github.com/labbsr0x/whisper/web/config"
 	"github.com/labbsr0x/whisper/web/ui"
@@ -43,9 +42,7 @@ func (dapi *DefaultUserCredentialsAPI) POSTHandler() http.Handler {
 		gohtypes.PanicIfError("Not possible to create user", http.StatusInternalServerError, err)
 		logrus.Infof("User created: %v", userID)
 
-		to, content := misc.GetEmailConfirmationMail(payload.Username, payload.Email, payload.Challenge)
-
-		resources.Outbox <- mail.Mail{To: to, Content: content}
+		dapi.Outbox <- mail.GetEmailConfirmationMail(dapi.BaseUIPath, payload.Username, payload.Email, payload.Challenge)
 
 		w.WriteHeader(http.StatusOK)
 	})
@@ -57,7 +54,7 @@ func (dapi *DefaultUserCredentialsAPI) PUTHandler() http.Handler {
 		payload := new(types.UpdateUserCredentialRequestPayload).InitFromRequest(r)
 
 		if token, ok := r.Context().Value(whisper.TokenKey).(whisper.Token); ok {
-			dapi.UserCredentialsDAO.CheckCredentials(token.Subject, payload.OldPassword, "")
+			dapi.UserCredentialsDAO.CheckCredentials(token.Subject, payload.OldPassword)
 
 			err := dapi.UserCredentialsDAO.UpdateUserCredential(token.Subject, payload.Email, payload.NewPassword)
 			gohtypes.PanicIfError("Error updating user credential info", http.StatusInternalServerError, err)
@@ -74,7 +71,7 @@ func (dapi *DefaultUserCredentialsAPI) GETRegistrationPageHandler(route string) 
 		gohtypes.PanicIfError("Unable to parse the login_challenge parameter", http.StatusBadRequest, err)
 
 		page := types.RegistrationPage{LoginChallenge: challenge}
-		view := ui.BuildPage(ui.Registration, &page)
+		view := ui.BuildPage(dapi.BaseUIPath, ui.Registration, &page)
 		Render(w, view)
 	}))
 }
@@ -99,7 +96,7 @@ func (dapi *DefaultUserCredentialsAPI) GETEmailConfirmationPageHandler(route str
 		LoadErrorPage := func() {
 			if rec := recover(); rec != nil {
 				page := types.EmailConfirmationPage{Successful: false, Message: rec.(gohtypes.Error).Message}
-				view := ui.BuildPage(ui.EmailConfirmation, &page)
+				view := ui.BuildPage(dapi.BaseUIPath, ui.EmailConfirmation, &page)
 				Render(w, view)
 			}
 		}
@@ -109,11 +106,11 @@ func (dapi *DefaultUserCredentialsAPI) GETEmailConfirmationPageHandler(route str
 		claims := misc.ExtractClaimsTokenFromRequest(r)
 		username, challenge := misc.UnmarshalEmailConfirmationToken(claims)
 
-		dapi.UserCredentialsDAO.AuthenticateUserCredential(username)
+		dapi.UserCredentialsDAO.ValidateUserCredentialEmail(username)
 
 		link := getRedirectionLink(challenge, username, dapi)
 		page := types.EmailConfirmationPage{Successful: true, Message: "Your email has been confirmed", RedirectTo: link}
-		view := ui.BuildPage(ui.EmailConfirmation, &page)
+		view := ui.BuildPage(dapi.BaseUIPath, ui.EmailConfirmation, &page)
 		Render(w, view)
 	}))
 }
@@ -129,7 +126,7 @@ func (dapi *DefaultUserCredentialsAPI) GETUpdatePageHandler(route string) http.H
 			gohtypes.PanicIfError(fmt.Sprintf("Could not find credentials with username '%v'", token.Subject), http.StatusInternalServerError, err)
 
 			page := types.UpdatePage{RedirectTo: redirectTo, Username: userCredentials.Username, Email: userCredentials.Email}
-			view := ui.BuildPage(ui.Update, &page)
+			view := ui.BuildPage(dapi.BaseUIPath, ui.Update, &page)
 			Render(w, view)
 
 			return

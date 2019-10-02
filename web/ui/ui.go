@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"github.com/labbsr0x/goh/gohtypes"
-	"github.com/labbsr0x/whisper/resources"
 	"html/template"
 	"io/ioutil"
 	"mime/quotedprintable"
@@ -34,9 +33,9 @@ func Handler(baseUIPath string) http.Handler {
 }
 
 // BuildPage is used to load a page with the standard layout
-func BuildPage(htmlFile string, page IPage) []byte {
+func BuildPage(baseUIPath, htmlFile string, page IPage) []byte {
 	buf := new(bytes.Buffer)
-	content := template.Must(template.ParseFiles(path.Join(resources.BaseUIPath, htmlFile)))
+	content := template.Must(template.ParseFiles(path.Join(baseUIPath, htmlFile)))
 
 	err := content.Execute(buf, page)
 	gohtypes.PanicIfError("Unable to load page", http.StatusInternalServerError, err)
@@ -46,14 +45,14 @@ func BuildPage(htmlFile string, page IPage) []byte {
 
 	page.SetHTML(template.HTML(html))
 
-	layout := template.Must(template.ParseFiles(path.Join(resources.BaseUIPath, Layout)))
+	layout := template.Must(template.ParseFiles(path.Join(baseUIPath, Layout)))
 	err = layout.Execute(buf, page)
 	gohtypes.PanicIfError("Unable to load layout", http.StatusInternalServerError, err)
 
 	return buf.Bytes()
 }
 
-func BuildMail(htmlFile string, mailContent interface{}) []byte {
+func BuildMail(baseUIPath, htmlFile string, mailContent interface{}) []byte {
 	var body bytes.Buffer
 
 	boundary := "f46d043c813270fc6b04c2d223da"
@@ -67,7 +66,7 @@ func BuildMail(htmlFile string, mailContent interface{}) []byte {
 	body.WriteString("\n\n--" + boundary + "\n")
 	body.WriteString("Content-Type: text/html; charset=\"UTF-8\";\n")
 	body.WriteString("Content-Transfer-Encoding: quoted-printable\n\n")
-	body.WriteString(getHTMLBytes(htmlFile, mailContent))
+	body.WriteString(getHTMLBytes(baseUIPath, htmlFile, mailContent))
 
 	// Embed logo
 	logoFile := "spy-black.png"
@@ -78,7 +77,7 @@ func BuildMail(htmlFile string, mailContent interface{}) []byte {
 	body.WriteString("Content-ID: <" + logoName + ">\n")
 	body.WriteString("Content-Disposition: inline; filename=\"" + logoFile + "\"\n")
 	body.WriteString("X-Attachment-Id: " + logoName + "\n\n")
-	body.Write(getLogoBytes(logoFile))
+	body.Write(getLogoBytes(baseUIPath, logoFile))
 
 	// End multiple parts
 	body.WriteString("\n\n--" + boundary + "--\n")
@@ -86,8 +85,8 @@ func BuildMail(htmlFile string, mailContent interface{}) []byte {
 	return body.Bytes()
 }
 
-func getHTMLBytes(htmlFile string, mailContent interface{}) string {
-	tmpl, err := template.ParseFiles(path.Join(resources.BaseUIPath, htmlFile))
+func getHTMLBytes(baseUIPath, htmlFile string, mailContent interface{}) string {
+	tmpl, err := template.ParseFiles(path.Join(baseUIPath, htmlFile))
 	gohtypes.PanicIfError("Unable to open mail content", http.StatusInternalServerError, err)
 
 	buff := new(bytes.Buffer)
@@ -103,8 +102,8 @@ func getHTMLBytes(htmlFile string, mailContent interface{}) string {
 	return string(res.Bytes())
 }
 
-func getLogoBytes(logoName string) []byte {
-	logo := resources.BaseUIPath + "/static/images/" + logoName
+func getLogoBytes(baseUIPath, logoName string) []byte {
+	logo := baseUIPath + "/static/images/" + logoName
 	file, err := os.Open(logo)
 	gohtypes.PanicIfError("Unable to open email images", http.StatusInternalServerError, err)
 

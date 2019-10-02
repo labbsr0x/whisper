@@ -4,6 +4,7 @@ import (
 	"github.com/labbsr0x/goh/gohserver"
 	"github.com/labbsr0x/goh/gohtypes"
 	whisper "github.com/labbsr0x/whisper-client/client"
+	"github.com/labbsr0x/whisper/mail"
 	"github.com/labbsr0x/whisper/web/ui"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -36,7 +37,12 @@ func (dapi *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 		loginRequest := new(types.RequestLoginPayload).InitFromRequest(r)
 		logrus.Debugf("Login request payload '%v'", loginRequest)
 
-		dapi.UserCredentialsDAO.CheckCredentials(loginRequest.Username, loginRequest.Password, loginRequest.Challenge)
+		userCredential := dapi.UserCredentialsDAO.CheckCredentials(loginRequest.Username, loginRequest.Password)
+
+		if !userCredential.EmailValidated {
+			dapi.Outbox <- mail.GetEmailConfirmationMail(dapi.BaseUIPath, userCredential.Username, userCredential.Email, loginRequest.Challenge)
+			gohtypes.Panic("This account email is not authenticated, an email was sent to you confirm your email", http.StatusUnauthorized)
+		}
 
 		info := dapi.Self.AcceptLoginRequest(
 			loginRequest.Challenge,
@@ -71,7 +77,7 @@ func (dapi *DefaultLoginAPI) LoginGETHandler(route string) http.Handler {
 				}
 			} else {
 				page := types.LoginPage{Challenge: challenge}
-				view := ui.BuildPage(ui.Login, &page)
+				view := ui.BuildPage(dapi.BaseUIPath, ui.Login, &page)
 				Render(w, view)
 			}
 			return

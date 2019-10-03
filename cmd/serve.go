@@ -16,6 +16,8 @@ var serveCmd = &cobra.Command{
 		mailChannel := make(chan mail.Mail)
 
 		builder := new(config.WebBuilder).Init(viper.GetViper(), mailChannel)
+		
+		defer builder.DB.Close()
 
 		mailHandler := new(mail.DefaultHandler).Init(builder.MailUser, builder.MailPassword, builder.MailHost, builder.MailPort, mailChannel)
 		mailHandler.Run()

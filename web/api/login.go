@@ -4,6 +4,7 @@ import (
 	"github.com/labbsr0x/goh/gohserver"
 	"github.com/labbsr0x/goh/gohtypes"
 	whisper "github.com/labbsr0x/whisper-client/client"
+	"github.com/labbsr0x/whisper/db"
 	"github.com/labbsr0x/whisper/mail"
 	"github.com/labbsr0x/whisper/web/ui"
 	"github.com/sirupsen/logrus"
@@ -23,11 +24,13 @@ type LoginAPI interface {
 // DefaultLoginAPI holds the default implementation of the User API interface
 type DefaultLoginAPI struct {
 	*config.WebBuilder
+	UserCredentialsDAO db.UserCredentialsDAO
 }
 
 // InitFromWebBuilder initializes a default login api instance
 func (dapi *DefaultLoginAPI) InitFromWebBuilder(webBuilder *config.WebBuilder) *DefaultLoginAPI {
 	dapi.WebBuilder = webBuilder
+	dapi.UserCredentialsDAO = new(db.DefaultUserCredentialsDAO).Init(webBuilder.SecretKey, webBuilder.Outbox, webBuilder.DB)
 	return dapi
 }
 

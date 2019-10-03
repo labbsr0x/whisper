@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/labbsr0x/goh/gohtypes"
 	whisper "github.com/labbsr0x/whisper-client/client"
+	"github.com/labbsr0x/whisper/db"
 	"github.com/labbsr0x/whisper/mail"
 	"github.com/labbsr0x/whisper/misc"
 	"github.com/labbsr0x/whisper/web/api/types"
@@ -26,11 +27,14 @@ type UserCredentialsAPI interface {
 // DefaultUserCredentialsAPI holds the default implementation of the User API interface
 type DefaultUserCredentialsAPI struct {
 	*config.WebBuilder
+	UserCredentialsDAO db.UserCredentialsDAO
 }
 
 // InitFromWebBuilder initializes the default user credentials API from a WebBuilder
-func (dapi *DefaultUserCredentialsAPI) InitFromWebBuilder(builder *config.WebBuilder) *DefaultUserCredentialsAPI {
-	dapi.WebBuilder = builder
+func (dapi *DefaultUserCredentialsAPI) InitFromWebBuilder(webBuilder *config.WebBuilder) *DefaultUserCredentialsAPI {
+	dapi.WebBuilder = webBuilder
+	dapi.UserCredentialsDAO = new(db.DefaultUserCredentialsDAO).Init(webBuilder.SecretKey, webBuilder.Outbox, webBuilder.DB)
+
 	return dapi
 }
 
@@ -104,7 +108,8 @@ func (dapi *DefaultUserCredentialsAPI) GETEmailConfirmationPageHandler(route str
 		claims := misc.ExtractClaimsTokenFromRequest(dapi.SecretKey, r)
 		username, challenge := misc.UnmarshalEmailConfirmationToken(claims)
 
-		dapi.UserCredentialsDAO.ValidateUserCredentialEmail(username)
+		err := dapi.UserCredentialsDAO.ValidateUserCredentialEmail(username)
+		gohtypes.PanicIfError("Unable to validate user email", http.StatusInternalServerError, err)
 
 		link := getRedirectionLink(challenge, username, dapi)
 		page := types.EmailConfirmationPage{Successful: true, Message: "Your email has been confirmed", RedirectTo: link}

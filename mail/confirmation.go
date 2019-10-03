@@ -24,5 +24,3 @@ func GetEmailConfirmationMail(baseUIPath, username, email, challenge string) Mai
 
 	return Mail{To: to, Content: content}
 }
-
-

@@ -16,6 +16,8 @@ type Mail struct {
 	Content []byte
 }
 
+var _sendMail = smtp.SendMail
+
 type DefaultHandler struct {
 	user    string
 	address string
@@ -36,7 +38,7 @@ func (mh *DefaultHandler) Init(user, password, host, port, identity string, inbo
 func (mh *DefaultHandler) Run() {
 	go func() {
 		for mail := range mh.Inbox {
-			err := smtp.SendMail(mh.address, mh.auth, mh.user, mail.To, mail.Content)
+			err := _sendMail(mh.address, mh.auth, mh.user, mail.To, mail.Content)
 
 			if err != nil {
 				logrus.Error(err)

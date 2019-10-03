@@ -3,7 +3,6 @@ package db
 import (
 	"github.com/labbsr0x/whisper/mail"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/labbsr0x/whisper/misc"
@@ -35,55 +34,38 @@ func (user *UserCredential) BeforeCreate(scope *gorm.Scope) error {
 
 // UserCredentialsDAO defines the methods that can be performed
 type UserCredentialsDAO interface {
-	Init(dbURL, secretKey string, outbox chan<- mail.Mail) UserCredentialsDAO
+	Init(secretKey string, outbox chan<- mail.Mail, db *gorm.DB) UserCredentialsDAO
 	CreateUserCredential(username, password, email string) (string, error)
 	UpdateUserCredential(username, email, password string) error
 	GetUserCredential(username string) (UserCredential, error)
 	CheckCredentials(username, password string) UserCredential
-	ValidateUserCredentialEmail(username string)
+	ValidateUserCredentialEmail(username string) error
 }
 
 // DefaultUserCredentialsDAO a default UserCredentialsDAO interface implementation
 type DefaultUserCredentialsDAO struct {
-	outbox      chan<- mail.Mail
-	DatabaseURL string
-	SecretKey   string
+	db        *gorm.DB
+	outbox    chan<- mail.Mail
+	secretKey string
 }
 
-// Init initializes a default user credentials DAO from web builder
-func (dao *DefaultUserCredentialsDAO) Init(dbURL, secretKey string, outbox chan<- mail.Mail) UserCredentialsDAO {
-	dao.SecretKey = secretKey
-	dao.DatabaseURL = strings.Replace(dbURL, "mysql://", "", 1)
+// InitFromWebBuilder initializes a default user credentials DAO from web builder
+func (dao *DefaultUserCredentialsDAO) Init(secretKey string, outbox chan<- mail.Mail, db *gorm.DB) UserCredentialsDAO {
+	dao.secretKey = secretKey
 	dao.outbox = outbox
+	dao.db = db
 
-	gohtypes.PanicIfError("Not possible to migrate db", http.StatusInternalServerError, dao.migrate())
+	err := dao.db.AutoMigrate(&UserCredential{}).Error
+	gohtypes.PanicIfError("Not possible to migrate db", http.StatusInternalServerError, err)
 
 	return dao
 }
 
-// migrate initializes a migration routine to synchronize db and model
-func (dao *DefaultUserCredentialsDAO) migrate() error {
-	db, err := gorm.Open("mysql", dao.DatabaseURL)
-	if err == nil {
-		defer db.Close()
-		db.LogMode(true)
-		err = db.AutoMigrate(&UserCredential{}).Error
-	}
-	return err
-}
-
 // CreateUserCredential creates a user
 func (dao *DefaultUserCredentialsDAO) CreateUserCredential(username, password, email string) (string, error) {
-	db, err := gorm.Open("mysql", dao.DatabaseURL)
-	if err != nil {
-		return "", err
-	}
-
-	defer db.Close()
-
 	var users []UserCredential
 
-	if res := db.Model(&UserCredential{}).Where("username = ?", username).Or("email = ?", email).Find(&users); res.Error != nil {
+	if res := dao.db.Model(&UserCredential{}).Where("username = ?", username).Or("email = ?", email).Find(&users); res.Error != nil {
 		return "", res.Error
 	}
 
@@ -98,7 +80,7 @@ func (dao *DefaultUserCredentialsDAO) CreateUserCredential(username, password, e
 	}
 
 	salt := misc.GenerateSalt()
-	hPassword := misc.GetEncryptedPassword(dao.SecretKey, password, salt)
+	hPassword := misc.GetEncryptedPassword(dao.secretKey, password, salt)
 	userCredential := UserCredential{
 		Username:       username,
 		Password:       hPassword,
@@ -107,59 +89,44 @@ func (dao *DefaultUserCredentialsDAO) CreateUserCredential(username, password, e
 		EmailValidated: false,
 	}
 
-	if res := db.Create(&userCredential); res.Error != nil {
+	if res := dao.db.Create(&userCredential); res.Error != nil {
 		return "", res.Error
 	}
 
 	return userCredential.ID, nil
 }
 
-func (dao *DefaultUserCredentialsDAO) ValidateUserCredentialEmail(username string) {
+func (dao *DefaultUserCredentialsDAO) ValidateUserCredentialEmail(username string) error {
 	userCredential, err := dao.GetUserCredential(username)
-	gohtypes.PanicIfError("Unable to retrieve user", http.StatusInternalServerError, err)
+	if err != nil {
+		return err
+	}
 
 	userCredential.EmailValidated = true
 
-	db, err := gorm.Open("mysql", dao.DatabaseURL)
-	gohtypes.PanicIfError("Unable to connect with database", http.StatusInternalServerError, err)
-
-	if db := db.Save(userCredential); db.Error != nil {
-		gohtypes.Panic("Unable to authenticate user", http.StatusInternalServerError)
-	}
+	return dao.db.Save(userCredential).Error
 }
 
 // UpdateUserCredential updates a user
 func (dao *DefaultUserCredentialsDAO) UpdateUserCredential(username, email, password string) error {
-	db, err := gorm.Open("mysql", dao.DatabaseURL)
-	if err == nil {
-		defer db.Close()
+	userCredential := UserCredential{}
+	salt := misc.GenerateSalt()
+	hPassword := misc.GetEncryptedPassword(dao.secretKey, password, salt)
 
-		salt := misc.GenerateSalt()
-		hPassword := misc.GetEncryptedPassword(dao.SecretKey, password, salt)
+	err := dao.db.Where("username = ?", username).First(&userCredential).Error
+	gohtypes.PanicIfError("Unable to retrieve user", http.StatusInternalServerError, err)
 
-		userCredential := UserCredential{}
-		db.Where("username = ?", username).First(&userCredential)
+	userCredential.Password = hPassword
+	userCredential.Salt = salt
+	userCredential.Email = email
 
-		userCredential.Password = hPassword
-		userCredential.Salt = salt
-		userCredential.Email = email
-
-		db = db.Save(userCredential)
-		err = db.Error
-	}
-	return err
+	return dao.db.Save(userCredential).Error
 }
 
 // GetUserCredential gets an user credential
-func (dao *DefaultUserCredentialsDAO) GetUserCredential(username string) (UserCredential, error) {
-	userCredential := UserCredential{}
-	db, err := gorm.Open("mysql", dao.DatabaseURL)
-	if err == nil {
-		defer db.Close()
-		db = db.Where("username = ?", username).First(&userCredential)
-		err = db.Error
-	}
-	return userCredential, err
+func (dao *DefaultUserCredentialsDAO) GetUserCredential(username string) (userCredential UserCredential, err error) {
+	err = dao.db.Where("username = ?", username).First(&userCredential).Error
+	return
 }
 
 // CheckCredentials verifies if the informed credentials are valid
@@ -170,7 +137,7 @@ func (dao *DefaultUserCredentialsDAO) CheckCredentials(username, password string
 		gohtypes.PanicIfError("Unable to authenticate user", http.StatusInternalServerError, err)
 	}
 
-	hPassword := misc.GetEncryptedPassword(dao.SecretKey, password, userCredential.Salt)
+	hPassword := misc.GetEncryptedPassword(dao.secretKey, password, userCredential.Salt)
 
 	if hPassword != userCredential.Password {
 		gohtypes.Panic("Incorrect password", http.StatusUnauthorized)

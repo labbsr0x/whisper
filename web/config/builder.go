@@ -3,13 +3,15 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/jinzhu/gorm"
+	"github.com/labbsr0x/goh/gohtypes"
 	"github.com/labbsr0x/whisper/mail"
 	"io/ioutil"
+	"net/http"
 	"os"
+	"strings"
 
 	"github.com/labbsr0x/whisper-client/client"
-
-	"github.com/labbsr0x/whisper/db"
 
 	"github.com/labbsr0x/whisper/misc"
 
@@ -54,10 +56,10 @@ type Flags struct {
 // WebBuilder defines the parametric information of a whisper server instance
 type WebBuilder struct {
 	*Flags
-	Self               *client.WhisperClient
-	GrantScopes        misc.GrantScopes
-	UserCredentialsDAO db.UserCredentialsDAO
-	Outbox             chan<- mail.Mail
+	Self        *client.WhisperClient
+	GrantScopes misc.GrantScopes
+	Outbox      chan<- mail.Mail
+	DB          *gorm.DB
 }
 
 // AddFlags adds flags for Builder.
@@ -77,7 +79,7 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.StringP(mailPort, "", "", "Sets the mail worker port")
 }
 
-// Init initializes the web server builder with properties retrieved from Viper.
+// InitFromWebBuilder initializes the web server builder with properties retrieved from Viper.
 func (b *WebBuilder) Init(v *viper.Viper, outbox chan<- mail.Mail) *WebBuilder {
 	flags := new(Flags)
 	flags.Port = v.GetString(port)
@@ -97,10 +99,10 @@ func (b *WebBuilder) Init(v *viper.Viper, outbox chan<- mail.Mail) *WebBuilder {
 	flags.check()
 
 	b.Flags = flags
+	b.Outbox = outbox
 	b.GrantScopes = b.getGrantScopesFromFile(flags.ScopesFilePath)
 	b.Self = new(client.WhisperClient).InitFromParams(flags.HydraAdminURL, flags.HydraPublicURL, "whisper", "", b.GrantScopes.GetScopeListFromGrantScopeMap(), []string{})
-	b.UserCredentialsDAO = new(db.DefaultUserCredentialsDAO).Init(b.DatabaseURL, b.SecretKey, outbox)
-	b.Outbox = outbox
+	b.DB = b.initDB()
 
 	logrus.Infof("GrantScopes: '%v'", b.GrantScopes)
 	return b
@@ -168,4 +170,13 @@ func (b *WebBuilder) getGrantScopesFromFile(scopesFilePath string) misc.GrantSco
 	}
 
 	return grantScopes
+}
+
+// initDB opens a connection with the database
+func (b *WebBuilder) initDB() *gorm.DB {
+	dbURL := strings.Replace(b.DatabaseURL, "mysql://", "", 1)
+	dbc, err := gorm.Open("mysql", dbURL)
+	gohtypes.PanicIfError("Unable to open db", http.StatusInternalServerError, err)
+
+	return dbc.LogMode(true)
 }

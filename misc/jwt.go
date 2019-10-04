@@ -4,24 +4,20 @@ import (
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/labbsr0x/goh/gohtypes"
-	"github.com/spf13/viper"
 	"net/http"
 	"net/url"
 	"time"
 )
 
 // GenerateToken generates a jwt token
-func GenerateToken(data jwt.MapClaims) (string, error) {
-	secret := viper.GetString("secret-key")
-
+func GenerateToken(secret string, data jwt.MapClaims) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, data)
 
 	return token.SignedString([]byte(secret))
 }
 
 // ExtractClaimsTokenFromRequest extract a jwt token from a given request
-func ExtractClaimsTokenFromRequest(r *http.Request) jwt.MapClaims {
-	secret := viper.GetString("secret-key")
+func ExtractClaimsTokenFromRequest(secret string, r *http.Request) jwt.MapClaims {
 	keyFunc := func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
@@ -30,7 +26,7 @@ func ExtractClaimsTokenFromRequest(r *http.Request) jwt.MapClaims {
 		return []byte(secret), nil
 	}
 
-	tokenString, err := url.QueryUnescape(r.URL.Query().Get("email_confirmation_token"))
+	tokenString, err := url.QueryUnescape(r.URL.Query().Get("token"))
 	gohtypes.PanicIfError("Unable to retrieve the email confirmation token", http.StatusBadRequest, err)
 
 	token, err := jwt.Parse(tokenString, keyFunc)
@@ -73,7 +69,7 @@ func UnmarshalEmailConfirmationToken(claims jwt.MapClaims) (username, challenge 
 	return
 }
 
-func GetEmailConfirmationToken(username, challenge string) string {
+func GetEmailConfirmationToken(secret, username, challenge string) string {
 	claims := jwt.MapClaims{
 		"sub":       username,                                // Subject
 		"exp":       time.Now().Add(10 * time.Minute).Unix(), // Expiration
@@ -82,7 +78,7 @@ func GetEmailConfirmationToken(username, challenge string) string {
 		"iat":       time.Now().Unix(),                       // Issued At
 	}
 
-	token, err := GenerateToken(claims)
+	token, err := GenerateToken(secret, claims)
 	gohtypes.PanicIfError("Not possible to create token", http.StatusInternalServerError, err)
 
 	return token

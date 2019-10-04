@@ -3,6 +3,7 @@ package ui
 import (
 	"bytes"
 	"encoding/base64"
+	"github.com/google/uuid"
 	"github.com/labbsr0x/goh/gohtypes"
 	"html/template"
 	"io/ioutil"
@@ -55,7 +56,7 @@ func BuildPage(baseUIPath, htmlFile string, page IPage) []byte {
 func BuildMail(baseUIPath, htmlFile string, mailContent interface{}) []byte {
 	var body bytes.Buffer
 
-	boundary := "f46d043c813270fc6b04c2d223da"
+	boundary := uuid.New().String()
 
 	// Add headers
 	body.WriteString("Subject: Whisper\n")

@@ -42,7 +42,7 @@ func (dapi *DefaultUserCredentialsAPI) POSTHandler() http.Handler {
 		gohtypes.PanicIfError("Not possible to create user", http.StatusInternalServerError, err)
 		logrus.Infof("User created: %v", userID)
 
-		dapi.Outbox <- mail.GetEmailConfirmationMail(dapi.BaseUIPath, payload.Username, payload.Email, payload.Challenge)
+		dapi.Outbox <- mail.GetEmailConfirmationMail(dapi.BaseUIPath, dapi.SecretKey, payload.Username, payload.Email, payload.Challenge)
 
 		w.WriteHeader(http.StatusOK)
 	})
@@ -103,7 +103,7 @@ func (dapi *DefaultUserCredentialsAPI) GETEmailConfirmationPageHandler(route str
 
 		defer LoadErrorPage()
 
-		claims := misc.ExtractClaimsTokenFromRequest(r)
+		claims := misc.ExtractClaimsTokenFromRequest(dapi.SecretKey, r)
 		username, challenge := misc.UnmarshalEmailConfirmationToken(claims)
 
 		dapi.UserCredentialsDAO.ValidateUserCredentialEmail(username)

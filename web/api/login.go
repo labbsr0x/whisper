@@ -77,8 +77,7 @@ func (dapi *DefaultLoginAPI) LoginGETHandler(route string) http.Handler {
 				}
 			} else {
 				page := types.LoginPage{Challenge: challenge}
-				view := ui.BuildPage(dapi.BaseUIPath, ui.Login, &page)
-				Render(w, view)
+				ui.WritePage(w, dapi.BaseUIPath, ui.Login, &page)
 			}
 			return
 		}

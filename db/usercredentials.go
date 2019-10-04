@@ -45,7 +45,7 @@ type UserCredentialsDAO interface {
 
 // DefaultUserCredentialsDAO a default UserCredentialsDAO interface implementation
 type DefaultUserCredentialsDAO struct {
-	outbox chan<- mail.Mail
+	outbox      chan<- mail.Mail
 	DatabaseURL string
 	SecretKey   string
 }

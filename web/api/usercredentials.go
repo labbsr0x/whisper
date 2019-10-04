@@ -71,8 +71,7 @@ func (dapi *DefaultUserCredentialsAPI) GETRegistrationPageHandler(route string) 
 		gohtypes.PanicIfError("Unable to parse the login_challenge parameter", http.StatusBadRequest, err)
 
 		page := types.RegistrationPage{LoginChallenge: challenge}
-		view := ui.BuildPage(dapi.BaseUIPath, ui.Registration, &page)
-		Render(w, view)
+		ui.WritePage(w, dapi.BaseUIPath, ui.Registration, &page)
 	}))
 }
 
@@ -96,8 +95,7 @@ func (dapi *DefaultUserCredentialsAPI) GETEmailConfirmationPageHandler(route str
 		LoadErrorPage := func() {
 			if rec := recover(); rec != nil {
 				page := types.EmailConfirmationPage{Successful: false, Message: rec.(gohtypes.Error).Message}
-				view := ui.BuildPage(dapi.BaseUIPath, ui.EmailConfirmation, &page)
-				Render(w, view)
+				ui.WritePage(w, dapi.BaseUIPath, ui.EmailConfirmation, &page)
 			}
 		}
 
@@ -110,8 +108,7 @@ func (dapi *DefaultUserCredentialsAPI) GETEmailConfirmationPageHandler(route str
 
 		link := getRedirectionLink(challenge, username, dapi)
 		page := types.EmailConfirmationPage{Successful: true, Message: "Your email has been confirmed", RedirectTo: link}
-		view := ui.BuildPage(dapi.BaseUIPath, ui.EmailConfirmation, &page)
-		Render(w, view)
+		ui.WritePage(w, dapi.BaseUIPath, ui.EmailConfirmation, &page)
 	}))
 }
 
@@ -126,8 +123,7 @@ func (dapi *DefaultUserCredentialsAPI) GETUpdatePageHandler(route string) http.H
 			gohtypes.PanicIfError(fmt.Sprintf("Could not find credentials with username '%v'", token.Subject), http.StatusInternalServerError, err)
 
 			page := types.UpdatePage{RedirectTo: redirectTo, Username: userCredentials.Username, Email: userCredentials.Email}
-			view := ui.BuildPage(dapi.BaseUIPath, ui.Update, &page)
-			Render(w, view)
+			ui.WritePage(w, dapi.BaseUIPath, ui.Update, &page)
 
 			return
 		}

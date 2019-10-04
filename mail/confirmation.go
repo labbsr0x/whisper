@@ -2,7 +2,6 @@ package mail
 
 import (
 	"github.com/labbsr0x/whisper/misc"
-	"github.com/labbsr0x/whisper/web/ui"
 )
 
 // Enum
@@ -15,12 +14,13 @@ type emailConfirmationMailContent struct {
 	Username string
 }
 
-// GetEmailConfirmationMail build the mail for email confirmation
+// GetEmailConfirmationMail render the mail for email confirmation
 func GetEmailConfirmationMail(baseUIPath, secret, username, email, challenge string) Mail {
 	to := []string{email}
 	token := misc.GetEmailConfirmationToken(secret, username, challenge)
 	link := "http://localhost:7070/email-confirmation?token=" + token
-	content := ui.BuildMail(baseUIPath, emailConfirmationMail, emailConfirmationMailContent{Link: link, Username: username})
+	page := emailConfirmationMailContent{Link: link, Username: username}
+	content := render(baseUIPath, emailConfirmationMail, &page)
 
 	return Mail{To: to, Content: content}
 }

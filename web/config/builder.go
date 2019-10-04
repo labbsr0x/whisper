@@ -116,18 +116,25 @@ func (flags *Flags) check() {
 		flags.MailHost == "" ||
 		flags.MailPort == ""
 
+	requiredFlagsNames := []string{
+		baseUIPath,
+		hydraAdminURL,
+		hydraPublicURL,
+		scopesFilePath,
+		secretKey,
+		databaseURL,
+		mailUser,
+		mailPassword,
+		mailHost,
+		mailPort,
+	}
+
 	if haveEmptyRequiredFlags {
-		msg := fmt.Sprintf("The following flags cannot be empty:\n\n\t%v\n\t%v\n\t%v\n\t%v\n\t%v\n\t%v\n\t%v\n\t%v\n\t%v\n\t%v\n",
-			baseUIPath,
-			hydraAdminURL,
-			hydraPublicURL,
-			scopesFilePath,
-			secretKey,
-			databaseURL,
-			mailUser,
-			mailPassword,
-			mailHost,
-			mailPort)
+		msg := fmt.Sprintf("The following flags cannot be empty:")
+
+		for _, name := range requiredFlagsNames {
+			msg += fmt.Sprintf("\n\t%v", name)
+		}
 
 		panic(msg)
 	}

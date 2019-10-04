@@ -40,7 +40,7 @@ func (dapi *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 		userCredential := dapi.UserCredentialsDAO.CheckCredentials(loginRequest.Username, loginRequest.Password)
 
 		if !userCredential.EmailValidated {
-			dapi.Outbox <- mail.GetEmailConfirmationMail(dapi.BaseUIPath, dapi.SecretKey, userCredential.Username, userCredential.Email, loginRequest.Challenge)
+			dapi.Outbox <- mail.GetEmailConfirmationMail(dapi.BaseUIPath, dapi.SecretKey, dapi.PublicURL, userCredential.Username, userCredential.Email, loginRequest.Challenge)
 			gohtypes.Panic("This account email is not authenticated, an email was sent to you confirm your email", http.StatusUnauthorized)
 		}
 

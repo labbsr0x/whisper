@@ -1,6 +1,7 @@
 package mail
 
 import (
+	"fmt"
 	"github.com/labbsr0x/whisper/misc"
 )
 
@@ -15,10 +16,10 @@ type emailConfirmationMailContent struct {
 }
 
 // GetEmailConfirmationMail render the mail for email confirmation
-func GetEmailConfirmationMail(baseUIPath, secret, username, email, challenge string) Mail {
+func GetEmailConfirmationMail(baseUIPath, secret, publicAddress, username, email, challenge string) Mail {
 	to := []string{email}
 	token := misc.GetEmailConfirmationToken(secret, username, challenge)
-	link := "http://localhost:7070/email-confirmation?token=" + token
+	link := fmt.Sprintf("%v/email-confirmation?token=%v", publicAddress, token)
 	page := emailConfirmationMailContent{Link: link, Username: username}
 	content := render(baseUIPath, emailConfirmationMail, &page)
 

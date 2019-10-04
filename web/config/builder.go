@@ -23,6 +23,7 @@ const (
 	port           = "port"
 	hydraAdminURL  = "hydra-admin-url"
 	hydraPublicURL = "hydra-public-url"
+	publicURL      = "public-url"
 	logLevel       = "log-level"
 	scopesFilePath = "scopes-file-path"
 	databaseURL    = "database-url"
@@ -41,6 +42,7 @@ type Flags struct {
 	ScopesFilePath string
 	HydraAdminURL  string
 	HydraPublicURL string
+	PublicURL      string
 	DatabaseURL    string
 	SecretKey      string
 	MailUser       string
@@ -64,6 +66,7 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.StringP(port, "p", "7070", "[optional] Custom port for accessing Whisper's services. Defaults to 7070")
 	flags.StringP(hydraAdminURL, "a", "", "Hydra Admin URL")
 	flags.StringP(hydraPublicURL, "o", "", "Hydra Public URL")
+	flags.StringP(publicURL, "", "", "Public URL for referencing in links")
 	flags.StringP(logLevel, "l", "info", "[optional] Sets the Log Level to one of seven (trace, debug, info, warn, error, fatal, panic). Defaults to info")
 	flags.StringP(scopesFilePath, "s", "", "Sets the path to the json file where the available scopes will be found")
 	flags.StringP(databaseURL, "d", "", "Sets the database url where user credential data will be stored")
@@ -83,6 +86,7 @@ func (b *WebBuilder) Init(v *viper.Viper, outbox chan<- mail.Mail) *WebBuilder {
 	flags.ScopesFilePath = v.GetString(scopesFilePath)
 	flags.HydraAdminURL = v.GetString(hydraAdminURL)
 	flags.HydraPublicURL = v.GetString(hydraPublicURL)
+	flags.PublicURL = v.GetString(publicURL)
 	flags.DatabaseURL = v.GetString(databaseURL)
 	flags.SecretKey = v.GetString(secretKey)
 	flags.MailUser = v.GetString(mailUser)
@@ -108,6 +112,7 @@ func (flags *Flags) check() {
 	haveEmptyRequiredFlags := flags.BaseUIPath == "" ||
 		flags.HydraAdminURL == "" ||
 		flags.HydraPublicURL == "" ||
+		flags.PublicURL == "" ||
 		flags.ScopesFilePath == "" ||
 		flags.SecretKey == "" ||
 		flags.DatabaseURL == "" ||
@@ -120,6 +125,7 @@ func (flags *Flags) check() {
 		baseUIPath,
 		hydraAdminURL,
 		hydraPublicURL,
+		publicURL,
 		scopesFilePath,
 		secretKey,
 		databaseURL,

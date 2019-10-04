@@ -29,7 +29,6 @@ const (
 	secretKey      = "secret-key"
 	mailUser       = "mail-user"
 	mailPassword   = "mail-password"
-	mailIdentity   = "mail-identity"
 	mailHost       = "mail-host"
 	mailPort       = "mail-port"
 )
@@ -46,7 +45,6 @@ type Flags struct {
 	SecretKey      string
 	MailUser       string
 	MailPassword   string
-	MailIdentity   string
 	MailHost       string
 	MailPort       string
 }
@@ -72,7 +70,6 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.StringP(secretKey, "k", "", "Sets the secret key used to hash the stored passwords")
 	flags.StringP(mailUser, "", "", "Sets the mail worker user")
 	flags.StringP(mailPassword, "", "", "Sets the mail worker user's password")
-	flags.StringP(mailIdentity, "", "", "Sets the mail worker user's identity")
 	flags.StringP(mailHost, "", "", "Sets the mail worker host")
 	flags.StringP(mailPort, "", "", "Sets the mail worker port")
 }
@@ -90,7 +87,6 @@ func (b *WebBuilder) Init(v *viper.Viper, outbox chan<- mail.Mail) *WebBuilder {
 	flags.SecretKey = v.GetString(secretKey)
 	flags.MailUser = v.GetString(mailUser)
 	flags.MailPassword = v.GetString(mailPassword)
-	flags.MailIdentity = v.GetString(mailIdentity)
 	flags.MailHost = v.GetString(mailHost)
 	flags.MailPort = v.GetString(mailPort)
 

@@ -16,10 +16,10 @@ type emailConfirmationMailContent struct {
 }
 
 // GetEmailConfirmationMail build the mail for email confirmation
-func GetEmailConfirmationMail(baseUIPath, username, email, challenge string) Mail {
+func GetEmailConfirmationMail(baseUIPath, secret, username, email, challenge string) Mail {
 	to := []string{email}
-	token := misc.GetEmailConfirmationToken(username, challenge)
-	link := "http://localhost:7070/email-confirmation?email_confirmation_token=" + token
+	token := misc.GetEmailConfirmationToken(secret, username, challenge)
+	link := "http://localhost:7070/email-confirmation?token=" + token
 	content := ui.BuildMail(baseUIPath, emailConfirmationMail, emailConfirmationMailContent{Link: link, Username: username})
 
 	return Mail{To: to, Content: content}

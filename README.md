@@ -75,6 +75,7 @@ From the project root folder, fire the following commands to execute this projec
         --base-ui-path     ./web/ui/www \
         --hydra-admin-url  http://localhost:4445 \
         --hydra-public-url http://localhost:4444 \
+        --public-url       http://localhost:7070 \
         --secret-key       uhSunsodnsuBsdjsbds \
         --log-level        debug \
         --scopes-file-path ./scopes.json \

@@ -95,8 +95,7 @@ func (payload *AddUserCredentialRequestPayload) check() {
 		gohtypes.Panic("Wrong password confirmation", http.StatusBadRequest)
 	}
 
-	err := misc.ValidatePassword(payload.Password, payload.Username, payload.Email)
-	gohtypes.PanicIfError("Password not valid", http.StatusBadRequest, err)
+	misc.ValidatePassword(payload.Password, payload.Username, payload.Email)
 
 	verifyEmail(payload.Email)
 }

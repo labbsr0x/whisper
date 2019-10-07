@@ -178,5 +178,9 @@ func (b *WebBuilder) initDB() *gorm.DB {
 	dbc, err := gorm.Open("mysql", dbURL)
 	gohtypes.PanicIfError("Unable to open db", http.StatusInternalServerError, err)
 
+	dbc.DB().SetMaxIdleConns(4)
+	dbc.DB().SetMaxOpenConns(20)
+
 	return dbc.LogMode(true)
+
 }

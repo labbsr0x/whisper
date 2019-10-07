@@ -43,6 +43,42 @@ function notifySuccess (text) {
     notify("success", text)
 }
 
+function isPasswordValid (password, username, email) {
+    var minCharacters = 12;
+    var maxCharacters = 30;
+    var minUnique = 7;
+
+    if (!password || password.length < minCharacters) {
+        return "Your password should have at least " + minCharacters + " characters";
+    }
+
+    if (!password || password.length > maxCharacters) {
+        return "Your password should have at most " + maxCharacters + " characters";
+    }
+
+    var pass = password.toLowerCase();
+    var user = username.toLowerCase();
+    var mail = email.toLowerCase();
+
+    if (pass.contains(user) || user.contains(pass)) {
+        return "Your password is too similar to your username";
+    }
+
+    if (pass.contains(mail) || mail.contains(user)) {
+        return "Your password is too similar to your email";
+    }
+
+    var distinct = password.filter(function (value, index, self) {
+        return self.indexOf(value) === index;
+    });
+
+    if (!distinct || distinct.lenght < minUnique) {
+        return "Your password should have at least " + minUnique + " unique characters";
+    }
+
+    return null;
+}
+
 function setupLoginPage(action) {
     if (action !== "login") {
         return;
@@ -196,6 +232,13 @@ function setupUpdatePage(action) {
             return;
         }
 
+        var err = isPasswordValid(request.newPassword);
+
+        if (!err) {
+            notifyError(err);
+            return;
+        }
+
         startSubmitting($this);
 
         $.ajax({
@@ -220,38 +263,6 @@ function setupUpdatePage(action) {
 
 function setupRegistrationPage(action) {
     if (action !== "registration") {
-        return;
-    }
-
-    function isPasswordValid (password, username, email) {
-        var minCharacters = 12;
-        var maxCharacters = 30;
-        var minUnique = 7;
-
-        if (!password || password.length < minCharacters) {
-            return "Your password should have at least " + minCharacters + " characters";
-        }
-
-        if (!password || password.length > maxCharacters) {
-            return "Your password should have at most " + maxCharacters + " characters";
-        }
-
-        if (username.toLowerCase().contains(password.toLowerCase())) {
-            return "Your password should not be contained in your username";
-        }
-
-        if (email.toLowerCase().contains(password.toLowerCase())) {
-            return "Your password should not be contained in your email";
-        }
-
-        distinct = password.filter(function (value, index, self) {
-            return self.indexOf(value) === index;
-        })
-
-        if (!distinct || distinct.lenght < minUnique) {
-            return "Your password should have at least " + minUnique + " unique characters";
-        }
-
         return;
     }
 
@@ -287,7 +298,7 @@ function setupRegistrationPage(action) {
             return;
         }
 
-        var err = isPasswordValid(request.password)
+        var err = isPasswordValid(request.password);
 
         if (!err) {
             notifyError(err);

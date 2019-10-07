@@ -1,3 +1,7 @@
+$(document).ready(function(){
+    $('[data-toggle="tooltip"]').tooltip();
+});
+
 var params = new URLSearchParams(window.location.search);
 
 window.onload = function() {
@@ -60,19 +64,19 @@ function isPasswordValid (password, username, email) {
     var user = username.toLowerCase();
     var mail = email.toLowerCase();
 
-    if (pass.contains(user) || user.contains(pass)) {
+    if (pass.includes(user) || user.includes(pass)) {
         return "Your password is too similar to your username";
     }
 
-    if (pass.contains(mail) || mail.contains(user)) {
+    if (pass.includes(mail) || mail.includes(user)) {
         return "Your password is too similar to your email";
     }
 
-    var distinct = password.filter(function (value, index, self) {
+    var distinct = password.split('').filter(function (value, index, self) {
         return self.indexOf(value) === index;
     });
 
-    if (!distinct || distinct.lenght < minUnique) {
+    if (!distinct || distinct.length < minUnique) {
         return "Your password should have at least " + minUnique + " unique characters";
     }
 
@@ -232,9 +236,10 @@ function setupUpdatePage(action) {
             return;
         }
 
-        var err = isPasswordValid(request.newPassword);
+        // TODO: find a way to get the username
+        var err = isPasswordValid(request.newPassword, "", request.email);
 
-        if (!err) {
+        if (err) {
             notifyError(err);
             return;
         }
@@ -298,9 +303,9 @@ function setupRegistrationPage(action) {
             return;
         }
 
-        var err = isPasswordValid(request.password);
+        var err = isPasswordValid(request.password, request.username, request.email);
 
-        if (!err) {
+        if (err) {
             notifyError(err);
             return;
         }

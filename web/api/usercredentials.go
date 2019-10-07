@@ -77,7 +77,7 @@ func (dapi *DefaultUserCredentialsAPI) GETRegistrationPageHandler(route string) 
 		challenge, err := url.QueryUnescape(r.URL.Query().Get("login_challenge"))
 		gohtypes.PanicIfError("Unable to parse the login_challenge parameter", http.StatusBadRequest, err)
 
-		page := types.RegistrationPage{LoginChallenge: challenge}
+		page := types.RegistrationPage{LoginChallenge: challenge, PasswordTooltip: misc.GetPasswordTooltip()}
 		ui.WritePage(w, dapi.BaseUIPath, ui.Registration, &page)
 	}))
 }
@@ -130,7 +130,7 @@ func (dapi *DefaultUserCredentialsAPI) GETUpdatePageHandler(route string) http.H
 			userCredentials, err := dapi.UserCredentialsDAO.GetUserCredential(token.Subject)
 			gohtypes.PanicIfError(fmt.Sprintf("Could not find credentials with username '%v'", token.Subject), http.StatusInternalServerError, err)
 
-			page := types.UpdatePage{RedirectTo: redirectTo, Username: userCredentials.Username, Email: userCredentials.Email}
+			page := types.UpdatePage{RedirectTo: redirectTo, Username: userCredentials.Username, Email: userCredentials.Email, PasswordTooltip: misc.GetPasswordTooltip()}
 			ui.WritePage(w, dapi.BaseUIPath, ui.Update, &page)
 
 			return

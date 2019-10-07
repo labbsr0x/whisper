@@ -236,7 +236,6 @@ function setupUpdatePage(action) {
             return;
         }
 
-        // TODO: find a way to get the username
         var err = isPasswordValid(request.newPassword, "", request.email);
 
         if (err) {

@@ -2,6 +2,8 @@ package misc
 
 import (
 	"fmt"
+	"github.com/labbsr0x/goh/gohtypes"
+	"net/http"
 	"strings"
 )
 
@@ -11,13 +13,13 @@ const (
 	passMinUniqueCharacters = 7
 )
 
-func ValidatePassword (password, username, email string) error {
+func ValidatePassword (password, username, email string) {
 	if len(password) < passMinCharacters {
-		return fmt.Errorf("your password should have at least %v characters", passMinCharacters)
+		gohtypes.Panic(fmt.Sprintf("Your password should have at least %v characters", passMinCharacters), http.StatusBadRequest)
 	}
 
 	if len(password) > passMaxCharacters {
-		return fmt.Errorf("your password should have at most %v characters", passMaxCharacters)
+		gohtypes.Panic(fmt.Sprintf("Your password should have at most %v characters", passMaxCharacters), http.StatusBadRequest)
 	}
 
 	pass := strings.ToLower(password)
@@ -25,18 +27,16 @@ func ValidatePassword (password, username, email string) error {
 	mail := strings.ToLower(email)
 
 	if strings.Contains(pass, user) || strings.Contains(user, pass) {
-		return fmt.Errorf("your password is too similar to your username")
+		gohtypes.Panic("Your password is too similar to your username", http.StatusBadRequest)
 	}
 
 	if strings.Contains(pass, mail) || strings.Contains(mail, pass) {
-		return fmt.Errorf("your password is too similar to your email")
+		gohtypes.Panic("Your password is too similar to your email", http.StatusBadRequest)
 	}
 
 	if CountUniqueCharacters(pass) < passMinUniqueCharacters {
-		return fmt.Errorf("your password should have at least %v unique characters", passMinUniqueCharacters)
+		gohtypes.Panic(fmt.Sprintf("your password should have at least %v unique characters", passMinUniqueCharacters), http.StatusBadRequest)
 	}
-
-	return nil
 }
 
 func GetPasswordTooltip () string {

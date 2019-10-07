@@ -16,6 +16,7 @@ import (
 type RegistrationPage struct {
 	Page
 	LoginChallenge string
+	PasswordTooltip string
 }
 
 func (p *RegistrationPage) SetHTML(html template.HTML) {
@@ -40,6 +41,7 @@ type UpdatePage struct {
 	Email      string
 	Token      string
 	RedirectTo string
+	PasswordTooltip string
 }
 
 func (p *UpdatePage) SetHTML(html template.HTML) {
@@ -75,7 +77,7 @@ func (payload *AddUserCredentialRequestPayload) InitFromRequest(r *http.Request)
 
 	err = json.Unmarshal(data, &payload)
 	gohtypes.PanicIfError("Not possible to unmarshal update payload", http.StatusBadRequest, err)
-	
+
 	logrus.Debugf("Payload: '%v'", payload)
 
 	payload.check()

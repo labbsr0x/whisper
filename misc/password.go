@@ -5,19 +5,19 @@ import (
 	"strings"
 )
 
-func ValidatePassword (password, username, email string) error {
-	const (
-		minCharacters = 12
-		maxCharacters = 30
-		minUnique = 7
-	)
+const (
+	passMinCharacters       = 12
+	passMaxCharacters       = 30
+	passMinUniqueCharacters = 7
+)
 
-	if len(password) < minCharacters {
-		return fmt.Errorf("your password should have at least %v characters", minCharacters)
+func ValidatePassword (password, username, email string) error {
+	if len(password) < passMinCharacters {
+		return fmt.Errorf("your password should have at least %v characters", passMinCharacters)
 	}
 
-	if len(password) > maxCharacters {
-		return fmt.Errorf("your password should have at most %v characters", maxCharacters)
+	if len(password) > passMaxCharacters {
+		return fmt.Errorf("your password should have at most %v characters", passMaxCharacters)
 	}
 
 	pass := strings.ToLower(password)
@@ -32,9 +32,13 @@ func ValidatePassword (password, username, email string) error {
 		return fmt.Errorf("your password is too similar to your email")
 	}
 
-	if CountUniqueCharacters(pass) < minUnique {
-		return fmt.Errorf("your password should have at least %v unique characters", minUnique)
+	if CountUniqueCharacters(pass) < passMinUniqueCharacters {
+		return fmt.Errorf("your password should have at least %v unique characters", passMinUniqueCharacters)
 	}
 
 	return nil
+}
+
+func GetPasswordTooltip () string {
+	return fmt.Sprintf("<div style=\"text-align: left;\"> Password Rules:<br> 1. At least %v characters<br> 2. At most %v characters<br> 3. At least %v unique characters<br> 4. Differ from username and email<br> </div>", passMinCharacters, passMaxCharacters, passMinUniqueCharacters)
 }

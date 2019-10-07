@@ -55,12 +55,15 @@ func (dapi *DefaultUserCredentialsAPI) POSTHandler() http.Handler {
 // PUTHandler handles put requests to update user credentials
 func (dapi *DefaultUserCredentialsAPI) PUTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		payload := new(types.UpdateUserCredentialRequestPayload).InitFromRequest(r)
-
 		if token, ok := r.Context().Value(whisper.TokenKey).(whisper.Token); ok {
+			payload := new(types.UpdateUserCredentialRequestPayload).InitFromRequest(r)
+
 			dapi.UserCredentialsDAO.CheckCredentials(token.Subject, payload.OldPassword)
 
-			err := dapi.UserCredentialsDAO.UpdateUserCredential(token.Subject, payload.Email, payload.NewPassword)
+			err := misc.ValidatePassword(payload.NewPassword, token.Subject, payload.Email)
+			gohtypes.PanicIfError("Password not valid", http.StatusBadRequest, err)
+
+			err = dapi.UserCredentialsDAO.UpdateUserCredential(token.Subject, payload.Email, payload.NewPassword)
 			gohtypes.PanicIfError("Error updating user credential info", http.StatusInternalServerError, err)
 
 			w.WriteHeader(http.StatusOK)

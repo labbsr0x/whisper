@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"github.com/labbsr0x/whisper/misc"
 	"html/template"
 	"io/ioutil"
 	"net/http"
@@ -72,7 +73,9 @@ func (payload *AddUserCredentialRequestPayload) InitFromRequest(r *http.Request)
 	data, err := ioutil.ReadAll(r.Body)
 	gohtypes.PanicIfError("Not possible to parse registration payload", http.StatusBadRequest, err)
 
-	json.Unmarshal(data, &payload)
+	err = json.Unmarshal(data, &payload)
+	gohtypes.PanicIfError("Not possible to unmarshal update payload", http.StatusBadRequest, err)
+	
 	logrus.Debugf("Payload: '%v'", payload)
 
 	payload.check()
@@ -90,6 +93,9 @@ func (payload *AddUserCredentialRequestPayload) check() {
 		gohtypes.Panic("Wrong password confirmation", http.StatusBadRequest)
 	}
 
+	err := misc.ValidatePassword(payload.Password, payload.Username, payload.Email)
+	gohtypes.PanicIfError("Password not valid", http.StatusBadRequest, err)
+
 	verifyEmail(payload.Email)
 }
 
@@ -98,7 +104,9 @@ func (payload *UpdateUserCredentialRequestPayload) InitFromRequest(r *http.Reque
 	data, err := ioutil.ReadAll(r.Body)
 	gohtypes.PanicIfError("Not possible to parse update payload", http.StatusBadRequest, err)
 
-	json.Unmarshal(data, &payload)
+	err = json.Unmarshal(data, &payload)
+	gohtypes.PanicIfError("Not possible to unmarshal update payload", http.StatusBadRequest, err)
+
 	logrus.Debugf("Payload: '%v'", payload)
 
 	payload.check()

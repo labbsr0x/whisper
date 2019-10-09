@@ -1,11 +1,13 @@
 # BUILD
 FROM abilioesteves/gowebbuilder:v1.0.0 as builder
 
-ENV p $GOPATH/src/github.com/labbsr0x/whisper
+RUN mkdir /app
+WORKDIR /app
 
-ADD ./ ${p}
-WORKDIR ${p}
-RUN go get -v ./...
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /whisper main.go
 

@@ -248,7 +248,7 @@ function setupUpdatePage(action) {
             return;
         }
 
-        var username = $("#update-username").val()
+        var username = $("#update-username").val();
         var err = isPasswordValid(request.newPassword, username, request.email);
 
         if (err) {

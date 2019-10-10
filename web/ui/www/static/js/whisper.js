@@ -48,9 +48,21 @@ function notifySuccess (text) {
 }
 
 function isPasswordValid (password, username, email) {
-    var minCharacters = 12;
-    var maxCharacters = 30;
-    var minUnique = 7;
+    var minCharacters = $('#password-min-characters');
+    var maxCharacters = $('#password-max-characters');
+    var minUnique = $('#password-min-unique-characters');
+
+    if (minCharacters == null || maxCharacters == null || minUnique == null) {
+        return "Unable to load password policy";
+    }
+
+    minCharacters = parseInt(minCharacters.val());
+    maxCharacters = parseInt(maxCharacters.val());
+    minUnique = parseInt(minUnique.val());
+
+    if (isNaN(minCharacters) || isNaN(maxCharacters) || isNaN(minUnique)) {
+        return "Unable to load password policy";
+    }
 
     if (!password || password.length < minCharacters) {
         return "Your password should have at least " + minCharacters + " characters";
@@ -236,7 +248,8 @@ function setupUpdatePage(action) {
             return;
         }
 
-        var err = isPasswordValid(request.newPassword, "", request.email);
+        var username = $("#update-username").val()
+        var err = isPasswordValid(request.newPassword, username, request.email);
 
         if (err) {
             notifyError(err);

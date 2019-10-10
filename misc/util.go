@@ -1,6 +1,6 @@
 package misc
 
-func CountUniqueCharacters (str string) int {
+func CountUniqueCharacters(str string) int {
 	counter := make(map[int32]int)
 
 	for _, value := range str {

@@ -122,4 +122,3 @@ func getLogoBytes(baseUIPath, logoName string) []byte {
 
 	return buff
 }
-

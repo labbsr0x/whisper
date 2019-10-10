@@ -9,6 +9,9 @@
             <hr/>
             <div class="card-body">
                 <form id="update-form">
+                    <input id="login-challenge" type="hidden" name="password-min-characters" value="{{.PasswordMinCharacters}}"></input>
+                    <input id="login-challenge" type="hidden" name="password-max-characters" value="{{.PasswordMaxCharacters}}"></input>
+                    <input id="login-challenge" type="hidden" name="password-min-unique-characters" value="{{.PasswordMinUniqueCharacters}}"></input>
                     <div class="form-group">
                         <label for="username">Username</label>
                         <input disabled type="username" class="form-control" id="update-username" name="username" value="{{.Username}}">

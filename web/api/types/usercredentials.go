@@ -15,8 +15,11 @@ import (
 // RegistrationPage defines the information needed to load a registration page
 type RegistrationPage struct {
 	Page
-	LoginChallenge string
-	PasswordTooltip string
+	LoginChallenge              string
+	PasswordTooltip             string
+	PasswordMinCharacters       int
+	PasswordMaxCharacters       int
+	PasswordMinUniqueCharacters int
 }
 
 func (p *RegistrationPage) SetHTML(html template.HTML) {
@@ -37,11 +40,14 @@ func (p *EmailConfirmationPage) SetHTML(html template.HTML) {
 // UpdatePage defines the information needed to load a update user credentials page
 type UpdatePage struct {
 	Page
-	Username   string
-	Email      string
-	Token      string
-	RedirectTo string
-	PasswordTooltip string
+	Username                    string
+	Email                       string
+	Token                       string
+	RedirectTo                  string
+	PasswordTooltip             string
+	PasswordMinCharacters       int
+	PasswordMaxCharacters       int
+	PasswordMinUniqueCharacters int
 }
 
 func (p *UpdatePage) SetHTML(html template.HTML) {

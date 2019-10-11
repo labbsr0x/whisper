@@ -3,7 +3,7 @@ package api
 import (
 	"github.com/labbsr0x/goh/gohserver"
 	"github.com/labbsr0x/goh/gohtypes"
-	whisper "github.com/labbsr0x/whisper-client/client"
+	"github.com/labbsr0x/whisper/hydra"
 	"github.com/labbsr0x/whisper/misc"
 	"github.com/labbsr0x/whisper/web/api/types"
 	"github.com/labbsr0x/whisper/web/config"
@@ -36,12 +36,12 @@ func (dapi *DefaultConsentAPI) ConsentPOSTHandler() http.Handler {
 		consentRequest := new(types.ConsentRequestPayload).InitFromRequest(r)
 		logrus.Debugf("Consent request payload '%v'", consentRequest)
 		if consentRequest.Accept {
-			info := dapi.Self.GetConsentRequestInfo(consentRequest.Challenge)
+			info := dapi.HydraHelper.GetConsentRequestInfo(consentRequest.Challenge)
 			logrus.Debugf("Consent request info: '%v'", info)
 			if info != nil {
-				acceptInfo := dapi.Self.AcceptConsentRequest(
+				acceptInfo := dapi.HydraHelper.AcceptConsentRequest(
 					consentRequest.Challenge,
-					whisper.AcceptConsentRequestPayload{
+					hydra.AcceptConsentRequestPayload{
 						GrantAccessTokenAudience: misc.ConvertInterfaceArrayToStringArray(info["requested_access_token_audience"].([]interface{})),
 						GrantScope:               consentRequest.GrantScope,
 						Remember:                 consentRequest.Remember,
@@ -57,7 +57,8 @@ func (dapi *DefaultConsentAPI) ConsentPOSTHandler() http.Handler {
 				}
 			}
 		} else {
-			rejectInfo := dapi.Self.RejectConsentRequest(consentRequest.Challenge, whisper.RejectConsentRequestPayload{Error: "access_denied", ErrorDescription: "The resource owner denied the request"})
+			payload := hydra.RejectConsentRequestPayload{Error: "access_denied", ErrorDescription: "The resource owner denied the request"}
+			rejectInfo := dapi.HydraHelper.RejectConsentRequest(consentRequest.Challenge, payload)
 			if rejectInfo != nil {
 				http.Redirect(w, r, rejectInfo["redirect_to"].(string), http.StatusFound)
 				return
@@ -72,12 +73,12 @@ func (dapi *DefaultConsentAPI) ConsentGETHandler(route string) http.Handler {
 	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		challenge, err := url.QueryUnescape(r.URL.Query().Get("consent_challenge"))
 		gohtypes.PanicIfError("Unable to parse the consent_challenge parameter", http.StatusBadRequest, err)
-		info := dapi.Self.GetConsentRequestInfo(challenge)
+		info := dapi.HydraHelper.GetConsentRequestInfo(challenge)
 		logrus.Debugf("Consent Request Info: '%v'", info)
 		if info["skip"].(bool) {
-			info = dapi.Self.AcceptConsentRequest(
+			info = dapi.HydraHelper.AcceptConsentRequest(
 				challenge,
-				whisper.AcceptConsentRequestPayload{
+				hydra.AcceptConsentRequestPayload{
 					GrantScope:               misc.ConvertInterfaceArrayToStringArray(info["requested_scope"].([]interface{})),
 					GrantAccessTokenAudience: misc.ConvertInterfaceArrayToStringArray(info["requested_access_token_audience"].([]interface{}))},
 			)

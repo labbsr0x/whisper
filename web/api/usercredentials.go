@@ -5,6 +5,7 @@ import (
 	"github.com/labbsr0x/goh/gohtypes"
 	whisper "github.com/labbsr0x/whisper-client/client"
 	"github.com/labbsr0x/whisper/db"
+	"github.com/labbsr0x/whisper/hydra"
 	"github.com/labbsr0x/whisper/mail"
 	"github.com/labbsr0x/whisper/misc"
 	"github.com/labbsr0x/whisper/web/api/types"
@@ -89,8 +90,8 @@ func (dapi *DefaultUserCredentialsAPI) GETRegistrationPageHandler(route string) 
 
 func getRedirectionLink(challenge, username string, api *DefaultUserCredentialsAPI) string {
 	if len(challenge) > 0 {
-		payload := whisper.AcceptLoginRequestPayload{ACR: "0", Remember: false, Subject: username}
-		info := api.Self.AcceptLoginRequest(challenge, payload)
+		payload := hydra.AcceptLoginRequestPayload{ACR: "0", Remember: false, Subject: username}
+		info := api.HydraHelper.AcceptLoginRequest(challenge, payload)
 		if info == nil {
 			gohtypes.Panic("Unable to accept token login request", http.StatusInternalServerError)
 		}

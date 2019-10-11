@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/jinzhu/gorm"
 	"github.com/labbsr0x/goh/gohtypes"
+	"github.com/labbsr0x/whisper/hydra"
 	"github.com/labbsr0x/whisper/mail"
 	"io/ioutil"
 	"net/http"
@@ -57,6 +58,7 @@ type Flags struct {
 type WebBuilder struct {
 	*Flags
 	Self        *client.WhisperClient
+	HydraHelper hydra.Api
 	GrantScopes misc.GrantScopes
 	Outbox      chan<- mail.Mail
 	DB          *gorm.DB
@@ -101,6 +103,7 @@ func (b *WebBuilder) Init(v *viper.Viper, outbox chan<- mail.Mail) *WebBuilder {
 	b.Flags = flags
 	b.Outbox = outbox
 	b.GrantScopes = b.getGrantScopesFromFile(flags.ScopesFilePath)
+	b.HydraHelper = new(hydra.DefaultHydraHelper).Init(b.HydraAdminURL)
 	b.Self = new(client.WhisperClient).InitFromParams(flags.HydraAdminURL, flags.HydraPublicURL, "whisper", "", b.GrantScopes.GetScopeListFromGrantScopeMap(), []string{})
 	b.DB = b.initDB()
 

@@ -3,8 +3,8 @@ package api
 import (
 	"github.com/labbsr0x/goh/gohserver"
 	"github.com/labbsr0x/goh/gohtypes"
-	whisper "github.com/labbsr0x/whisper-client/client"
 	"github.com/labbsr0x/whisper/db"
+	"github.com/labbsr0x/whisper/hydra"
 	"github.com/labbsr0x/whisper/mail"
 	"github.com/labbsr0x/whisper/web/ui"
 	"github.com/sirupsen/logrus"
@@ -47,9 +47,9 @@ func (dapi *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 			gohtypes.Panic("This account email is not authenticated, an email was sent to you confirm your email", http.StatusUnauthorized)
 		}
 
-		info := dapi.Self.AcceptLoginRequest(
+		info := dapi.HydraHelper.AcceptLoginRequest(
 			loginRequest.Challenge,
-			whisper.AcceptLoginRequestPayload{ACR: "0", Remember: loginRequest.Remember, RememberFor: 3600, Subject: loginRequest.Username},
+			hydra.AcceptLoginRequestPayload{ACR: "0", Remember: loginRequest.Remember, RememberFor: 3600, Subject: loginRequest.Username},
 		)
 		logrus.Debugf("Accept login request info: %v", info)
 		if info != nil {
@@ -66,13 +66,13 @@ func (dapi *DefaultLoginAPI) LoginGETHandler(route string) http.Handler {
 	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		challenge, err := url.QueryUnescape(r.URL.Query().Get("login_challenge"))
 		if err == nil {
-			info := dapi.Self.GetLoginRequestInfo(challenge)
+			info := dapi.HydraHelper.GetLoginRequestInfo(challenge)
 			logrus.Debugf("Login Request Info: %v", info)
 			if info["skip"].(bool) {
 				subject := info["subject"].(string)
-				info = dapi.Self.AcceptLoginRequest(
+				info = dapi.HydraHelper.AcceptLoginRequest(
 					challenge,
-					whisper.AcceptLoginRequestPayload{Subject: subject},
+					hydra.AcceptLoginRequestPayload{Subject: subject},
 				)
 				if info != nil {
 					logrus.Debugf("Login request skipped for subject '%v'", subject)

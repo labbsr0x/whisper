@@ -9,10 +9,12 @@ import (
 	"github.com/labbsr0x/whisper/mail"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 
 	"github.com/labbsr0x/whisper-client/client"
+	"github.com/labbsr0x/whisper-client/config"
 
 	"github.com/labbsr0x/whisper/misc"
 
@@ -104,8 +106,22 @@ func (b *WebBuilder) Init(v *viper.Viper, outbox chan<- mail.Mail) *WebBuilder {
 	b.Outbox = outbox
 	b.GrantScopes = b.getGrantScopesFromFile(flags.ScopesFilePath)
 	b.HydraHelper = new(hydra.DefaultHydraHelper).Init(b.HydraAdminURL)
-	b.Self = new(client.WhisperClient).InitFromParams(flags.HydraAdminURL, flags.HydraPublicURL, "whisper", "", b.GrantScopes.GetScopeListFromGrantScopeMap(), []string{})
 	b.DB = b.initDB()
+
+	hydraAdminURI, err := url.Parse(flags.HydraAdminURL)
+	gohtypes.PanicIfError("Invalid hydra admin url", 500, err)
+	hydraPublicURI, err := url.Parse(flags.HydraPublicURL)
+	gohtypes.PanicIfError("Invalid hydra public url", 500, err)
+
+	b.Self = new(client.WhisperClient).InitFromConfig(&config.Config{
+		ClientID:       "whisper",
+		ClientSecret:   "",
+		WhisperURL:     nil,
+		HydraAdminURL:  hydraAdminURI,
+		HydraPublicURL: hydraPublicURI,
+		Scopes:         b.GrantScopes.GetScopeListFromGrantScopeMap(),
+		RedirectURIs:   []string{},
+	})
 
 	logrus.Infof("GrantScopes: '%v'", b.GrantScopes)
 	return b

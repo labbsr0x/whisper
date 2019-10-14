@@ -23,12 +23,12 @@ func (dapi *DefaultHydraAPI) InitFromWebBuilder(webBuilder *config.WebBuilder) *
 
 // HydraGETHandler provides the Hydra URLs
 func (dapi *DefaultHydraAPI) HydraGETHandler(route string) http.Handler {
-	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		data := map[string]interface{}{
 			"hydraAdminUrl":  dapi.HydraAdminURL,
 			"hydraPublicUrl": dapi.HydraPublicURL,
 		}
 
 		gohserver.WriteJSONResponse(data, http.StatusOK, w)
-	}))
+	})
 }

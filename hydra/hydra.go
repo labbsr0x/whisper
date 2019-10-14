@@ -19,7 +19,7 @@ type DefaultHydraHelper struct {
 	client *gohclient.Default
 }
 
-func (dhh *DefaultHydraHelper) Init (adminURL string) Api {
+func (dhh *DefaultHydraHelper) Init(adminURL string) Api {
 	var err error
 
 	dhh.client, err = gohclient.New(nil, adminURL)

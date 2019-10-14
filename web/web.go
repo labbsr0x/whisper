@@ -22,6 +22,7 @@ type Server struct {
 	UserCredentialsAPIs api.UserCredentialsAPI
 	LoginAPIs           api.LoginAPI
 	ConsentAPIs         api.ConsentAPI
+	HydraAPIs           api.HydraAPI
 }
 
 // InitFromWebBuilder builds a Server instance
@@ -30,6 +31,7 @@ func (s *Server) InitFromWebBuilder(webBuilder *config.WebBuilder) *Server {
 	s.UserCredentialsAPIs = new(api.DefaultUserCredentialsAPI).InitFromWebBuilder(webBuilder)
 	s.LoginAPIs = new(api.DefaultLoginAPI).InitFromWebBuilder(webBuilder)
 	s.ConsentAPIs = new(api.DefaultConsentAPI).InitFromWebBuilder(webBuilder)
+	s.HydraAPIs = new(api.DefaultHydraAPI).InitFromWebBuilder(webBuilder)
 
 	logLevel, err := logrus.ParseLevel(s.LogLevel)
 	if err != nil {
@@ -59,6 +61,8 @@ func (s *Server) Run() error {
 	router.Handle("/registration", s.UserCredentialsAPIs.POSTHandler()).Methods("POST")
 
 	router.Handle("/email-confirmation", s.UserCredentialsAPIs.GETEmailConfirmationPageHandler("/email-confirmation")).Methods("GET")
+
+	router.Handle("/hydra", s.HydraAPIs.HydraGETHandler("/hydra")).Methods("GET")
 
 	secureRouter.Handle("/update", s.UserCredentialsAPIs.GETUpdatePageHandler("/secure/update")).Methods("GET")
 	secureRouter.Handle("/update", s.UserCredentialsAPIs.PUTHandler()).Methods("PUT")

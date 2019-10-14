@@ -19,7 +19,6 @@ func put(client *gohclient.Default, flow, challenge, action string, data []byte)
 	return treatResponse(client.Put(p, data))
 }
 
-
 func treatResponse(resp *http.Response, data []byte, err error) map[string]interface{} {
 	if err == nil {
 		if resp.StatusCode >= 200 && resp.StatusCode <= 302 {

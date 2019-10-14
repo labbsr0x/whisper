@@ -83,7 +83,7 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.StringP(mailPort, "", "", "Sets the mail worker port")
 }
 
-// InitFromWebBuilder initializes the web server builder with properties retrieved from Viper.
+// Init initializes the web server builder with properties retrieved from Viper.
 func (b *WebBuilder) Init(v *viper.Viper, outbox chan<- mail.Mail) *WebBuilder {
 	flags := new(Flags)
 	flags.Port = v.GetString(port)

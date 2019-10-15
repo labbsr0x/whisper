@@ -28,9 +28,9 @@ type DefaultLoginAPI struct {
 }
 
 // InitFromWebBuilder initializes a default login api instance
-func (dapi *DefaultLoginAPI) InitFromWebBuilder(webBuilder *config.WebBuilder) *DefaultLoginAPI {
-	dapi.WebBuilder = webBuilder
-	dapi.UserCredentialsDAO = new(db.DefaultUserCredentialsDAO).Init(webBuilder.SecretKey, webBuilder.Outbox, webBuilder.DB)
+func (dapi *DefaultLoginAPI) InitFromWebBuilder(w *config.WebBuilder) *DefaultLoginAPI {
+	dapi.WebBuilder = w
+	dapi.UserCredentialsDAO = new(db.DefaultUserCredentialsDAO).Init(w.SecretKey, w.BaseUIPath, w.PublicURL, w.Outbox, w.DB)
 	return dapi
 }
 

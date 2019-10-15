@@ -32,9 +32,9 @@ type DefaultUserCredentialsAPI struct {
 }
 
 // InitFromWebBuilder initializes the default user credentials API from a WebBuilder
-func (dapi *DefaultUserCredentialsAPI) InitFromWebBuilder(webBuilder *config.WebBuilder) *DefaultUserCredentialsAPI {
-	dapi.WebBuilder = webBuilder
-	dapi.UserCredentialsDAO = new(db.DefaultUserCredentialsDAO).Init(webBuilder.SecretKey, webBuilder.Outbox, webBuilder.DB)
+func (dapi *DefaultUserCredentialsAPI) InitFromWebBuilder(w *config.WebBuilder) *DefaultUserCredentialsAPI {
+	dapi.WebBuilder = w
+	dapi.UserCredentialsDAO = new(db.DefaultUserCredentialsDAO).Init(w.SecretKey, w.BaseUIPath, w.PublicURL, w.Outbox, w.DB)
 
 	return dapi
 }

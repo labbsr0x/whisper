@@ -34,7 +34,7 @@ func (user *UserCredential) BeforeCreate(scope *gorm.Scope) error {
 
 // UserCredentialsDAO defines the methods that can be performed
 type UserCredentialsDAO interface {
-	Init(secretKey string, outbox chan<- mail.Mail, db *gorm.DB) UserCredentialsDAO
+	Init(secretKey, baseUIPath, publicAddressURL string, outbox chan<- mail.Mail, db *gorm.DB) UserCredentialsDAO
 	CreateUserCredential(username, password, email string) (string, error)
 	UpdateUserCredential(username, email, password string) error
 	GetUserCredential(username string) (UserCredential, error)
@@ -44,16 +44,20 @@ type UserCredentialsDAO interface {
 
 // DefaultUserCredentialsDAO a default UserCredentialsDAO interface implementation
 type DefaultUserCredentialsDAO struct {
-	db        *gorm.DB
-	outbox    chan<- mail.Mail
-	secretKey string
+	db               *gorm.DB
+	outbox           chan<- mail.Mail
+	secretKey        string
+	baseUIPath       string
+	publicAddressURL string
 }
 
 // InitFromWebBuilder initializes a default user credentials DAO from web builder
-func (dao *DefaultUserCredentialsDAO) Init(secretKey string, outbox chan<- mail.Mail, db *gorm.DB) UserCredentialsDAO {
+func (dao *DefaultUserCredentialsDAO) Init(secretKey, baseUIPath, publicAddressURL string, outbox chan<- mail.Mail, db *gorm.DB) UserCredentialsDAO {
 	dao.secretKey = secretKey
 	dao.outbox = outbox
 	dao.db = db
+	dao.baseUIPath = baseUIPath
+	dao.publicAddressURL = publicAddressURL
 
 	err := dao.db.AutoMigrate(&UserCredential{}).Error
 	gohtypes.PanicIfError("Not possible to migrate db", http.StatusInternalServerError, err)
@@ -110,15 +114,24 @@ func (dao *DefaultUserCredentialsDAO) ValidateUserCredentialEmail(username strin
 // UpdateUserCredential updates a user
 func (dao *DefaultUserCredentialsDAO) UpdateUserCredential(username, email, password string) error {
 	userCredential := UserCredential{}
-	salt := misc.GenerateSalt()
-	hPassword := misc.GetEncryptedPassword(dao.secretKey, password, salt)
 
 	err := dao.db.Where("username = ?", username).First(&userCredential).Error
 	gohtypes.PanicIfError("Unable to retrieve user", http.StatusInternalServerError, err)
 
-	userCredential.Password = hPassword
-	userCredential.Salt = salt
-	userCredential.Email = email
+	if hNewPassword := misc.GetEncryptedPassword(dao.secretKey, password, userCredential.Salt); hNewPassword != userCredential.Password {
+		salt := misc.GenerateSalt()
+		hPassword := misc.GetEncryptedPassword(dao.secretKey, password, salt)
+
+		userCredential.Password = hPassword
+		userCredential.Salt = salt
+	}
+
+	if email != userCredential.Email {
+		userCredential.Email = email
+		userCredential.EmailValidated = false
+
+		dao.outbox <- mail.GetEmailConfirmationMail(dao.baseUIPath, dao.secretKey, dao.publicAddressURL, username, email, "")
+	}
 
 	return dao.db.Save(userCredential).Error
 }

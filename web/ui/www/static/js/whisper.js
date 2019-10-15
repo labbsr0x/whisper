@@ -238,13 +238,13 @@ function setupUpdatePage(action) {
             return;
         }
 
-        if (request.newPassword !== request.newPasswordConfirmation) {
-            notifyError("Invalid password confirmation");
+        if (request.oldPassword === request.newPassword) {
+            notifyError("New password cannot be the same as the old");
             return;
         }
 
-        if (!request.grantScope) {
-            notifyError("Grant Scopes are missing");
+        if (request.newPassword !== request.newPasswordConfirmation) {
+            notifyError("Invalid password confirmation");
             return;
         }
 

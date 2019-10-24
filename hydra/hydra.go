@@ -10,6 +10,7 @@ import (
 type Api interface {
 	GetLoginRequestInfo(challenge string) map[string]interface{}
 	AcceptLoginRequest(challenge string, payload AcceptLoginRequestPayload) map[string]interface{}
+	AcceptLogoutRequest(challenge string) map[string]interface{}
 	GetConsentRequestInfo(challenge string) map[string]interface{}
 	AcceptConsentRequest(challenge string, payload AcceptConsentRequestPayload) map[string]interface{}
 	RejectConsentRequest(challenge string, payload RejectConsentRequestPayload) map[string]interface{}
@@ -37,6 +38,10 @@ func (dhh *DefaultHydraHelper) GetLoginRequestInfo(challenge string) map[string]
 func (dhh *DefaultHydraHelper) AcceptLoginRequest(challenge string, payload AcceptLoginRequestPayload) map[string]interface{} {
 	data, _ := json.Marshal(&payload)
 	return put(dhh.client, "login", challenge, "accept", data)
+}
+
+func (dhh *DefaultHydraHelper) AcceptLogoutRequest(challenge string) map[string]interface{} {
+	return put(dhh.client, "login", challenge, "accept", nil)
 }
 
 // GetConsentRequestInfo retrieves information to drive decisions over how to deal with the consent request

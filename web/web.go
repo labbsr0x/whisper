@@ -24,6 +24,7 @@ type Server struct {
 	*config.WebBuilder
 	UserCredentialsAPIs api.UserCredentialsAPI
 	LoginAPIs           api.LoginAPI
+	LogoutAPIs          api.LogoutAPI
 	ConsentAPIs         api.ConsentAPI
 	HydraAPIs           api.HydraAPI
 }
@@ -33,6 +34,7 @@ func (s *Server) InitFromWebBuilder(webBuilder *config.WebBuilder) *Server {
 	s.WebBuilder = webBuilder
 	s.UserCredentialsAPIs = new(api.DefaultUserCredentialsAPI).InitFromWebBuilder(webBuilder)
 	s.LoginAPIs = new(api.DefaultLoginAPI).InitFromWebBuilder(webBuilder)
+	s.LogoutAPIs = new(api.LogoutAPI).InitFromWebBuilder(webBuilder)
 	s.ConsentAPIs = new(api.DefaultConsentAPI).InitFromWebBuilder(webBuilder)
 	s.HydraAPIs = new(api.DefaultHydraAPI).InitFromWebBuilder(webBuilder)
 
@@ -57,6 +59,8 @@ func (s *Server) Run() error {
 	router.Handle("/login", s.LoginAPIs.LoginGETHandler("/login")).Methods("GET")
 	router.Handle("/login", s.LoginAPIs.LoginPOSTHandler()).Methods("POST")
 
+	router.Handle("/logout", s.LogoutAPIs.LogoutGETHandler()).Methods("GET")
+
 	router.Handle("/consent", s.ConsentAPIs.ConsentGETHandler("/consent")).Methods("GET")
 	router.Handle("/consent", s.ConsentAPIs.ConsentPOSTHandler()).Methods("POST")
 
@@ -65,7 +69,7 @@ func (s *Server) Run() error {
 
 	router.Handle("/email-confirmation", s.UserCredentialsAPIs.GETEmailConfirmationPageHandler("/email-confirmation")).Methods("GET")
 
-	router.Handle("/hydra", s.HydraAPIs.HydraGETHandler("/hydra")).Methods("GET")
+	router.Handle("/hydra", s.HydraAPIs.HydraGETHandler()).Methods("GET")
 
 	secureRouter.Handle("/update", s.UserCredentialsAPIs.GETUpdatePageHandler("/secure/update")).Methods("GET")
 	secureRouter.Handle("/update", s.UserCredentialsAPIs.PUTHandler()).Methods("PUT")

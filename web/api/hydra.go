@@ -7,7 +7,7 @@ import (
 )
 
 type HydraAPI interface {
-	HydraGETHandler(route string) http.Handler
+	HydraGETHandler() http.Handler
 }
 
 // DefaultHydraAPI holds the default implementation of the Hydra API interface
@@ -22,7 +22,7 @@ func (dapi *DefaultHydraAPI) InitFromWebBuilder(webBuilder *config.WebBuilder) *
 }
 
 // HydraGETHandler provides the Hydra URLs
-func (dapi *DefaultHydraAPI) HydraGETHandler(route string) http.Handler {
+func (dapi *DefaultHydraAPI) HydraGETHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		data := map[string]interface{}{
 			"hydraAdminUrl":  dapi.HydraAdminURL,

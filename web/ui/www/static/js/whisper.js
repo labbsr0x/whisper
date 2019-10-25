@@ -80,7 +80,7 @@ function isPasswordValid (password, username, email) {
         return "Your password is too similar to your username";
     }
 
-    if (pass.includes(mail) || mail.includes(user)) {
+    if (pass.includes(mail) || mail.includes(pass)) {
         return "Your password is too similar to your email";
     }
 

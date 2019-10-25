@@ -14,6 +14,10 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /whisper main.go
 ## PKG
 FROM alpine
 
+RUN apk update \
+    && apk add --no-cache ca-certificates \
+    && update-ca-certificates
+
 ENV WHISPER_BASE_UI_PATH "/www/"
 ENV WHISPER_SCOPES_FILE_PATH "/scopes.json"
 ENV WHISPER_PORT ""

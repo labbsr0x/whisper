@@ -1,7 +1,10 @@
 package web
 
 import (
+	"context"
 	"net/http"
+	"os"
+	"os/signal"
 	"time"
 
 	"github.com/labbsr0x/whisper/web/api"
@@ -71,6 +74,11 @@ func (s *Server) Run() error {
 	router.Use(middleware.GetErrorMiddleware())
 	secureRouter.Use(s.Self.GetMuxSecurityMiddleware())
 
+	return s.ListenAndServe(router)
+}
+
+func (s *Server) ListenAndServe(router *mux.Router) error {
+
 	srv := &http.Server{
 		Handler:      router,
 		Addr:         "0.0.0.0:" + s.Port,
@@ -78,11 +86,29 @@ func (s *Server) Run() error {
 		ReadTimeout:  15 * time.Second,
 	}
 
-	logrus.Info("Initialized")
-	err := srv.ListenAndServe()
-	if err != nil {
-		logrus.Fatal("server initialization error", err)
-		return err
+	// Run our server in a goroutine so that it doesn't block.
+	go func() {
+		logrus.Info("Initialized")
+		if err := srv.ListenAndServe(); err != nil {
+			logrus.Fatal("server initialization error", err)
+		}
+	}()
+
+	channel := make(chan os.Signal, 1)
+
+	signal.Notify(channel, os.Interrupt)
+
+	<-channel
+
+	logrus.Debugf("Waiting at most %v seconds for a graceful shutdown", time.Second * s.ShutdownTime)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second * s.ShutdownTime)
+
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil{
+		logrus.Fatal("server finalization error", err)
 	}
+
+	logrus.Info("Shutting down")
 	return nil
 }

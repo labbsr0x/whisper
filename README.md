@@ -84,6 +84,7 @@ From the project root folder, fire the following commands to execute this projec
         --mail-password    "<your smtp account password>" \
         --mail-host        "<your smtp server address>" \
         --mail-port        "<your smtp server port>" \
+        --shutdown-time    10 \
     ```
 
 4. Authorize application on hydra

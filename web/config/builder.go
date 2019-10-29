@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/labbsr0x/whisper-client/client"
 	"github.com/labbsr0x/whisper-client/config"
@@ -37,6 +38,7 @@ const (
 	mailPassword   = "mail-password"
 	mailHost       = "mail-host"
 	mailPort       = "mail-port"
+	shutdownTime   = "shutdown-time"
 )
 
 // Flags define the fields that will be passed via cmd
@@ -54,6 +56,7 @@ type Flags struct {
 	MailPassword   string
 	MailHost       string
 	MailPort       string
+	ShutdownTime   time.Duration
 }
 
 // WebBuilder defines the parametric information of a whisper server instance
@@ -81,6 +84,7 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.StringP(mailPassword, "", "", "Sets the mail worker user's password")
 	flags.StringP(mailHost, "", "", "Sets the mail worker host")
 	flags.StringP(mailPort, "", "", "Sets the mail worker port")
+	flags.StringP(shutdownTime, "", "10", "[optional] Sets the Graceful Shutdown wait time (seconds)")
 }
 
 // Init initializes the web server builder with properties retrieved from Viper.
@@ -99,6 +103,7 @@ func (b *WebBuilder) Init(v *viper.Viper, outbox chan<- mail.Mail) *WebBuilder {
 	flags.MailPassword = v.GetString(mailPassword)
 	flags.MailHost = v.GetString(mailHost)
 	flags.MailPort = v.GetString(mailPort)
+	flags.ShutdownTime = v.GetDuration(shutdownTime)
 
 	flags.check()
 

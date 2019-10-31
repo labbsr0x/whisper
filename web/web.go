@@ -86,19 +86,19 @@ func (s *Server) ListenAndServe(router *mux.Router) error {
 		ReadTimeout:  15 * time.Second,
 	}
 
-	// Run our server in a goroutine so that it doesn't block.
-	go func() {
-		logrus.Info("Initialized")
-		if err := srv.ListenAndServe(); err != nil {
-			logrus.Fatal("server initialization error", err)
-		}
-	}()
-
 	channel := make(chan os.Signal, 1)
-
 	signal.Notify(channel, os.Interrupt)
 
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			logrus.Fatal("server initialization error: %v", err)
+		}
+	}()
+	logrus.Info("Server Started")
+
 	<-channel
+
+	logrus.Info("Server Stopped")
 
 	logrus.Debugf("Waiting at most %v seconds for a graceful shutdown", time.Second * s.ShutdownTime)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second * s.ShutdownTime)
@@ -106,9 +106,10 @@ func (s *Server) ListenAndServe(router *mux.Router) error {
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil{
-		logrus.Fatal("server finalization error", err)
+		logrus.Fatal("server finalization error: %v", err)
 	}
 
-	logrus.Info("Shutting down")
+	logrus.Info("Server Exited Properly")
+
 	return nil
 }

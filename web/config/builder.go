@@ -84,7 +84,7 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.StringP(mailPassword, "", "", "Sets the mail worker user's password")
 	flags.StringP(mailHost, "", "", "Sets the mail worker host")
 	flags.StringP(mailPort, "", "", "Sets the mail worker port")
-	flags.StringP(shutdownTime, "", "10", "[optional] Sets the Graceful Shutdown wait time (seconds)")
+	flags.StringP(shutdownTime, "t", "10", "[optional] Sets the Graceful Shutdown wait time (seconds)")
 }
 
 // Init initializes the web server builder with properties retrieved from Viper.

@@ -15,6 +15,11 @@ import (
 	"github.com/labbsr0x/whisper/hydra"
 	"github.com/labbsr0x/whisper/mail"
 
+	"github.com/jinzhu/gorm"
+	"github.com/labbsr0x/goh/gohtypes"
+	"github.com/labbsr0x/whisper/hydra"
+	"github.com/labbsr0x/whisper/mail"
+
 	"github.com/labbsr0x/whisper-client/client"
 	"github.com/labbsr0x/whisper-client/config"
 

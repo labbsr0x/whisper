@@ -21,6 +21,7 @@ type UserCredentialsAPI interface {
 	POSTHandler() http.Handler
 	PUTHandler() http.Handler
 	GETEmailConfirmationPageHandler(route string) http.Handler
+	GETChangePasswordPageHandler(route string) http.Handler
 	GETRegistrationPageHandler(route string) http.Handler
 	GETUpdatePageHandler(route string) http.Handler
 }
@@ -102,7 +103,7 @@ func getRedirectionLink(challenge, username string, api *DefaultUserCredentialsA
 	return "/login"
 }
 
-// GETEmailConfirmationPageHandler builds the page where new credentials will be inserted
+// GETEmailConfirmationPageHandler builds the page where confirm email
 func (dapi *DefaultUserCredentialsAPI) GETEmailConfirmationPageHandler(route string) http.Handler {
 	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		LoadErrorPage := func() {
@@ -123,6 +124,35 @@ func (dapi *DefaultUserCredentialsAPI) GETEmailConfirmationPageHandler(route str
 		link := getRedirectionLink(challenge, username, dapi)
 		page := types.EmailConfirmationPage{Successful: true, Message: "Your email has been confirmed", RedirectTo: link}
 		ui.WritePage(w, dapi.BaseUIPath, ui.EmailConfirmation, &page)
+	}))
+}
+
+// GETChangePasswordPageHandler builds the page where new passwords will be inserted
+func (dapi *DefaultUserCredentialsAPI) GETChangePasswordPageHandler(route string) http.Handler {
+	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		claims := misc.ExtractClaimsTokenFromRequest(dapi.SecretKey, r)
+		username, challenge := misc.UnmarshalChangePasswordToken(claims)
+
+		userCredentials, err := dapi.UserCredentialsDAO.GetUserCredential(username)
+		gohtypes.PanicIfError(fmt.Sprintf("Could not find credentials with username '%v'", username), http.StatusInternalServerError, err)
+
+		link := getRedirectionLink(challenge, username, dapi)
+		page := types.ChangePasswordPage{
+			RedirectTo:                  redirectTo,
+			Username:                    userCredentials.Username,
+			PasswordTooltip:             misc.GetPasswordTooltip(),
+			PasswordMinCharacters:       misc.PasswordMinCharacters,
+			PasswordMaxCharacters:       misc.PasswordMaxCharacters,
+			PasswordMinUniqueCharacters: misc.PasswordMinUniqueCharacters,
+		}
+		ui.WritePage(w, dapi.BaseUIPath, ui.EmailConfirmation, &page)
+	}))
+}
+
+// POSTChangePasswordPageHandler change password
+func (dapi *DefaultUserCredentialsAPI) POSTChangePasswordPageHandler(route string) http.Handler {
+	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		link := getRedirectionLink(challenge, username, dapi)
 	}))
 }
 

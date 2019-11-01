@@ -69,12 +69,47 @@ func UnmarshalEmailConfirmationToken(claims jwt.MapClaims) (username, challenge 
 	return
 }
 
+// UnmarshalChangePasswordToken verify it is an change password token and extract the main confirmation
+func UnmarshalChangePasswordToken(claims jwt.MapClaims) (username, challenge string) {
+	cp, ok := claims["cp"].(bool)
+	if !ok || !cp {
+		gohtypes.Panic("Change password token not valid", http.StatusNotAcceptable)
+	}
+
+	username, ok = claims["sub"].(string)
+	if !ok {
+		gohtypes.Panic("Unable to find the user", http.StatusNotFound)
+	}
+
+	challenge, ok = claims["challenge"].(string)
+	if !ok {
+		gohtypes.Panic("Unable to find the login challenge", http.StatusNotFound)
+	}
+
+	return
+}
+
 func GetEmailConfirmationToken(secret, username, challenge string) string {
 	claims := jwt.MapClaims{
 		"sub":       username,                                // Subject
 		"exp":       time.Now().Add(10 * time.Minute).Unix(), // Expiration
 		"challenge": challenge,                               // Login Challenge
 		"emt":       true,                                    // Email Confirmation Token
+		"iat":       time.Now().Unix(),                       // Issued At
+	}
+
+	token, err := GenerateToken(secret, claims)
+	gohtypes.PanicIfError("Not possible to create token", http.StatusInternalServerError, err)
+
+	return token
+}
+
+func GetChangePasswordToken(secret, username, challenge string) string {
+	claims := jwt.MapClaims{
+		"sub":       username,                                // Subject
+		"exp":       time.Now().Add(10 * time.Minute).Unix(), // Expiration
+		"challenge": challenge,                               // Login Challenge
+		"cp":       true,                                    // Change Password Token
 		"iat":       time.Now().Unix(),                       // Issued At
 	}
 

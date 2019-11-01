@@ -37,6 +37,20 @@ func (p *EmailConfirmationPage) SetHTML(html template.HTML) {
 	p.HTML = html
 }
 
+type ChangePasswordPage struct {
+	Page
+	Username                    string
+	RedirectTo                  string
+	PasswordTooltip             string
+	PasswordMinCharacters       int
+	PasswordMaxCharacters       int
+	PasswordMinUniqueCharacters int
+}
+
+func (p *ChangePasswordPage) SetHTML(html template.HTML) {
+	p.HTML = html
+}
+
 // UpdatePage defines the information needed to load a update user credentials page
 type UpdatePage struct {
 	Page

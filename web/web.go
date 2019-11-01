@@ -64,6 +64,7 @@ func (s *Server) Run() error {
 	router.Handle("/registration", s.UserCredentialsAPIs.POSTHandler()).Methods("POST")
 
 	router.Handle("/email-confirmation", s.UserCredentialsAPIs.GETEmailConfirmationPageHandler("/email-confirmation")).Methods("GET")
+	router.Handle("/change-password", s.UserCredentialsAPIs.GETChangePasswordPageHandler("/change-password")).Methods("GET")
 
 	router.Handle("/hydra", s.HydraAPIs.HydraGETHandler()).Methods("GET")
 

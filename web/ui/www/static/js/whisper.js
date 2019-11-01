@@ -278,6 +278,61 @@ function setupUpdatePage(action) {
     })
 }
 
+function setupChangePasswordPage(action) {
+    if (action !== "change-password") {
+        return;
+    }
+
+    $('#update-submit').on('click', function(event) {
+        event.preventDefault();
+
+        var $this = $(this);
+        var request = {
+            newPassword: $("#new-password").val(),
+            newPasswordConfirmation: $("#new-password-confirmation").val(),
+        };
+
+        if (!request.newPassword) {
+            notifyError("Invalid new password");
+            return;
+        }
+
+        if (request.newPassword !== request.newPasswordConfirmation) {
+            notifyError("Invalid password confirmation");
+            return;
+        }
+
+        var username = $("#username").val();
+        var err = isPasswordValid(request.newPassword, username, request.email);
+
+        if (err) {
+            notifyError(err);
+            return;
+        }
+
+        startSubmitting($this);
+
+        $.ajax({
+            url: "/change-password",
+            type: "PUT",
+            data: JSON.stringify(request),
+            contentType: "application/json",
+            headers: {
+                "Authorization": "Bearer " + params.get("token")
+            },
+            success: function(data, status, xhr) {
+                finishSubmitting($this);
+                window.location = params.get("redirect_to");
+            },
+            error: function(xhr, status, error) {
+                finishSubmitting($this);
+                notifyError(xhr.responseText);
+            }
+        })
+    })
+}
+
+
 function setupRegistrationPage(action) {
     if (action !== "registration") {
         return;

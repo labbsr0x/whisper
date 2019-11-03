@@ -3,16 +3,17 @@ package config
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/jinzhu/gorm"
-	"github.com/labbsr0x/goh/gohtypes"
-	"github.com/labbsr0x/whisper/hydra"
-	"github.com/labbsr0x/whisper/mail"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/jinzhu/gorm"
+	"github.com/labbsr0x/goh/gohtypes"
+	"github.com/labbsr0x/whisper/hydra"
+	"github.com/labbsr0x/whisper/mail"
 
 	"github.com/labbsr0x/whisper-client/client"
 	"github.com/labbsr0x/whisper-client/config"
@@ -119,13 +120,14 @@ func (b *WebBuilder) Init(v *viper.Viper, outbox chan<- mail.Mail) *WebBuilder {
 	gohtypes.PanicIfError("Invalid hydra public url", 500, err)
 
 	b.Self = new(client.WhisperClient).InitFromConfig(&config.Config{
-		ClientID:       "whisper",
-		ClientSecret:   "",
-		WhisperURL:     nil,
-		HydraAdminURL:  hydraAdminURI,
-		HydraPublicURL: hydraPublicURI,
-		Scopes:         b.GrantScopes.GetScopeListFromGrantScopeMap(),
-		RedirectURIs:   []string{},
+		ClientID:          "whisper",
+		ClientSecret:      "",
+		WhisperURL:        nil,
+		HydraAdminURL:     hydraAdminURI,
+		HydraPublicURL:    hydraPublicURI,
+		Scopes:            b.GrantScopes.GetScopeListFromGrantScopeMap(),
+		LoginRedirectURI:  "",
+		LogoutRedirectURI: "",
 	})
 
 	logrus.Infof("GrantScopes: '%v'", b.GrantScopes)

@@ -33,18 +33,21 @@ func (dapi *DefaultConsentAPI) InitFromWebBuilder(webBuilder *config.WebBuilder)
 // ConsentPOSTHandler post form handler for app authorization
 func (dapi *DefaultConsentAPI) ConsentPOSTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		consentRequest := new(types.ConsentRequestPayload).InitFromRequest(r)
-		logrus.Debugf("Consent request payload '%v'", consentRequest)
-		if consentRequest.Accept {
-			info := dapi.HydraHelper.GetConsentRequestInfo(consentRequest.Challenge)
+		var payload types.ConsentRequestPayload
+
+		err := misc.UnmarshalPayloadFromRequest(&payload, r)
+		gohtypes.PanicIfError("Unable to unmarshal the request", http.StatusBadRequest, err)
+
+		if payload.Accept {
+			info := dapi.HydraHelper.GetConsentRequestInfo(payload.Challenge)
 			logrus.Debugf("Consent request info: '%v'", info)
 			if info != nil {
 				acceptInfo := dapi.HydraHelper.AcceptConsentRequest(
-					consentRequest.Challenge,
+					payload.Challenge,
 					hydra.AcceptConsentRequestPayload{
 						GrantAccessTokenAudience: misc.ConvertInterfaceArrayToStringArray(info["requested_access_token_audience"].([]interface{})),
-						GrantScope:               consentRequest.GrantScope,
-						Remember:                 consentRequest.Remember,
+						GrantScope:               payload.GrantScope,
+						Remember:                 payload.Remember,
 						RememberFor:              3600,
 					})
 
@@ -57,8 +60,8 @@ func (dapi *DefaultConsentAPI) ConsentPOSTHandler() http.Handler {
 				}
 			}
 		} else {
-			payload := hydra.RejectConsentRequestPayload{Error: "access_denied", ErrorDescription: "The resource owner denied the request"}
-			rejectInfo := dapi.HydraHelper.RejectConsentRequest(consentRequest.Challenge, payload)
+			payloadHydra := hydra.RejectConsentRequestPayload{Error: "access_denied", ErrorDescription: "The resource owner denied the request"}
+			rejectInfo := dapi.HydraHelper.RejectConsentRequest(payload.Challenge, payloadHydra)
 			if rejectInfo != nil {
 				http.Redirect(w, r, rejectInfo["redirect_to"].(string), http.StatusFound)
 				return

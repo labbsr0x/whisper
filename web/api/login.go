@@ -6,6 +6,7 @@ import (
 	"github.com/labbsr0x/whisper/db"
 	"github.com/labbsr0x/whisper/hydra"
 	"github.com/labbsr0x/whisper/mail"
+	"github.com/labbsr0x/whisper/misc"
 	"github.com/labbsr0x/whisper/web/ui"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -37,19 +38,21 @@ func (dapi *DefaultLoginAPI) InitFromWebBuilder(w *config.WebBuilder) *DefaultLo
 // LoginPOSTHandler post form handler for logging in users
 func (dapi *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		loginRequest := new(types.RequestLoginPayload).InitFromRequest(r)
-		logrus.Debugf("Login request payload '%v'", loginRequest)
+		var payload types.RequestLoginPayload
 
-		userCredential := dapi.UserCredentialsDAO.CheckCredentials(loginRequest.Username, loginRequest.Password)
+		err := misc.UnmarshalPayloadFromRequest(&payload, r)
+		gohtypes.PanicIfError("Unable to unmarshal the request", http.StatusBadRequest, err)
+
+		userCredential := dapi.UserCredentialsDAO.CheckCredentials(payload.Username, payload.Password)
 
 		if !userCredential.EmailValidated {
-			dapi.Outbox <- mail.GetEmailConfirmationMail(dapi.BaseUIPath, dapi.SecretKey, dapi.PublicURL, userCredential.Username, userCredential.Email, loginRequest.Challenge)
+			dapi.Outbox <- mail.GetEmailConfirmationMail(dapi.BaseUIPath, dapi.SecretKey, dapi.PublicURL, userCredential.Username, userCredential.Email, payload.Challenge)
 			gohtypes.Panic("This account email is not authenticated, an email was sent to you confirm your email", http.StatusUnauthorized)
 		}
 
 		info := dapi.HydraHelper.AcceptLoginRequest(
-			loginRequest.Challenge,
-			hydra.AcceptLoginRequestPayload{ACR: "0", Remember: loginRequest.Remember, RememberFor: 3600, Subject: loginRequest.Username},
+			payload.Challenge,
+			hydra.AcceptLoginRequestPayload{ACR: "0", Remember: payload.Remember, RememberFor: 3600, Subject: payload.Username},
 		)
 		logrus.Debugf("Accept login request info: %v", info)
 		if info != nil {

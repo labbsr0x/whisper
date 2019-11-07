@@ -26,7 +26,12 @@ func ConvertInterfaceArrayToStringArray(toConvert []interface{}) []string {
 func GetJSONStr(toEncode interface{}) string {
 	buf := new(bytes.Buffer)
 	enc := json.NewEncoder(buf)
-	enc.Encode(toEncode)
+
+	err := enc.Encode(toEncode)
+	if err != nil {
+		panic("Unable to encode")
+	}
+
 	return buf.String()
 }
 
@@ -43,6 +48,11 @@ func GenerateSalt() string {
 // GetEncryptedPassword builds an encrypted password with hmac(sha512)
 func GetEncryptedPassword(secretKey, password, salt string) string {
 	hash := hmac.New(sha512.New, []byte(secretKey))
-	io.WriteString(hash, password+salt)
+
+	_, err := io.WriteString(hash, password+salt)
+	if err != nil {
+		panic("Unable to write string")
+	}
+
 	return base64.URLEncoding.EncodeToString(hash.Sum(nil))
 }

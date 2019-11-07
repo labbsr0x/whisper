@@ -14,6 +14,7 @@ type ConsentPage struct {
 	RequestedScopes []misc.GrantScope
 }
 
+// SetHTML exposes the HTML from base page
 func (p *ConsentPage) SetHTML(html template.HTML) {
 	p.HTML = html
 }
@@ -26,11 +27,12 @@ type ConsentRequestPayload struct {
 	Remember   bool
 }
 
+// Check validates payload
 func (payload *ConsentRequestPayload) Check() error {
 	payload.Remember = true
 
 	if len(payload.Challenge) == 0 {
-		return fmt.Errorf("Incomplete form data")
+		return fmt.Errorf("incomplete form data")
 	}
 	return nil
 }

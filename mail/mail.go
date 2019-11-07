@@ -15,12 +15,13 @@ import (
 	"path"
 )
 
+// Api defines what should the mail expose
 type Api interface {
 	Init(user, password, host, port string, inbox <-chan Mail) Api
 	Run()
 }
 
-// Mail defines the email
+// Mail holds the content necessary for a email
 type Mail struct {
 	To      []string
 	Content []byte
@@ -28,6 +29,7 @@ type Mail struct {
 
 var _sendMail = smtp.SendMail
 
+// DefaultHandler holds the default implementation of mail
 type DefaultHandler struct {
 	user    string
 	address string
@@ -45,6 +47,7 @@ func (mh *DefaultHandler) Init(user, password, host, port string, inbox <-chan M
 	return mh
 }
 
+// Run start the goroutine that listen for emails to send
 func (mh *DefaultHandler) Run() {
 	go func() {
 		for mail := range mh.Inbox {

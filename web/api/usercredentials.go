@@ -160,7 +160,7 @@ func (dapi *DefaultUserCredentialsAPI) GETChangePasswordStep2PageHandler(route s
 		userCredential, err := dapi.UserCredentialsDAO.GetUserCredential(username)
 		gohtypes.PanicIfError("Unable to validate user email", http.StatusInternalServerError, err)
 
-		page := types.ChangePasswordPage{
+		page := types.ChangePasswordStep2Page{
 			Username:                    userCredential.Username,
 			Email:                       userCredential.Email,
 			PasswordTooltip:             misc.GetPasswordTooltip(),
@@ -176,7 +176,7 @@ func (dapi *DefaultUserCredentialsAPI) GETChangePasswordStep2PageHandler(route s
 // POSTChangePasswordPageHandler init change password process
 func (dapi *DefaultUserCredentialsAPI) POSTChangePasswordPageHandler(route string) http.Handler {
 	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var payload types.ChangePasswordInitUserCredentialRequestPayload
+		var payload types.ChangePasswordStep1UserCredentialRequestPayload
 
 		err := misc.UnmarshalPayloadFromRequest(&payload, r)
 		gohtypes.PanicIfError("Unable to unmarshal the request", http.StatusBadRequest, err)
@@ -193,7 +193,7 @@ func (dapi *DefaultUserCredentialsAPI) POSTChangePasswordPageHandler(route strin
 // PUTChangePasswordPageHandler finish change password process
 func (dapi *DefaultUserCredentialsAPI) PUTChangePasswordPageHandler(route string) http.Handler {
 	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var payload types.ChangePasswordUserCredentialRequestPayload
+		var payload types.ChangePasswordStep2UserCredentialRequestPayload
 
 		err := misc.UnmarshalPayloadFromRequest(&payload, r)
 		gohtypes.PanicIfError("Unable to unmarshal the request", http.StatusBadRequest, err)

@@ -10,9 +10,9 @@ type GrantScope struct {
 // GrantScopes defines a map of grant scopes
 type GrantScopes map[string]GrantScope
 
-// GetScopeListFromGrantScopeMap buils a list of scopes from a grant scope map
+// GetScopeListFromGrantScopeMap builds a list of scopes from a grant scope map
 func (gss GrantScopes) GetScopeListFromGrantScopeMap() []string {
-	toReturn := []string{}
+	var toReturn []string
 	for _, v := range gss {
 		toReturn = append(toReturn, v.Scope)
 	}

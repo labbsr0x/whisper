@@ -19,7 +19,7 @@ Passwords are cryptographically stored with a salt and secret-key with the help 
 HMAC(SHA512(password+salt), secret-key)
 ```
 
-Salts are generated randomically each time a password is stored.
+Salts are generated randomly each time a password is stored.
 
 The secret-key is unique and should not be changed after the app goes up, otherwise Whisper will be unable to verify the validity of old passwords.
 
@@ -31,7 +31,7 @@ The admin endpoint is managed by Hydra and is by default not publicly available.
 
 If the application you are developing is a command-line interface or a mobile device, you need to use the `authorization_code` grant type with `pkce`.
 
-The `pkce` (pronouced pixy) flow is specified by the [RFC7636](https://tools.ietf.org/html/rfc7636).
+The `pkce` (pronounced pixy) flow is specified by the [RFC7636](https://tools.ietf.org/html/rfc7636).
 
 # Login and Consent
 
@@ -131,4 +131,4 @@ The token will be searched in the request's bearer authorization header or via a
 https://<your-whisper-domain>/secure/update?token=nZgyaH1JthU0GIsp2ndRDrYNFE_6ivOqjrQhikIQ5rk.8u5lgf7OtGDbN4Y2GXcTudf1u8lLX3kvsYkFH3uPxrY&redirect_to=http://<your-app-domain>/<where-you-were>
 ```
 
-After successfuly updating credentials, the UI is redirected back to where it came from, via the provided `redirect_to` query param.
+After successfully updating credentials, the UI is redirected back to where it came from, via the provided `redirect_to` query param.

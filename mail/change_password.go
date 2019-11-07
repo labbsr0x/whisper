@@ -16,10 +16,10 @@ type changePasswordMailContent struct {
 }
 
 // GetChangePasswordMail render the mail for changing password
-func GetChangePasswordMail(baseUIPath, secret, publicAddress, username, email, challenge string) Mail {
+func GetChangePasswordMail(baseUIPath, secret, publicAddress, username, email, redirectTo string) Mail {
 	to := []string{email}
-	token := misc.GetEmailConfirmationToken(secret, username, challenge)
-	link := fmt.Sprintf("%v/change-password?token=%v", publicAddress, token)
+	token := misc.GetChangePasswordToken(secret, username, redirectTo)
+	link := fmt.Sprintf("%v/change-password/step-2?token=%v", publicAddress, token)
 	page := changePasswordMailContent{Link: link, Username: username}
 	content := render(baseUIPath, changePasswordMail, &page)
 

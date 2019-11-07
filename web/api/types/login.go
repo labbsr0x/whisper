@@ -1,19 +1,14 @@
 package types
 
 import (
-	"encoding/json"
 	"fmt"
-	"github.com/labbsr0x/goh/gohtypes"
 	"github.com/labbsr0x/whisper/misc"
-	"github.com/sirupsen/logrus"
 	"html/template"
-	"io/ioutil"
-	"net/http"
 )
 
 // LoginPage defines the data needed to build a consent page
 type LoginPage struct {
-	Page
+	misc.BasePage
 	ClientURI       string
 	ClientName      string
 	RequestedScopes []misc.GrantScope
@@ -32,21 +27,8 @@ type RequestLoginPayload struct {
 	Remember  bool
 }
 
-// InitFromRequest initializes the login request payload from an http request form
-func (payload *RequestLoginPayload) InitFromRequest(r *http.Request) *RequestLoginPayload {
-	data, err := ioutil.ReadAll(r.Body)
-	gohtypes.PanicIfError("Not possible to parse registration payload", http.StatusBadRequest, err)
-
-	json.Unmarshal(data, &payload)
-	logrus.Debugf("Payload: '%v'", payload)
-
-	payload.check()
-
-	return payload
-}
-
 // check verifies if the login request payload is ok
-func (payload *RequestLoginPayload) check() error {
+func (payload *RequestLoginPayload) Check() error {
 	if len(payload.Challenge) == 0 || len(payload.Password) == 0 || len(payload.Username) == 0 {
 		return fmt.Errorf("Incomplete fields")
 	}

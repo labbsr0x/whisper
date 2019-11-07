@@ -1,20 +1,14 @@
 package types
 
 import (
-	"encoding/json"
+	"fmt"
 	"github.com/labbsr0x/whisper/misc"
 	"html/template"
-	"io/ioutil"
-	"net/http"
-	"regexp"
-
-	"github.com/labbsr0x/goh/gohtypes"
-	"github.com/sirupsen/logrus"
 )
 
 // RegistrationPage defines the information needed to load a registration page
 type RegistrationPage struct {
-	Page
+	misc.BasePage
 	LoginChallenge              string
 	PasswordTooltip             string
 	PasswordMinCharacters       int
@@ -27,7 +21,7 @@ func (p *RegistrationPage) SetHTML(html template.HTML) {
 }
 
 type EmailConfirmationPage struct {
-	Page
+	misc.BasePage
 	Successful bool
 	Message    string
 	RedirectTo string
@@ -38,9 +32,9 @@ func (p *EmailConfirmationPage) SetHTML(html template.HTML) {
 }
 
 type ChangePasswordPage struct {
-	Page
+	misc.BasePage
 	Username                    string
-	RedirectTo                  string
+	Email                       string
 	PasswordTooltip             string
 	PasswordMinCharacters       int
 	PasswordMaxCharacters       int
@@ -53,7 +47,7 @@ func (p *ChangePasswordPage) SetHTML(html template.HTML) {
 
 // UpdatePage defines the information needed to load a update user credentials page
 type UpdatePage struct {
-	Page
+	misc.BasePage
 	Username                    string
 	Email                       string
 	Token                       string
@@ -68,6 +62,11 @@ func (p *UpdatePage) SetHTML(html template.HTML) {
 	p.HTML = html
 }
 
+// AddUserCredentialResponsePayload defines the response payload after adding a user
+type AddUserCredentialResponsePayload struct {
+	UserCredentialID string
+}
+
 // AddUserCredentialRequestPayload defines the payload for adding a user
 type AddUserCredentialRequestPayload struct {
 	Email                string `json:"email"`
@@ -77,9 +76,21 @@ type AddUserCredentialRequestPayload struct {
 	Challenge            string `json:"challenge"`
 }
 
-// AddUserCredentialResponsePayload defines the response payload after adding a user
-type AddUserCredentialResponsePayload struct {
-	UserCredentialID string
+func (payload *AddUserCredentialRequestPayload) Check() error {
+	if len(payload.Username) == 0 || len(payload.Password) == 0 || len(payload.PasswordConfirmation) == 0 || len(payload.Email) == 0 {
+		return fmt.Errorf("All fields are required")
+	}
+
+	if payload.Password != payload.PasswordConfirmation {
+		return fmt.Errorf("Wrong password confirmation")
+	}
+
+	err := misc.ValidatePassword(payload.Password, payload.Username, payload.Email)
+	if err != nil {
+		return err
+	}
+
+	return misc.VerifyEmail(payload.Email)
 }
 
 // UpdateUserCredentialRequestPayload defines the payload for updating a user
@@ -90,68 +101,45 @@ type UpdateUserCredentialRequestPayload struct {
 	OldPassword             string `json:"oldPassword"`
 }
 
-// InitFromRequest initializes the login request payload from an http request form
-func (payload *AddUserCredentialRequestPayload) InitFromRequest(r *http.Request) *AddUserCredentialRequestPayload {
-	data, err := ioutil.ReadAll(r.Body)
-	gohtypes.PanicIfError("Not possible to parse registration payload", http.StatusBadRequest, err)
-
-	err = json.Unmarshal(data, &payload)
-	gohtypes.PanicIfError("Not possible to unmarshal update payload", http.StatusBadRequest, err)
-
-	logrus.Debugf("Payload: '%v'", payload)
-
-	payload.check()
-
-	return payload
-}
-
-// check verifies if the login request payload is ok
-func (payload *AddUserCredentialRequestPayload) check() {
-	if len(payload.Username) == 0 || len(payload.Password) == 0 || len(payload.PasswordConfirmation) == 0 || len(payload.Email) == 0 {
-		gohtypes.Panic("All fields are required", http.StatusBadRequest)
-	}
-
-	if payload.Password != payload.PasswordConfirmation {
-		gohtypes.Panic("Wrong password confirmation", http.StatusBadRequest)
-	}
-
-	misc.ValidatePassword(payload.Password, payload.Username, payload.Email)
-
-	verifyEmail(payload.Email)
-}
-
-// InitFromRequest initializes the update request payload from an http request form
-func (payload *UpdateUserCredentialRequestPayload) InitFromRequest(r *http.Request) *UpdateUserCredentialRequestPayload {
-	data, err := ioutil.ReadAll(r.Body)
-	gohtypes.PanicIfError("Not possible to parse update payload", http.StatusBadRequest, err)
-
-	err = json.Unmarshal(data, &payload)
-	gohtypes.PanicIfError("Not possible to unmarshal update payload", http.StatusBadRequest, err)
-
-	logrus.Debugf("Payload: '%v'", payload)
-
-	payload.check()
-
-	return payload
-}
-
-// check verifies if the login request payload is ok
-func (payload *UpdateUserCredentialRequestPayload) check() {
+func (payload *UpdateUserCredentialRequestPayload) Check() error {
 	if len(payload.OldPassword) == 0 || len(payload.NewPassword) == 0 || len(payload.NewPasswordConfirmation) == 0 || len(payload.Email) == 0 {
-		gohtypes.Panic("All fields must not be empty", http.StatusBadRequest)
+		return fmt.Errorf("All fields must not be empty")
 	}
 
 	if payload.NewPassword != payload.NewPasswordConfirmation {
-		gohtypes.Panic("Wrong password confirmation", http.StatusBadRequest)
+		return fmt.Errorf("Wrong password confirmation")
 	}
 
-	verifyEmail(payload.Email)
+	return misc.VerifyEmail(payload.Email)
 }
 
-func verifyEmail(email string) {
-	re := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+type ChangePasswordInitUserCredentialRequestPayload struct {
+	RedirectTo string `json:"redirect_to"`
+	Email      string `json:"email"`
+}
 
-	if !re.MatchString(email) {
-		gohtypes.Panic("Invalid email", http.StatusBadRequest)
+func (payload *ChangePasswordInitUserCredentialRequestPayload) Check() error {
+	if len(payload.Email) == 0 {
+		return fmt.Errorf("All fields must not be empty")
 	}
+
+	return misc.VerifyEmail(payload.Email)
+}
+
+type ChangePasswordUserCredentialRequestPayload struct {
+	Token                   string `json:"token"`
+	NewPassword             string `json:"newPassword"`
+	NewPasswordConfirmation string `json:"newPasswordConfirmation"`
+}
+
+func (payload *ChangePasswordUserCredentialRequestPayload) Check() error {
+	if len(payload.Token) == 0 || len(payload.NewPassword) == 0 || len(payload.NewPasswordConfirmation) == 0 {
+		return fmt.Errorf("All fields must not be empty")
+	}
+
+	if payload.NewPassword != payload.NewPasswordConfirmation {
+		return fmt.Errorf("Wrong password confirmation")
+	}
+
+	return nil
 }

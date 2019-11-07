@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"github.com/labbsr0x/goh/gohserver"
 	"github.com/labbsr0x/goh/gohtypes"
 	whisper "github.com/labbsr0x/whisper-client/client"
 	"github.com/labbsr0x/whisper/db"
@@ -21,7 +22,10 @@ type UserCredentialsAPI interface {
 	POSTHandler() http.Handler
 	PUTHandler() http.Handler
 	GETEmailConfirmationPageHandler(route string) http.Handler
-	GETChangePasswordPageHandler(route string) http.Handler
+	GETChangePasswordStep1PageHandler(route string) http.Handler
+	GETChangePasswordStep2PageHandler(route string) http.Handler
+	POSTChangePasswordPageHandler(route string) http.Handler
+	PUTChangePasswordPageHandler(route string) http.Handler
 	GETRegistrationPageHandler(route string) http.Handler
 	GETUpdatePageHandler(route string) http.Handler
 }
@@ -43,7 +47,11 @@ func (dapi *DefaultUserCredentialsAPI) InitFromWebBuilder(w *config.WebBuilder) 
 // POSTHandler handles post requests to create user credentials
 func (dapi *DefaultUserCredentialsAPI) POSTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		payload := new(types.AddUserCredentialRequestPayload).InitFromRequest(r)
+		var payload types.AddUserCredentialRequestPayload
+
+		err := misc.UnmarshalPayloadFromRequest(&payload, r)
+		gohtypes.PanicIfError("Unable to unmarshal the request", http.StatusBadRequest, err)
+
 		userID, err := dapi.UserCredentialsDAO.CreateUserCredential(payload.Username, payload.Password, payload.Email)
 		gohtypes.PanicIfError("Not possible to create user", http.StatusInternalServerError, err)
 		logrus.Infof("User created: %v", userID)
@@ -57,14 +65,18 @@ func (dapi *DefaultUserCredentialsAPI) POSTHandler() http.Handler {
 // PUTHandler handles put requests to update user credentials
 func (dapi *DefaultUserCredentialsAPI) PUTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		payload := new(types.UpdateUserCredentialRequestPayload).InitFromRequest(r)
+		var payload types.UpdateUserCredentialRequestPayload
+
+		err := misc.UnmarshalPayloadFromRequest(&payload, r)
+		gohtypes.PanicIfError("Unable to unmarshal the request", http.StatusBadRequest, err)
 
 		if token, ok := r.Context().Value(whisper.TokenKey).(whisper.Token); ok {
-			misc.ValidatePassword(payload.NewPassword, token.Subject, payload.Email)
+			err := misc.ValidatePassword(payload.NewPassword, token.Subject, payload.Email)
+			gohtypes.PanicIfError("Invalid Password", http.StatusInternalServerError, err)
 
 			dapi.UserCredentialsDAO.CheckCredentials(token.Subject, payload.OldPassword)
 
-			err := dapi.UserCredentialsDAO.UpdateUserCredential(token.Subject, payload.Email, payload.NewPassword)
+			err = dapi.UserCredentialsDAO.UpdateUserCredential(token.Subject, payload.Email, payload.NewPassword)
 			gohtypes.PanicIfError("Error updating user credential info", http.StatusInternalServerError, err)
 
 			w.WriteHeader(http.StatusOK)
@@ -115,10 +127,12 @@ func (dapi *DefaultUserCredentialsAPI) GETEmailConfirmationPageHandler(route str
 
 		defer LoadErrorPage()
 
-		claims := misc.ExtractClaimsTokenFromRequest(dapi.SecretKey, r)
+		claims, err := misc.ExtractClaimsTokenFromRequest(dapi.SecretKey, r)
+		gohtypes.PanicIfError("Unable to extract token from request", http.StatusInternalServerError, err)
+
 		username, challenge := misc.UnmarshalEmailConfirmationToken(claims)
 
-		err := dapi.UserCredentialsDAO.ValidateUserCredentialEmail(username)
+		err = dapi.UserCredentialsDAO.ValidateUserCredentialEmail(username)
 		gohtypes.PanicIfError("Unable to validate user email", http.StatusInternalServerError, err)
 
 		link := getRedirectionLink(challenge, username, dapi)
@@ -127,32 +141,76 @@ func (dapi *DefaultUserCredentialsAPI) GETEmailConfirmationPageHandler(route str
 	}))
 }
 
-// GETChangePasswordPageHandler builds the page where new passwords will be inserted
-func (dapi *DefaultUserCredentialsAPI) GETChangePasswordPageHandler(route string) http.Handler {
+// GETChangePasswordPageHandler builds the page to init the change password
+func (dapi *DefaultUserCredentialsAPI) GETChangePasswordStep1PageHandler(route string) http.Handler {
 	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		claims := misc.ExtractClaimsTokenFromRequest(dapi.SecretKey, r)
-		username, challenge := misc.UnmarshalChangePasswordToken(claims)
+		ui.WritePage(w, dapi.BaseUIPath, ui.ChangePasswordStep1, nil)
+	}))
+}
 
-		userCredentials, err := dapi.UserCredentialsDAO.GetUserCredential(username)
-		gohtypes.PanicIfError(fmt.Sprintf("Could not find credentials with username '%v'", username), http.StatusInternalServerError, err)
+// GETChangePasswordPageHandler builds the page where new passwords will be inserted
+func (dapi *DefaultUserCredentialsAPI) GETChangePasswordStep2PageHandler(route string) http.Handler {
+	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		claims, err := misc.ExtractClaimsTokenFromRequest(dapi.SecretKey, r)
+		gohtypes.PanicIfError("Unable to extract token from request", http.StatusBadRequest, err)
 
-		link := getRedirectionLink(challenge, username, dapi)
+		username, _, err := misc.UnmarshalChangePasswordToken(claims)
+		gohtypes.PanicIfError("Unable to unmarshal token", http.StatusBadRequest, err)
+
+		userCredential, err := dapi.UserCredentialsDAO.GetUserCredential(username)
+		gohtypes.PanicIfError("Unable to validate user email", http.StatusInternalServerError, err)
+
 		page := types.ChangePasswordPage{
-			RedirectTo:                  redirectTo,
-			Username:                    userCredentials.Username,
+			Username:                    userCredential.Username,
+			Email:                       userCredential.Email,
 			PasswordTooltip:             misc.GetPasswordTooltip(),
 			PasswordMinCharacters:       misc.PasswordMinCharacters,
 			PasswordMaxCharacters:       misc.PasswordMaxCharacters,
 			PasswordMinUniqueCharacters: misc.PasswordMinUniqueCharacters,
 		}
-		ui.WritePage(w, dapi.BaseUIPath, ui.EmailConfirmation, &page)
+
+		ui.WritePage(w, dapi.BaseUIPath, ui.ChangePasswordStep2, &page)
 	}))
 }
 
-// POSTChangePasswordPageHandler change password
+// POSTChangePasswordPageHandler init change password process
 func (dapi *DefaultUserCredentialsAPI) POSTChangePasswordPageHandler(route string) http.Handler {
 	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		link := getRedirectionLink(challenge, username, dapi)
+		var payload types.ChangePasswordInitUserCredentialRequestPayload
+
+		err := misc.UnmarshalPayloadFromRequest(&payload, r)
+		gohtypes.PanicIfError("Unable to unmarshal the request", http.StatusBadRequest, err)
+
+		userCredential, err := dapi.UserCredentialsDAO.GetUserCredentialByEmail(payload.Email)
+		gohtypes.PanicIfError("Unable to validate user email", http.StatusInternalServerError, err)
+
+		dapi.Outbox <- mail.GetChangePasswordMail(dapi.BaseUIPath, dapi.SecretKey, dapi.PublicURL, userCredential.Username, userCredential.Email, payload.RedirectTo)
+
+		w.WriteHeader(http.StatusOK)
+	}))
+}
+
+// PUTChangePasswordPageHandler finish change password process
+func (dapi *DefaultUserCredentialsAPI) PUTChangePasswordPageHandler(route string) http.Handler {
+	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var payload types.ChangePasswordUserCredentialRequestPayload
+
+		err := misc.UnmarshalPayloadFromRequest(&payload, r)
+		gohtypes.PanicIfError("Unable to unmarshal the request", http.StatusBadRequest, err)
+
+		claims, err := misc.ParseToken(payload.Token, dapi.SecretKey)
+		gohtypes.PanicIfError("Unable to parse token", http.StatusInternalServerError, err)
+
+		username, redirectTo, err := misc.UnmarshalChangePasswordToken(claims)
+
+		userCredential, err := dapi.UserCredentialsDAO.GetUserCredential(username)
+		gohtypes.PanicIfError("Unable to validate user email", http.StatusInternalServerError, err)
+
+		err = dapi.UserCredentialsDAO.UpdateUserCredential(userCredential.Username, userCredential.Email, payload.NewPassword)
+		gohtypes.PanicIfError("Error updating user credential info", http.StatusInternalServerError, err)
+
+		msg := map[string]interface{}{"redirect_to": redirectTo}
+		gohserver.WriteJSONResponse(msg, http.StatusOK, w)
 	}))
 }
 

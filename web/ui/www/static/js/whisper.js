@@ -11,6 +11,8 @@ window.onload = function() {
     setupUpdatePage(action);
     setupRegistrationPage(action);
     setupEmailConfirmationPage(action);
+    setupChangePasswordStep1Page(action);
+    setupChangePasswordStep2Page(action);
 };
 
 function startSubmitting (obj) {
@@ -278,16 +280,62 @@ function setupUpdatePage(action) {
     })
 }
 
-function setupChangePasswordPage(action) {
-    if (action !== "change-password") {
+function setupChangePasswordStep1Page(action) {
+    if (action !== "change-password/step-1") {
         return;
     }
 
-    $('#update-submit').on('click', function(event) {
+    var redirect_to = params.get("redirect_to");
+
+    $('#submit').on('click', function (event) {
         event.preventDefault();
 
         var $this = $(this);
         var request = {
+            redirect_to: redirect_to,
+            email: $("#email").val(),
+        };
+
+        if (!request.email) {
+            notifyError("Email is missing");
+            return;
+        }
+
+        startSubmitting($this);
+
+        $.ajax({
+            url: "/change-password",
+            type: "POST",
+            data: JSON.stringify(request),
+            contentType: "application/json",
+            headers: {
+                "Authorization": "Bearer " + params.get("token")
+            },
+            success: function(data, status, xhr) {
+                finishSubmitting($this);
+                notifySuccess("Check the inbox of your email.");
+            },
+            error: function(xhr, status, error) {
+                finishSubmitting($this);
+                notifyError(xhr.responseText);
+            }
+        })
+    })
+}
+
+function setupChangePasswordStep2Page(action) {
+    if (action !== "change-password/step-2") {
+        return;
+    }
+
+    var token = params.get("token");
+
+    $('#submit').on('click', function (event) {
+        event.preventDefault();
+
+        var $this = $(this);
+        var request = {
+            token: token,
             newPassword: $("#new-password").val(),
             newPasswordConfirmation: $("#new-password-confirmation").val(),
         };
@@ -303,7 +351,8 @@ function setupChangePasswordPage(action) {
         }
 
         var username = $("#username").val();
-        var err = isPasswordValid(request.newPassword, username, request.email);
+        var email = $("#email").val();
+        var err = isPasswordValid(request.newPassword, username, email);
 
         if (err) {
             notifyError(err);
@@ -317,12 +366,9 @@ function setupChangePasswordPage(action) {
             type: "PUT",
             data: JSON.stringify(request),
             contentType: "application/json",
-            headers: {
-                "Authorization": "Bearer " + params.get("token")
-            },
             success: function(data, status, xhr) {
                 finishSubmitting($this);
-                window.location = params.get("redirect_to");
+                window.location = data.redirect_to;
             },
             error: function(xhr, status, error) {
                 finishSubmitting($this);
@@ -331,7 +377,6 @@ function setupChangePasswordPage(action) {
         })
     })
 }
-
 
 function setupRegistrationPage(action) {
     if (action !== "registration") {

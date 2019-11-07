@@ -13,7 +13,7 @@
                         <h5>The app <a href="{{.ClientURI}}">{{.ClientName}}</a> wants access to your Whisper account</h5>
                     </div>
 
-                    <div style="display: flex; flex-direction: column; justify-content: center; padding: 0px 15px 0px 15px;">
+                    <div style="display: flex; flex-direction: column; justify-content: center; padding: 0 15px 0 15px;">
                         {{range .RequestedScopes}}
                             <input type="hidden" class="consent-grant-scope" value="{{.Scope}}"/>
                             <div>
@@ -23,7 +23,7 @@
                                     </div>
                                     <div>
                                         <a href="#consent-details-{{.Scope}}" role="button" data-toggle="collapse" aria-expanded="false" aria-controls="consent-details-{{.Scope}}">
-                                            <img src="static/images/info.svg"  height="20px" width="20px"/>
+                                            <img src="static/images/info.svg" height="20px" width="20px" alt="info" />
                                         </a>
                                     </div>
                                 </div>

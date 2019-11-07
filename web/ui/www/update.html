@@ -13,26 +13,26 @@
                     <input id="password-max-characters" type="hidden" name="password-max-characters" value="{{.PasswordMaxCharacters}}"/>
                     <input id="password-min-unique-characters" type="hidden" name="password-min-unique-characters" value="{{.PasswordMinUniqueCharacters}}"/>
                     <div class="form-group">
-                        <label for="username">Username</label>
-                        <input disabled type="username" class="form-control" id="update-username" name="username" value="{{.Username}}">
+                        <label for="update-username">Username</label>
+                        <input disabled type="text" class="form-control" id="update-username" name="username" value="{{.Username}}">
                     </div>
                     <div class="form-group">
-                        <label for="email">E-mail</label>
+                        <label for="update-email">E-mail</label>
                         <input type="email" class="form-control" id="update-email" name="email" placeholder="{{.Email}}" value="{{.Email}}"/>
                     </div>
                     <div class="form-group">
-                        <label for="old-password">Old Password</label>
+                        <label for="update-old-password">Old Password</label>
                         <input type="password" class="form-control" id="update-old-password" name="old-password" placeholder="">
                     </div>
                     <div class="form-group">
-                            <label for="new-password">New Password</label>
+                            <label for="update-new-password">New Password</label>
                             <span data-toggle="tooltip" data-placement="top"  data-html="true" title="{{.PasswordTooltip}}">
                                 <i class='fa fa-info-circle'></i>
                             </span>
                             <input type="password" class="form-control" id="update-new-password" name="new-password" placeholder="">
                         </div>
                     <div class="form-group">
-                        <label for="new-password-confirmation">New Password Confirmation</label>
+                        <label for="update-new-password-confirmation">New Password Confirmation</label>
                         <input type="password" class="form-control" id="update-new-password-confirmation" name="new-password-confirmation" placeholder="">
                     </div>
                     <div style="display: flex; justify-content: space-between">

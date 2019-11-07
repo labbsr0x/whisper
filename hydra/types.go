@@ -1,7 +1,5 @@
 package hydra
 
-type key string
-
 // AcceptLoginRequestPayload holds the data to communicate with hydra's accept login api
 type AcceptLoginRequestPayload struct {
 	Subject     string `json:"subject"`

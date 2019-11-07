@@ -9,7 +9,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// GetErrorMiddleware deals with erros in a graceful way
+// GetErrorMiddleware deals with errors in a graceful way
 func GetErrorMiddleware() mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

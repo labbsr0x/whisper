@@ -16,10 +16,12 @@ type RegistrationPage struct {
 	PasswordMinUniqueCharacters int
 }
 
+// SetHTML exposes the HTML from base page
 func (p *RegistrationPage) SetHTML(html template.HTML) {
 	p.HTML = html
 }
 
+// EmailConfirmationPage defines the information needed to load the email confirmation page
 type EmailConfirmationPage struct {
 	misc.BasePage
 	Successful bool
@@ -27,11 +29,13 @@ type EmailConfirmationPage struct {
 	RedirectTo string
 }
 
+// SetHTML exposes the HTML from base page
 func (p *EmailConfirmationPage) SetHTML(html template.HTML) {
 	p.HTML = html
 }
 
-type ChangePasswordPage struct {
+// ChangePasswordStep2Page defines the information needed to load the second step of change password page
+type ChangePasswordStep2Page struct {
 	misc.BasePage
 	Username                    string
 	Email                       string
@@ -41,7 +45,8 @@ type ChangePasswordPage struct {
 	PasswordMinUniqueCharacters int
 }
 
-func (p *ChangePasswordPage) SetHTML(html template.HTML) {
+// SetHTML exposes the HTML from base page
+func (p *ChangePasswordStep2Page) SetHTML(html template.HTML) {
 	p.HTML = html
 }
 
@@ -58,6 +63,7 @@ type UpdatePage struct {
 	PasswordMinUniqueCharacters int
 }
 
+// SetHTML exposes the HTML from base page
 func (p *UpdatePage) SetHTML(html template.HTML) {
 	p.HTML = html
 }
@@ -76,13 +82,14 @@ type AddUserCredentialRequestPayload struct {
 	Challenge            string `json:"challenge"`
 }
 
+// Check validates payload
 func (payload *AddUserCredentialRequestPayload) Check() error {
 	if len(payload.Username) == 0 || len(payload.Password) == 0 || len(payload.PasswordConfirmation) == 0 || len(payload.Email) == 0 {
-		return fmt.Errorf("All fields are required")
+		return fmt.Errorf("all fields are required")
 	}
 
 	if payload.Password != payload.PasswordConfirmation {
-		return fmt.Errorf("Wrong password confirmation")
+		return fmt.Errorf("wrong password confirmation")
 	}
 
 	err := misc.ValidatePassword(payload.Password, payload.Username, payload.Email)
@@ -101,44 +108,49 @@ type UpdateUserCredentialRequestPayload struct {
 	OldPassword             string `json:"oldPassword"`
 }
 
+// Check validates payload
 func (payload *UpdateUserCredentialRequestPayload) Check() error {
 	if len(payload.OldPassword) == 0 || len(payload.NewPassword) == 0 || len(payload.NewPasswordConfirmation) == 0 || len(payload.Email) == 0 {
-		return fmt.Errorf("All fields must not be empty")
+		return fmt.Errorf("all fields must not be empty")
 	}
 
 	if payload.NewPassword != payload.NewPasswordConfirmation {
-		return fmt.Errorf("Wrong password confirmation")
+		return fmt.Errorf("wrong password confirmation")
 	}
 
 	return misc.VerifyEmail(payload.Email)
 }
 
-type ChangePasswordInitUserCredentialRequestPayload struct {
+// ChangePasswordStep1UserCredentialRequestPayload defines the payload for start changing password
+type ChangePasswordStep1UserCredentialRequestPayload struct {
 	RedirectTo string `json:"redirect_to"`
 	Email      string `json:"email"`
 }
 
-func (payload *ChangePasswordInitUserCredentialRequestPayload) Check() error {
+// Check validates payload
+func (payload *ChangePasswordStep1UserCredentialRequestPayload) Check() error {
 	if len(payload.Email) == 0 {
-		return fmt.Errorf("All fields must not be empty")
+		return fmt.Errorf("all fields must not be empty")
 	}
 
 	return misc.VerifyEmail(payload.Email)
 }
 
-type ChangePasswordUserCredentialRequestPayload struct {
+// ChangePasswordStep2UserCredentialRequestPayload defines the payload for finish changing password
+type ChangePasswordStep2UserCredentialRequestPayload struct {
 	Token                   string `json:"token"`
 	NewPassword             string `json:"newPassword"`
 	NewPasswordConfirmation string `json:"newPasswordConfirmation"`
 }
 
-func (payload *ChangePasswordUserCredentialRequestPayload) Check() error {
+// Check validates payload
+func (payload *ChangePasswordStep2UserCredentialRequestPayload) Check() error {
 	if len(payload.Token) == 0 || len(payload.NewPassword) == 0 || len(payload.NewPasswordConfirmation) == 0 {
-		return fmt.Errorf("All fields must not be empty")
+		return fmt.Errorf("all fields must not be empty")
 	}
 
 	if payload.NewPassword != payload.NewPasswordConfirmation {
-		return fmt.Errorf("Wrong password confirmation")
+		return fmt.Errorf("wrong password confirmation")
 	}
 
 	return nil

@@ -146,11 +146,11 @@ function setupLoginPage(action) {
             type: "POST",
             data: JSON.stringify(request),
             contentType: "application/json",
-            success: function(data, status, xhr) {
+            success: function(data) {
                 finishSubmitting($this);
                 window.location = data.redirect_to;
             },
-            error: function(xhr, status, error) {
+            error: function(xhr) {
                 finishSubmitting($this);
                 notifyError(xhr.responseText);
             }
@@ -193,11 +193,11 @@ function setupConsentForm(action) {
                 type: "POST",
                 data: JSON.stringify(request),
                 contentType: "application/json",
-                success: function (data, status, xhr) {
+                success: function (data) {
                     finishSubmitting($this, buttonText);
                     window.location = data.redirect_to;
                 },
-                error: function (xhr, status, error) {
+                error: function (xhr) {
                     finishSubmitting($this, buttonText);
                     notifyError(xhr.responseText);
                 }
@@ -268,11 +268,11 @@ function setupUpdatePage(action) {
             headers: {
                 "Authorization": "Bearer " + params.get("token")
             },
-            success: function(data, status, xhr) {
+            success: function() {
                 finishSubmitting($this);
                 window.location = params.get("redirect_to");
             },
-            error: function(xhr, status, error) {
+            error: function(xhr) {
                 finishSubmitting($this);
                 notifyError(xhr.responseText);
             }
@@ -311,11 +311,11 @@ function setupChangePasswordStep1Page(action) {
             headers: {
                 "Authorization": "Bearer " + params.get("token")
             },
-            success: function(data, status, xhr) {
+            success: function() {
                 finishSubmitting($this);
                 notifySuccess("Check the inbox of your email.");
             },
-            error: function(xhr, status, error) {
+            error: function(xhr) {
                 finishSubmitting($this);
                 notifyError(xhr.responseText);
             }
@@ -366,11 +366,11 @@ function setupChangePasswordStep2Page(action) {
             type: "PUT",
             data: JSON.stringify(request),
             contentType: "application/json",
-            success: function(data, status, xhr) {
+            success: function(data) {
                 finishSubmitting($this);
                 window.location = data.redirect_to;
             },
-            error: function(xhr, status, error) {
+            error: function(xhr) {
                 finishSubmitting($this);
                 notifyError(xhr.responseText);
             }
@@ -429,11 +429,11 @@ function setupRegistrationPage(action) {
             type: "POST",
             data: JSON.stringify(request),
             contentType: "application/json",
-            success: function(data, status, xhr) {
+            success: function() {
                 finishSubmitting($(this));
                 window.location = "/login?first_login=true&username="+$("#registration-username").val()+"&login_challenge="+$("#login-challenge").val();
             },
-            error: function(xhr, status, error) {
+            error: function(xhr) {
                 finishSubmitting($this);
                 notifyError(xhr.responseText);
             }

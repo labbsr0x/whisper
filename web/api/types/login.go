@@ -15,6 +15,7 @@ type LoginPage struct {
 	Challenge       string
 }
 
+// SetHTML exposes the HTML from base page
 func (p *LoginPage) SetHTML(html template.HTML) {
 	p.HTML = html
 }
@@ -27,10 +28,10 @@ type RequestLoginPayload struct {
 	Remember  bool
 }
 
-// check verifies if the login request payload is ok
+// Check validates payload
 func (payload *RequestLoginPayload) Check() error {
 	if len(payload.Challenge) == 0 || len(payload.Password) == 0 || len(payload.Username) == 0 {
-		return fmt.Errorf("Incomplete fields")
+		return fmt.Errorf("incomplete fields")
 	}
 
 	return nil

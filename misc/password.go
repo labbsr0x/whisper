@@ -11,13 +11,14 @@ const (
 	PasswordMinUniqueCharacters = 7
 )
 
+// ValidatePassword verify if a password is valid
 func ValidatePassword(password, username, email string) error {
 	if len(password) < PasswordMinCharacters {
-		return fmt.Errorf("Your password should have at least %v characters", PasswordMinCharacters)
+		return fmt.Errorf("password should have at least %v characters", PasswordMinCharacters)
 	}
 
 	if len(password) > PasswordMaxCharacters {
-		return fmt.Errorf("Your password should have at most %v characters", PasswordMaxCharacters)
+		return fmt.Errorf("password should have at most %v characters", PasswordMaxCharacters)
 	}
 
 	pass := strings.ToLower(password)
@@ -25,20 +26,21 @@ func ValidatePassword(password, username, email string) error {
 	mail := strings.ToLower(email)
 
 	if strings.Contains(pass, user) || strings.Contains(user, pass) {
-		return fmt.Errorf("Your password is too similar to your username")
+		return fmt.Errorf("password is too similar to your username")
 	}
 
 	if strings.Contains(pass, mail) || strings.Contains(mail, pass) {
-		return fmt.Errorf("Your password is too similar to your email")
+		return fmt.Errorf("password is too similar to your email")
 	}
 
 	if CountUniqueCharacters(pass) < PasswordMinUniqueCharacters {
-		return fmt.Errorf("Your password should have at least %v unique characters", PasswordMinUniqueCharacters)
+		return fmt.Errorf("password should have at least %v unique characters", PasswordMinUniqueCharacters)
 	}
 
 	return nil
 }
 
+// GetPasswordTooltip retrieves the tooltip about passwords
 func GetPasswordTooltip() string {
 	return fmt.Sprintf("<div style=\"text-align: left;\"> Password Rules:<br> 1. At least %v characters<br> 2. At most %v characters<br> 3. At least %v unique characters<br> 4. Differ from username and email<br> </div>", PasswordMinCharacters, PasswordMaxCharacters, PasswordMinUniqueCharacters)
 }

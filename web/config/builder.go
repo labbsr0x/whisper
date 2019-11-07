@@ -15,11 +15,6 @@ import (
 	"github.com/labbsr0x/whisper/hydra"
 	"github.com/labbsr0x/whisper/mail"
 
-	"github.com/jinzhu/gorm"
-	"github.com/labbsr0x/goh/gohtypes"
-	"github.com/labbsr0x/whisper/hydra"
-	"github.com/labbsr0x/whisper/mail"
-
 	"github.com/labbsr0x/whisper-client/client"
 	"github.com/labbsr0x/whisper-client/config"
 
@@ -125,14 +120,12 @@ func (b *WebBuilder) Init(v *viper.Viper, outbox chan<- mail.Mail) *WebBuilder {
 	gohtypes.PanicIfError("Invalid hydra public url", 500, err)
 
 	b.Self = new(client.WhisperClient).InitFromConfig(&config.Config{
-		ClientID:          "whisper",
-		ClientSecret:      "",
-		WhisperURL:        nil,
-		HydraAdminURL:     hydraAdminURI,
-		HydraPublicURL:    hydraPublicURI,
-		Scopes:            b.GrantScopes.GetScopeListFromGrantScopeMap(),
-		LoginRedirectURI:  "",
-		LogoutRedirectURI: "",
+		ClientID:       "whisper",
+		ClientSecret:   "",
+		WhisperURL:     nil,
+		HydraAdminURL:  hydraAdminURI,
+		HydraPublicURL: hydraPublicURI,
+		Scopes:         b.GrantScopes.GetScopeListFromGrantScopeMap(),
 	})
 
 	logrus.Infof("GrantScopes: '%v'", b.GrantScopes)

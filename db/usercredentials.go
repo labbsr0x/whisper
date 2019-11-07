@@ -38,6 +38,7 @@ type UserCredentialsDAO interface {
 	CreateUserCredential(username, password, email string) (string, error)
 	UpdateUserCredential(username, email, password string) error
 	GetUserCredential(username string) (UserCredential, error)
+	GetUserCredentialByEmail(email string) (UserCredential, error)
 	CheckCredentials(username, password string) UserCredential
 	ValidateUserCredentialEmail(username string) error
 }
@@ -136,9 +137,15 @@ func (dao *DefaultUserCredentialsDAO) UpdateUserCredential(username, email, pass
 	return dao.db.Save(userCredential).Error
 }
 
-// GetUserCredential gets an user credential
+// GetUserCredential gets an user credential by its username
 func (dao *DefaultUserCredentialsDAO) GetUserCredential(username string) (userCredential UserCredential, err error) {
 	err = dao.db.Where("username = ?", username).First(&userCredential).Error
+	return
+}
+
+// GetUserCredential gets an user credential by its email
+func (dao *DefaultUserCredentialsDAO) GetUserCredentialByEmail(email string) (userCredential UserCredential, err error) {
+	err = dao.db.Where("email = ?", email).First(&userCredential).Error
 	return
 }
 

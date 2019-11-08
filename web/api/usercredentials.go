@@ -72,7 +72,7 @@ func (dapi *DefaultUserCredentialsAPI) PUTHandler() http.Handler {
 
 		if token, ok := r.Context().Value(whisper.TokenKey).(whisper.Token); ok {
 			err := misc.ValidatePassword(payload.NewPassword, token.Subject, payload.Email)
-			gohtypes.PanicIfError("Invalid Password", http.StatusInternalServerError, err)
+			gohtypes.PanicIfError("Invalid Password", http.StatusBadRequest, err)
 
 			dapi.UserCredentialsDAO.CheckCredentials(token.Subject, payload.OldPassword)
 
@@ -92,10 +92,10 @@ func (dapi *DefaultUserCredentialsAPI) GETRegistrationPageHandler(route string) 
 
 		page := types.RegistrationPage{
 			LoginChallenge:              challenge,
-			PasswordTooltip:             misc.GetPasswordTooltip(),
-			PasswordMinCharacters:       misc.PasswordMinCharacters,
-			PasswordMaxCharacters:       misc.PasswordMaxCharacters,
-			PasswordMinUniqueCharacters: misc.PasswordMinUniqueCharacters,
+			PasswordTooltip:             misc.PasswordTooltip,
+			PasswordMinChar:       misc.PasswordMinChar,
+			PasswordMaxChar:       misc.PasswordMaxChar,
+			PasswordMinUniqueChar: misc.PasswordMinUniqueChar,
 		}
 		ui.WritePage(w, dapi.BaseUIPath, ui.Registration, &page)
 	}))
@@ -163,10 +163,10 @@ func (dapi *DefaultUserCredentialsAPI) GETChangePasswordStep2PageHandler(route s
 		page := types.ChangePasswordStep2Page{
 			Username:                    userCredential.Username,
 			Email:                       userCredential.Email,
-			PasswordTooltip:             misc.GetPasswordTooltip(),
-			PasswordMinCharacters:       misc.PasswordMinCharacters,
-			PasswordMaxCharacters:       misc.PasswordMaxCharacters,
-			PasswordMinUniqueCharacters: misc.PasswordMinUniqueCharacters,
+			PasswordTooltip:             misc.PasswordTooltip,
+			PasswordMinCharacters:       misc.PasswordMinChar,
+			PasswordMaxCharacters:       misc.PasswordMaxChar,
+			PasswordMinUniqueCharacters: misc.PasswordMinUniqueChar,
 		}
 
 		ui.WritePage(w, dapi.BaseUIPath, ui.ChangePasswordStep2, &page)
@@ -228,10 +228,10 @@ func (dapi *DefaultUserCredentialsAPI) GETUpdatePageHandler(route string) http.H
 				RedirectTo:                  redirectTo,
 				Username:                    userCredentials.Username,
 				Email:                       userCredentials.Email,
-				PasswordTooltip:             misc.GetPasswordTooltip(),
-				PasswordMinCharacters:       misc.PasswordMinCharacters,
-				PasswordMaxCharacters:       misc.PasswordMaxCharacters,
-				PasswordMinUniqueCharacters: misc.PasswordMinUniqueCharacters,
+				PasswordTooltip:             misc.PasswordTooltip,
+				PasswordMinChar:       misc.PasswordMinChar,
+				PasswordMaxChar:       misc.PasswordMaxChar,
+				PasswordMinUniqueChar: misc.PasswordMinUniqueChar,
 			}
 			ui.WritePage(w, dapi.BaseUIPath, ui.Update, &page)
 

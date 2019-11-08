@@ -50,28 +50,28 @@ function notifySuccess (text) {
 }
 
 function isPasswordValid (password, username, email) {
-    var minCharacters = $('#password-min-characters');
-    var maxCharacters = $('#password-max-characters');
+    var minChar = $('#password-min-characters');
+    var maxChar = $('#password-max-characters');
     var minUnique = $('#password-min-unique-characters');
 
-    if (minCharacters == null || maxCharacters == null || minUnique == null) {
+    if (minChar == null || maxChar == null || minUnique == null) {
         return "Unable to load password policy";
     }
 
-    minCharacters = parseInt(minCharacters.val());
-    maxCharacters = parseInt(maxCharacters.val());
+    minChar = parseInt(minChar.val());
+    maxChar = parseInt(maxChar.val());
     minUnique = parseInt(minUnique.val());
 
-    if (isNaN(minCharacters) || isNaN(maxCharacters) || isNaN(minUnique)) {
+    if (isNaN(minChar) || isNaN(maxChar) || isNaN(minUnique)) {
         return "Unable to load password policy";
     }
 
-    if (!password || password.length < minCharacters) {
-        return "Your password should have at least " + minCharacters + " characters";
+    if (!password || password.length < minChar) {
+        return "Your password should have at least " + minChar + " characters";
     }
 
-    if (!password || password.length > maxCharacters) {
-        return "Your password should have at most " + maxCharacters + " characters";
+    if (!password || password.length > maxChar) {
+        return "Your password should have at most " + maxChar + " characters";
     }
 
     var pass = password.toLowerCase();

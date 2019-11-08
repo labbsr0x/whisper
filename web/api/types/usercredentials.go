@@ -11,9 +11,9 @@ type RegistrationPage struct {
 	misc.BasePage
 	LoginChallenge              string
 	PasswordTooltip             string
-	PasswordMinCharacters       int
-	PasswordMaxCharacters       int
-	PasswordMinUniqueCharacters int
+	PasswordMinChar       int
+	PasswordMaxChar       int
+	PasswordMinUniqueChar int
 }
 
 // SetHTML exposes the HTML from base page
@@ -58,9 +58,9 @@ type UpdatePage struct {
 	Token                       string
 	RedirectTo                  string
 	PasswordTooltip             string
-	PasswordMinCharacters       int
-	PasswordMaxCharacters       int
-	PasswordMinUniqueCharacters int
+	PasswordMinChar       int
+	PasswordMaxChar       int
+	PasswordMinUniqueChar int
 }
 
 // SetHTML exposes the HTML from base page

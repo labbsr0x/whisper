@@ -34,7 +34,7 @@ func (s *Server) InitFromWebBuilder(webBuilder *config.WebBuilder) *Server {
 	s.WebBuilder = webBuilder
 	s.UserCredentialsAPIs = new(api.DefaultUserCredentialsAPI).InitFromWebBuilder(webBuilder)
 	s.LoginAPIs = new(api.DefaultLoginAPI).InitFromWebBuilder(webBuilder)
-	s.LogoutAPIs = new(api.LogoutAPI).InitFromWebBuilder(webBuilder)
+	s.LogoutAPIs = new(api.DefaultLogoutAPI).InitFromWebBuilder(webBuilder)
 	s.ConsentAPIs = new(api.DefaultConsentAPI).InitFromWebBuilder(webBuilder)
 	s.HydraAPIs = new(api.DefaultHydraAPI).InitFromWebBuilder(webBuilder)
 
@@ -104,12 +104,12 @@ func (s *Server) ListenAndServe(router *mux.Router) error {
 
 	logrus.Info("Server Stopped")
 
-	logrus.Debugf("Waiting at most %v seconds for a graceful shutdown", time.Second * s.ShutdownTime)
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second * s.ShutdownTime)
+	logrus.Debugf("Waiting at most %v seconds for a graceful shutdown", time.Second*s.ShutdownTime)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*s.ShutdownTime)
 
 	defer cancel()
 
-	if err := srv.Shutdown(ctx); err != nil{
+	if err := srv.Shutdown(ctx); err != nil {
 		logrus.Fatal("server finalization error: %v", err)
 	}
 

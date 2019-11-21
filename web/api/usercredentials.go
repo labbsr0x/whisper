@@ -91,8 +91,8 @@ func (dapi *DefaultUserCredentialsAPI) GETRegistrationPageHandler(route string) 
 		gohtypes.PanicIfError("Unable to parse the login_challenge parameter", http.StatusBadRequest, err)
 
 		page := types.RegistrationPage{
-			LoginChallenge:              challenge,
-			PasswordTooltip:             misc.PasswordTooltip,
+			LoginChallenge:        challenge,
+			PasswordTooltip:       misc.PasswordTooltip,
 			PasswordMinChar:       misc.PasswordMinChar,
 			PasswordMaxChar:       misc.PasswordMaxChar,
 			PasswordMinUniqueChar: misc.PasswordMinUniqueChar,
@@ -225,10 +225,10 @@ func (dapi *DefaultUserCredentialsAPI) GETUpdatePageHandler(route string) http.H
 			gohtypes.PanicIfError(fmt.Sprintf("Could not find credentials with username '%v'", token.Subject), http.StatusInternalServerError, err)
 
 			page := types.UpdatePage{
-				RedirectTo:                  redirectTo,
-				Username:                    userCredentials.Username,
-				Email:                       userCredentials.Email,
-				PasswordTooltip:             misc.PasswordTooltip,
+				RedirectTo:            redirectTo,
+				Username:              userCredentials.Username,
+				Email:                 userCredentials.Email,
+				PasswordTooltip:       misc.PasswordTooltip,
 				PasswordMinChar:       misc.PasswordMinChar,
 				PasswordMaxChar:       misc.PasswordMaxChar,
 				PasswordMinUniqueChar: misc.PasswordMinUniqueChar,

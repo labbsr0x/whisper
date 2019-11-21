@@ -18,6 +18,11 @@ services:
       - WHISPER_HYDRA_PUBLIC_URL=http://hydra:4444/
       - WHISPER_SECRET_KEY=uhSunsodnsuBsdjsbds
       - WHISPER_DATABASE_URL=mysql://root:secret@tcp(mysqld-whisper:3306)/whisper?charset=utf8mb4&parseTime=True&loc=Local
+      - WHISPER_MAIL_USER=628ecbe7f53ac2
+      - WHISPER_MAIL_PASSWORD=457cd26e7890c5
+      - WHISPER_MAIL_HOST=smtp.mailtrap.io
+      - WHISPER_MAIL_PORT=2525
+      - WHISPER_PUBLIC_URL=http://localhost:7070
     restart: on-failure
 
   hydra-migrate:
@@ -45,7 +50,7 @@ services:
       serve all --dangerous-force-http
     environment:
       - LOG_LEVEL=debug
-      - OAUTH2_ISSUER_URL=http://localhost:4444
+      - OAUTH2_ISSUER_URL=http://hydra:4444
       - OAUTH2_CONSENT_URL=http://localhost:7070/consent
       - OAUTH2_LOGIN_URL=http://localhost:7070/login
       - DSN=mysql://root:secret@tcp(mysqld-hydra:3306)/hydra?max_conns=20&max_idle_conns=4

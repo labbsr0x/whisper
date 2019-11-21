@@ -11,11 +11,11 @@ To implement such OAuth flows, we have integrated Whisper with [Hydra](https://g
 
 To easily integrate with Whisper, client applications can make use of a special library and cli utility called [whisper-client](https://github.com/labbsr0x/whisper-client), available on github and also implemented in Go.
 
-# Passwords
+## Passwords
 
 Passwords are cryptographically stored with a salt and secret-key with the help of the following equation:
 
-```
+```go
 HMAC(SHA512(password+salt), secret-key)
 ```
 
@@ -23,7 +23,7 @@ Salts are generated randomly each time a password is stored.
 
 The secret-key is unique and should not be changed after the app goes up, otherwise Whisper will be unable to verify the validity of old passwords.
 
-# Client registration
+## Client registration
 
 To register your application as a client, you need to be able to talk privately with Whisper. 
 
@@ -33,7 +33,7 @@ If the application you are developing is a command-line interface or a mobile de
 
 The `pkce` (pronounced pixy) flow is specified by the [RFC7636](https://tools.ietf.org/html/rfc7636).
 
-# Login and Consent
+## Login and Consent
 
 After Whisper is up and running, to use it as a login and consent provider one needs to generate an authorization url and redirect the browser to it.
 
@@ -43,23 +43,29 @@ Whisper will then redirect the browser to the client registered `redirect_uri` w
 
 All this operations can be more easily accomplished using the whisper-client library.
 
-# Try it yourself
+## Try it yourself
 
 From the project root folder, fire the following commands to execute this project in development mode.
 
-1. Up the applications that whisper need
+1. Add Hydra to Hosts
+
+    ```bash
+    sudo echo "127.0.0.1 hydra" >> /etc/hosts
+    ```
+
+2. Up the applications that whisper need
 
     ```bash
     docker-compose up -d local
     ```
 
-2. Compile the local version
+3. Compile the local version
 
     ```bash
     go build
     ```
 
-3. Serve whisper locally
+4. Serve whisper locally
 
     This will serve the auxiliary services (databases and Hydra) and will run Whisper at the `7070` port; endpoints `/login` and `/consent` will display our incredibly simple user interface.
 
@@ -87,13 +93,13 @@ From the project root folder, fire the following commands to execute this projec
         --shutdown-time    10 \
     ```
 
-4. Authorize application on hydra
-    
+5. Authorize application on hydra
+
     This command will register to Hydra a client application that is authorized to perform a authorization code flow.
-    
+
     ```bash
-    docker-compose exec hydra \                                    
-        hydra clients create \  
+    docker-compose exec hydra \
+        hydra clients create \
             --endpoint http://localhost:4445 \
             --id auth-code-client \
             --secret secret \
@@ -102,32 +108,32 @@ From the project root folder, fire the following commands to execute this projec
             --scope openid,offline \
             --callbacks http://127.0.0.1:5555/callback
     ```
-   
-5. Launch application synced with hydra
-   
-   This command will launch the registered client application above at http://localhost:5555. Go to your browser and see if you can successfully login with it. 
-   
+
+6. Launch application synced with hydra
+
+   This command will launch the registered client application above at http://localhost:5555. Go to your browser and see if you can successfully login with it.
+
     ```bash
-    docker-compose exec hydra \ 
-        hydra token user \      
-            --client-id auth-code-client \    
+    docker-compose exec hydra \
+        hydra token user \
+            --client-id auth-code-client \
             --client-secret secret \
             --endpoint http://localhost:4444/ \
-            --port 5555 \                                   
+            --port 5555 \
             --scope openid,offline
     ```
 
     __OBS:__ Once the token exchange is made, the server will close itself.
 
-# Credential Update
+## Credential Update
 
-A special interface is provided for the update of user credentials. 
+A special interface is provided for the update of user credentials.
 
 The interface is found in the `/secure/update` endpoint and needs a valid token to access it.
 
 The token will be searched in the request's bearer authorization header or via a `token` query param, e.g.:
 
-```
+```url
 https://<your-whisper-domain>/secure/update?token=nZgyaH1JthU0GIsp2ndRDrYNFE_6ivOqjrQhikIQ5rk.8u5lgf7OtGDbN4Y2GXcTudf1u8lLX3kvsYkFH3uPxrY&redirect_to=http://<your-app-domain>/<where-you-were>
 ```
 

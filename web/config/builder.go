@@ -135,40 +135,31 @@ func (b *WebBuilder) Init(v *viper.Viper, outbox chan<- mail.Mail) *WebBuilder {
 func (flags *Flags) check() {
 	logrus.Infof("Flags: '%v'", flags)
 
-	haveEmptyRequiredFlags := flags.BaseUIPath == "" ||
-		flags.HydraAdminURL == "" ||
-		flags.HydraPublicURL == "" ||
-		flags.PublicURL == "" ||
-		flags.ScopesFilePath == "" ||
-		flags.SecretKey == "" ||
-		flags.DatabaseURL == "" ||
-		flags.MailUser == "" ||
-		flags.MailPassword == "" ||
-		flags.MailHost == "" ||
-		flags.MailPort == ""
-
-	requiredFlagsNames := []string{
-		baseUIPath,
-		hydraAdminURL,
-		hydraPublicURL,
-		publicURL,
-		scopesFilePath,
-		secretKey,
-		databaseURL,
-		mailUser,
-		mailPassword,
-		mailHost,
-		mailPort,
+	requiredFlags := []struct{value string; name string}{
+		{flags.BaseUIPath, baseUIPath},
+		{flags.HydraAdminURL, hydraAdminURL},
+		{flags.HydraPublicURL, hydraPublicURL},
+		{flags.PublicURL, publicURL},
+		{flags.ScopesFilePath, scopesFilePath},
+		{flags.SecretKey, secretKey},
+		{flags.DatabaseURL, databaseURL},
+		{flags.MailUser, mailUser},
+		{flags.MailPassword, mailPassword},
+		{flags.MailHost, mailHost},
+		{flags.MailPort, mailPort},
 	}
 
-	if haveEmptyRequiredFlags {
-		msg := fmt.Sprintf("The following flags cannot be empty:")
+	var errMsg string
 
-		for _, name := range requiredFlagsNames {
-			msg += fmt.Sprintf("\n\t%v", name)
+	for _, flag := range requiredFlags {
+		if flag.value == "" {
+			errMsg += fmt.Sprintf("\n\t%v", flag.name)
 		}
+	}
 
-		panic(msg)
+	if errMsg != "" {
+		errMsg = "The following flags are missing: " + errMsg
+		panic(errMsg)
 	}
 }
 

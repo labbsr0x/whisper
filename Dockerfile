@@ -1,5 +1,5 @@
 # BUILD
-FROM abilioesteves/gowebbuilder:v1.0.0 as builder
+FROM abilioesteves/gowebbuilder:1.2.0 as builder
 
 RUN mkdir /app
 WORKDIR /app

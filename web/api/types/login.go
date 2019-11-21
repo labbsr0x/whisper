@@ -31,7 +31,7 @@ type RequestLoginPayload struct {
 // Check validates payload
 func (payload *RequestLoginPayload) Check() error {
 	if len(payload.Challenge) == 0 || len(payload.Password) == 0 || len(payload.Username) == 0 {
-		return fmt.Errorf("incomplete fields")
+		return fmt.Errorf("no field should be empty")
 	}
 
 	return nil

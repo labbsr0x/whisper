@@ -85,7 +85,7 @@ type AddUserCredentialRequestPayload struct {
 // Check validates payload
 func (payload *AddUserCredentialRequestPayload) Check() error {
 	if len(payload.Username) == 0 || len(payload.Password) == 0 || len(payload.PasswordConfirmation) == 0 || len(payload.Email) == 0 {
-		return fmt.Errorf("all fields are required")
+		return fmt.Errorf("only challenge field can be empty")
 	}
 
 	if payload.Password != payload.PasswordConfirmation {
@@ -111,7 +111,7 @@ type UpdateUserCredentialRequestPayload struct {
 // Check validates payload
 func (payload *UpdateUserCredentialRequestPayload) Check() error {
 	if len(payload.OldPassword) == 0 || len(payload.NewPassword) == 0 || len(payload.NewPasswordConfirmation) == 0 || len(payload.Email) == 0 {
-		return fmt.Errorf("all fields must not be empty")
+		return fmt.Errorf("no field should be empty")
 	}
 
 	if payload.NewPassword != payload.NewPasswordConfirmation {
@@ -130,7 +130,7 @@ type ChangePasswordStep1UserCredentialRequestPayload struct {
 // Check validates payload
 func (payload *ChangePasswordStep1UserCredentialRequestPayload) Check() error {
 	if len(payload.Email) == 0 {
-		return fmt.Errorf("all fields must not be empty")
+		return fmt.Errorf("email field should not be empty")
 	}
 
 	return misc.VerifyEmail(payload.Email)
@@ -146,7 +146,7 @@ type ChangePasswordStep2UserCredentialRequestPayload struct {
 // Check validates payload
 func (payload *ChangePasswordStep2UserCredentialRequestPayload) Check() error {
 	if len(payload.Token) == 0 || len(payload.NewPassword) == 0 || len(payload.NewPasswordConfirmation) == 0 {
-		return fmt.Errorf("all fields must not be empty")
+		return fmt.Errorf("no field should be empty")
 	}
 
 	if payload.NewPassword != payload.NewPasswordConfirmation {

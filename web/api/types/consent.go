@@ -32,7 +32,7 @@ func (payload *ConsentRequestPayload) Check() error {
 	payload.Remember = true
 
 	if len(payload.Challenge) == 0 {
-		return fmt.Errorf("incomplete form data")
+		return fmt.Errorf("there must be a challenge")
 	}
 	return nil
 }

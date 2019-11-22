@@ -17,12 +17,12 @@ type IPayload interface {
 func UnmarshalPayloadFromRequest(p IPayload, r *http.Request) error {
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		return fmt.Errorf("unable to parse update payload")
+		return fmt.Errorf("unable to parse payload")
 	}
 
 	err = json.Unmarshal(data, &p)
 	if err != nil {
-		return fmt.Errorf("unable to unmarshal update payload")
+		return fmt.Errorf("unable to unmarshal payload")
 	}
 
 	logrus.Debugf("Payload: '%v'", p)

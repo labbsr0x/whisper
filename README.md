@@ -5,6 +5,8 @@ Whisper is an Identity and OAuth provider implemented in Go.
 
 By definition, it securely stores user credentials and authorizes clients in the context of OAuth 2.0.
 
+![whisper](https://raw.githubusercontent.com/labbsr0x/whisper/assets/whisper.gif "whisper preview")
+
 The OAuth flows adopted by Whisper are the `authorization_code` and `authorization_code + pkce` flows. 
 
 To implement such OAuth flows, we have integrated Whisper with [Hydra](https://github.com/ory/hydra), through its **Login and Consent flow** spec.

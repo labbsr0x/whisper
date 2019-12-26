@@ -96,7 +96,7 @@ func (s *Server) ListenAndServe(router *mux.Router) error {
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil {
-			logrus.Fatal("server initialization error: %v", err)
+			logrus.Fatalf("server initialization error: %v", err)
 		}
 	}()
 	logrus.Info("Server Started")
@@ -111,7 +111,7 @@ func (s *Server) ListenAndServe(router *mux.Router) error {
 	defer cancel()
 
 	if err := srv.Shutdown(ctx); err != nil {
-		logrus.Fatal("server finalization error: %v", err)
+		logrus.Fatalf("server finalization error: %v", err)
 	}
 
 	logrus.Info("Server Exited Properly")

@@ -1,5 +1,6 @@
 # Whisper
 [![Docker Pulls](https://img.shields.io/docker/pulls/labbsr0x/whisper.svg)](https://hub.docker.com/r/labbsr0x/whisper)
+[![Go Report Card](https://goreportcard.com/badge/github.com/labbsr0x/whisper)](https://goreportcard.com/report/github.com/labbsr0x/whisper)
 
 Whisper is an Identity and OAuth provider implemented in Go.
 

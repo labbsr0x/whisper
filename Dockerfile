@@ -1,5 +1,5 @@
 # BUILD
-FROM abilioesteves/gowebbuilder:1.2.0 as builder
+FROM abilioesteves/gowebbuilder:1.3.0 as builder
 
 RUN mkdir /app
 WORKDIR /app
@@ -8,6 +8,8 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
+
+RUN go test -v ./...
 
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /whisper main.go
 

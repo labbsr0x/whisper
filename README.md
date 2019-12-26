@@ -1,4 +1,5 @@
 # Whisper
+![Build Status](https://travis-ci.com/labbsr0x/whisper.svg?branch=master)
 [![Docker Pulls](https://img.shields.io/docker/pulls/labbsr0x/whisper.svg)](https://hub.docker.com/r/labbsr0x/whisper)
 [![Go Report Card](https://goreportcard.com/badge/github.com/labbsr0x/whisper)](https://goreportcard.com/report/github.com/labbsr0x/whisper)
 
@@ -50,27 +51,27 @@ All this operations can be more easily accomplished using the whisper-client lib
 
 From the project root folder, fire the following commands to execute this project in development mode.
 
-1. Add Hydra to Hosts
+1. Add Hydra to Hosts:
 
     ```bash
     sudo echo "127.0.0.1 hydra" >> /etc/hosts
     ```
 
-2. Up the applications that whisper need
+2. Up the applications that whisper need, which will serve the auxiliary services (databases and Hydra) and the web example:
 
     ```bash
     docker-compose up -d local
     ```
 
-3. Compile the local version
+3. Compile the local version:
 
     ```bash
     go build
     ```
 
-4. Serve whisper locally
+4. Serve whisper locally:
 
-    This will serve the auxiliary services (databases and Hydra) and will run Whisper at the `7070` port; endpoints `/login` and `/consent` will display our incredibly simple user interface.
+    Which will run Whisper at the `7070` port and display at endpoints `/login` and `/consent` our incredibly simple user interface.
 
     The only way to access this endpoints is through a valid authorization url.
 
@@ -127,6 +128,8 @@ From the project root folder, fire the following commands to execute this projec
     ```
 
     __OBS:__ Once the token exchange is made, the server will close itself.
+
+### You can also checkout [our examples](https://github.com/labbr0x/whisper-examples) for a more code oriented experience
 
 ## Credential Update
 

@@ -26,15 +26,23 @@ type Server struct {
 	LoginAPIs           api.LoginAPI
 	ConsentAPIs         api.ConsentAPI
 	HydraAPIs           api.HydraAPI
+	AppAPIs             api.AppAPI
 }
+
+var _userAPI = new(api.DefaultUserCredentialsAPI)
+var _loginAPI = new(api.DefaultLoginAPI)
+var _consentAPI = new(api.DefaultConsentAPI)
+var _hydraAPI = new(api.DefaultHydraAPI)
+var _appAPI = new(api.DefaultAppAPI)
 
 // InitFromWebBuilder builds a Server instance
 func (s *Server) InitFromWebBuilder(webBuilder *config.WebBuilder) *Server {
 	s.WebBuilder = webBuilder
-	s.UserCredentialsAPIs = new(api.DefaultUserCredentialsAPI).InitFromWebBuilder(webBuilder)
-	s.LoginAPIs = new(api.DefaultLoginAPI).InitFromWebBuilder(webBuilder)
-	s.ConsentAPIs = new(api.DefaultConsentAPI).InitFromWebBuilder(webBuilder)
-	s.HydraAPIs = new(api.DefaultHydraAPI).InitFromWebBuilder(webBuilder)
+	s.UserCredentialsAPIs = _userAPI.InitFromWebBuilder(webBuilder)
+	s.LoginAPIs = _loginAPI.InitFromWebBuilder(webBuilder)
+	s.ConsentAPIs = _consentAPI.InitFromWebBuilder(webBuilder)
+	s.HydraAPIs = _hydraAPI.InitFromWebBuilder(webBuilder)
+	s.AppAPIs = _appAPI.Init(webBuilder)
 
 	logLevel, err := logrus.ParseLevel(s.LogLevel)
 	if err != nil {
@@ -74,6 +82,9 @@ func (s *Server) Run() error {
 
 	secureRouter.Handle("/update", s.UserCredentialsAPIs.GETUpdatePageHandler("/secure/update")).Methods("GET")
 	secureRouter.Handle("/update", s.UserCredentialsAPIs.PUTHandler()).Methods("PUT")
+
+	secureRouter.Handle("/app", s.AppAPIs.POSTHandler())
+	secureRouter.Handle("/app", s.AppAPIs.GETHandler())
 
 	router.Use(middleware.GetPrometheusMiddleware())
 	router.Use(middleware.GetErrorMiddleware())

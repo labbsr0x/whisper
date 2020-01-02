@@ -52,7 +52,7 @@ type DefaultUserCredentialsDAO struct {
 	publicAddressURL string
 }
 
-// InitFromWebBuilder initializes a default user credentials DAO from web builder
+// Init initializes a default user credentials DAO from web builder
 func (dao *DefaultUserCredentialsDAO) Init(secretKey, baseUIPath, publicAddressURL string, outbox chan<- mail.Mail, db *gorm.DB) UserCredentialsDAO {
 	dao.secretKey = secretKey
 	dao.outbox = outbox

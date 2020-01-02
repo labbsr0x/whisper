@@ -9,8 +9,8 @@ import (
 // RegistrationPage defines the information needed to load a registration page
 type RegistrationPage struct {
 	misc.BasePage
-	LoginChallenge              string
-	PasswordTooltip             string
+	LoginChallenge        string
+	PasswordTooltip       string
 	PasswordMinChar       int
 	PasswordMaxChar       int
 	PasswordMinUniqueChar int
@@ -53,11 +53,11 @@ func (p *ChangePasswordStep2Page) SetHTML(html template.HTML) {
 // UpdatePage defines the information needed to load a update user credentials page
 type UpdatePage struct {
 	misc.BasePage
-	Username                    string
-	Email                       string
-	Token                       string
-	RedirectTo                  string
-	PasswordTooltip             string
+	Username              string
+	Email                 string
+	Token                 string
+	RedirectTo            string
+	PasswordTooltip       string
 	PasswordMinChar       int
 	PasswordMaxChar       int
 	PasswordMinUniqueChar int

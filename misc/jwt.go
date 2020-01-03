@@ -114,7 +114,7 @@ func GetEmailConfirmationToken(secret, username, challenge string) string {
 	return token
 }
 
-// GetEmailConfirmationToken builds a token for changing password
+// GetChangePasswordToken builds a token for changing password
 func GetChangePasswordToken(secret, username, redirectTo string) string {
 	if len(redirectTo) == 0 {
 		redirectTo = "/login"

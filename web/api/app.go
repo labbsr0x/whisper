@@ -3,7 +3,6 @@ package api
 import (
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/labbsr0x/goh/gohserver"
 	"github.com/labbsr0x/goh/gohtypes"
@@ -40,15 +39,29 @@ func (dapi *DefaultAppAPI) Init(w *config.WebBuilder) AppAPI {
 // POSTHandler defines the function to handle HTTP Post requests to create a new App
 func (dapi *DefaultAppAPI) POSTHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		var payload types.AddAppRequestPayload
+		var payload types.AddAppInitialRequestPayload
 		err := misc.UnmarshalPayloadFromRequest(&payload, r)
 		gohtypes.PanicIfError(fmt.Sprintf("Unable to unmarshal the request: %v", err), http.StatusBadRequest, err)
 
 		if token, ok := r.Context().Value(whisper.TokenKey).(whisper.Token); ok {
-			err = dapi.appDAO.CreateApp(payload, token.Subject)
-			gohtypes.PanicIfError("Unable to create App", 500, err)
+			app, err := dapi.appDAO.InsertAppData(payload, token.Subject)
+			gohtypes.PanicIfError("Unable to create App", http.StatusInternalServerError, err)
+			gohserver.WriteJSONResponse(app, http.StatusCreated, w)
+		}
+	})
+}
 
-			w.WriteHeader(http.StatusOK)
+// PUTHandler defines the function to handle HTTP Put requests to update an existing App
+func (dapi *DefaultAppAPI) PUTHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var payload types.UpdateAppRequestPayload
+		err := misc.UnmarshalPayloadFromRequest(&payload, r)
+		gohtypes.PanicIfError(fmt.Sprintf("Unable to unmarshal the request: %v", err), http.StatusBadRequest, err)
+
+		if token, ok := r.Context().Value(whisper.TokenKey).(whisper.Token); ok {
+			app, err := dapi.appDAO.UpdateAppData(payload, token.Subject)
+			gohtypes.PanicIfError("Unable to update app", http.StatusInternalServerError, err)
+			gohserver.WriteJSONResponse(app, http.StatusOK, w)
 		}
 	})
 }
@@ -61,20 +74,7 @@ func (dapi *DefaultAppAPI) GETHandler() http.Handler {
 			list, err := dapi.appDAO.ListApps(token.Subject)
 			gohtypes.PanicIfError(fmt.Sprintf("Unable to list the Apps from user '%s'", token.Subject), 500, err)
 
-			toReturn := []types.App{}
-			for _, app := range list {
-				toReturn = append(toReturn, types.App{
-					ID:                app.ClientID,
-					Name:              app.ClientName,
-					URL:               app.ClientURL,
-					LoginRedirectURL:  app.LoginRedirectURL,
-					LogoutRedirectURL: app.LogoutRedirectURL,
-					GrantTypes:        strings.Split(app.GrantTypes, ","),
-					Scopes:            misc.GrantScopes{}, // TODO recover scopes
-				})
-			}
-			gohserver.WriteJSONResponse(toReturn, 200, w)
-			return
+			gohserver.WriteJSONResponse(list, http.StatusCreated, w)
 		}
 	})
 }

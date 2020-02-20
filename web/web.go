@@ -28,13 +28,18 @@ type Server struct {
 	HydraAPIs           api.HydraAPI
 }
 
+var _userAPI = new(api.DefaultUserCredentialsAPI)
+var _loginAPI = new(api.DefaultLoginAPI)
+var _consentAPI = new(api.DefaultConsentAPI)
+var _hydraAPI = new(api.DefaultHydraAPI)
+
 // InitFromWebBuilder builds a Server instance
 func (s *Server) InitFromWebBuilder(webBuilder *config.WebBuilder) *Server {
 	s.WebBuilder = webBuilder
-	s.UserCredentialsAPIs = new(api.DefaultUserCredentialsAPI).InitFromWebBuilder(webBuilder)
-	s.LoginAPIs = new(api.DefaultLoginAPI).InitFromWebBuilder(webBuilder)
-	s.ConsentAPIs = new(api.DefaultConsentAPI).InitFromWebBuilder(webBuilder)
-	s.HydraAPIs = new(api.DefaultHydraAPI).InitFromWebBuilder(webBuilder)
+	s.UserCredentialsAPIs = _userAPI.InitFromWebBuilder(webBuilder)
+	s.LoginAPIs = _loginAPI.InitFromWebBuilder(webBuilder)
+	s.ConsentAPIs = _consentAPI.InitFromWebBuilder(webBuilder)
+	s.HydraAPIs = _hydraAPI.InitFromWebBuilder(webBuilder)
 
 	logLevel, err := logrus.ParseLevel(s.LogLevel)
 	if err != nil {

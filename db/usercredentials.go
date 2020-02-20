@@ -52,7 +52,7 @@ type DefaultUserCredentialsDAO struct {
 	publicAddressURL string
 }
 
-// InitFromWebBuilder initializes a default user credentials DAO from web builder
+// Init initializes a default user credentials DAO from web builder
 func (dao *DefaultUserCredentialsDAO) Init(secretKey, baseUIPath, publicAddressURL string, outbox chan<- mail.Mail, db *gorm.DB) UserCredentialsDAO {
 	dao.secretKey = secretKey
 	dao.outbox = outbox
@@ -101,6 +101,7 @@ func (dao *DefaultUserCredentialsDAO) CreateUserCredential(username, password, e
 	return userCredential.ID, nil
 }
 
+// ValidateUserCredentialEmail validates the user credential email
 func (dao *DefaultUserCredentialsDAO) ValidateUserCredentialEmail(username string) error {
 	userCredential, err := dao.GetUserCredential(username)
 	if err != nil {
@@ -143,7 +144,7 @@ func (dao *DefaultUserCredentialsDAO) GetUserCredential(username string) (userCr
 	return
 }
 
-// GetUserCredential gets an user credential by its email
+// GetUserCredentialByEmail gets an user credential by its email
 func (dao *DefaultUserCredentialsDAO) GetUserCredentialByEmail(email string) (userCredential UserCredential, err error) {
 	err = dao.db.Where("email = ?", email).First(&userCredential).Error
 	return

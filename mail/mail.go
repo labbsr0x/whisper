@@ -15,9 +15,9 @@ import (
 	"path"
 )
 
-// Api defines what should the mail expose
-type Api interface {
-	Init(user, password, host, port string, inbox <-chan Mail) Api
+// API defines what should the mail expose
+type API interface {
+	Init(user, password, host, port string, inbox <-chan Mail) API
 	Run()
 }
 
@@ -37,8 +37,8 @@ type DefaultHandler struct {
 	Inbox   <-chan Mail
 }
 
-// InitFromWebBuilder initializes a default email api instance
-func (mh *DefaultHandler) Init(user, password, host, port string, inbox <-chan Mail) Api {
+// Init initializes a default email api instance
+func (mh *DefaultHandler) Init(user, password, host, port string, inbox <-chan Mail) API {
 	mh.user = user
 	mh.address = host + ":" + port
 	mh.auth = smtp.PlainAuth("", user, password, host)

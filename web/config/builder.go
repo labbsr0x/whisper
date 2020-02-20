@@ -135,7 +135,10 @@ func (b *WebBuilder) Init(v *viper.Viper, outbox chan<- mail.Mail) *WebBuilder {
 func (flags *Flags) check() {
 	logrus.Infof("Flags: '%v'", flags)
 
-	requiredFlags := []struct{value string; name string}{
+	requiredFlags := []struct {
+		value string
+		name  string
+	}{
 		{flags.BaseUIPath, baseUIPath},
 		{flags.HydraAdminURL, hydraAdminURL},
 		{flags.HydraPublicURL, hydraPublicURL},

@@ -1,12 +1,9 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 	"strings"
 	"time"
 
@@ -110,7 +107,7 @@ func (b *WebBuilder) Init(v *viper.Viper, outbox chan<- mail.Mail) *WebBuilder {
 
 	b.Flags = flags
 	b.Outbox = outbox
-	b.GrantScopes = b.getGrantScopesFromFile(flags.ScopesFilePath)
+	b.GrantScopes = misc.GetGrantScopesFromFile(flags.ScopesFilePath)
 	b.HydraHelper = new(hydra.DefaultHydraHelper).Init(b.HydraAdminURL)
 	b.DB = b.initDB()
 
@@ -166,29 +163,7 @@ func (flags *Flags) check() {
 	}
 }
 
-// getGrantScopesFromFile reads into memory the json scopes file
-func (b *WebBuilder) getGrantScopesFromFile(scopesFilePath string) misc.GrantScopes {
-	jsonFile, err := os.Open(scopesFilePath)
-	if err != nil {
-		panic(err)
-	}
 
-	defer jsonFile.Close()
-
-	var grantScopes misc.GrantScopes
-
-	bytes, err := ioutil.ReadAll(jsonFile)
-	if err != nil {
-		panic(err.Error())
-	}
-
-	err = json.Unmarshal(bytes, &grantScopes)
-	if err != nil {
-		panic(err.Error())
-	}
-
-	return grantScopes
-}
 
 // initDB opens a connection with the database
 func (b *WebBuilder) initDB() *gorm.DB {

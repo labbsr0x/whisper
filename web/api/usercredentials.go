@@ -2,6 +2,9 @@ package api
 
 import (
 	"fmt"
+	"net/http"
+	"net/url"
+
 	"github.com/labbsr0x/goh/gohserver"
 	"github.com/labbsr0x/goh/gohtypes"
 	whisper "github.com/labbsr0x/whisper-client/client"
@@ -13,8 +16,6 @@ import (
 	"github.com/labbsr0x/whisper/web/config"
 	"github.com/labbsr0x/whisper/web/ui"
 	"github.com/sirupsen/logrus"
-	"net/http"
-	"net/url"
 )
 
 // UserCredentialsAPI defines the available user apis
@@ -141,14 +142,14 @@ func (dapi *DefaultUserCredentialsAPI) GETEmailConfirmationPageHandler(route str
 	}))
 }
 
-// GETChangePasswordPageHandler builds the page to init the change password
+// GETChangePasswordStep1PageHandler builds the page to init the change password
 func (dapi *DefaultUserCredentialsAPI) GETChangePasswordStep1PageHandler(route string) http.Handler {
 	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ui.WritePage(w, dapi.BaseUIPath, ui.ChangePasswordStep1, nil)
 	}))
 }
 
-// GETChangePasswordPageHandler builds the page where new passwords will be inserted
+// GETChangePasswordStep2PageHandler builds the page where new passwords will be inserted
 func (dapi *DefaultUserCredentialsAPI) GETChangePasswordStep2PageHandler(route string) http.Handler {
 	return http.StripPrefix(route, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		claims, err := misc.ExtractClaimsTokenFromRequest(dapi.SecretKey, r)

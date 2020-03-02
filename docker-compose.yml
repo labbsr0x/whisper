@@ -12,11 +12,14 @@ services:
     ports:
       - "7070:7070"
     environment:
-      - WHISPER_PORT=7070
       - WHISPER_LOG_LEVEL=debug
+      - WHISPER_PORT=7070
       - WHISPER_HYDRA_ADMIN_URL=http://hydra:4445/
       - WHISPER_HYDRA_PUBLIC_URL=http://hydra:4444/
-      - WHISPER_SECRET_KEY=uhSunsodnsuBsdjsbds
+      - WHISPER_HYDRA_CLIENT_ID=whisper
+      - WHISPER_HYDRA_CLIENT_SECRET=password # this should be changed
+      - WHISPER_HYDRA_CLIENT_NAME=Whisper 
+      - WHISPER_DATABASE_SECRET_KEY=uhSunsodnsuBsdjsbds # this should be changed
       - WHISPER_DATABASE_URL=mysql://root:secret@tcp(mysqld-whisper:3306)/whisper?charset=utf8mb4&parseTime=True&loc=Local
       - WHISPER_MAIL_USER=628ecbe7f53ac2
       - WHISPER_MAIL_PASSWORD=457cd26e7890c5
@@ -26,7 +29,7 @@ services:
     restart: on-failure
 
   hydra-migrate:
-    image: oryd/hydra:v1.0.0-rc.11
+    image: oryd/hydra:v1.3.2-alpine
     depends_on:
       - mysqld-hydra
     environment:
@@ -36,7 +39,7 @@ services:
     restart: on-failure
 
   hydra:
-    image: oryd/hydra:v1.0.0-rc.11
+    image: oryd/hydra:v1.3.2-alpine
     depends_on:
       - hydra-migrate
     ports:
@@ -50,17 +53,19 @@ services:
       serve all --dangerous-force-http
     environment:
       - LOG_LEVEL=debug
-      - URLS_SELF_ISSUER=http://hydra:4444
-      - URLS_CONSENT=http://localhost:7070/consent
-      - URLS_LOGIN=http://localhost:7070/login
-      - DSN=mysql://root:secret@tcp(mysqld-hydra:3306)/hydra?max_conns=20&max_idle_conns=4
-      - SECRETS_SYSTEM=youReallyNeedToChangeThis
-      - OAUTH2_EXPOSE_INTERNAL_ERRORS=true
-      - OIDC_SUBJECT_IDENTIFIERS_ENABLED=public,pairwise
+      - OIDC_SUBJECT_IDENTIFIERS_SUPPORTED_TYPES=public,pairwise
       - OIDC_SUBJECT_IDENTIFIERS_PAIRWISE_SALT=youReallyNeedToChangeThis
-      - SERVE_PUBLIC_CORS_ENABLED=true
+      - URLS_SELF_ISSUER=http://hydra:4444
+      - URLS_SELF_CONSENT=http://localhost:7070/consent
+      - URLS_SELF_LOGIN=http://localhost:7070/login
+      - OAUTH2_EXPOSE_INTERNAL_ERRORS=true
+      - SECRETS_SYSTEM=youReallyNeedToChangeThis
       - SERVE_ADMIN_CORS_ENABLED=true
-      # - STRATEGIES_ACCESS_TOKEN=jwt
+      - DSN=mysql://root:secret@tcp(mysqld-hydra:3306)/hydra?max_conns=20&max_idle_conns=4
+      - TTL_ACCESS_TOKEN=720h
+      - TTL_ID_TOKEN=720h
+      - TTL_REFRESH_TOKEN=-1
+#      - OAUTH2_ACCESS_TOKEN_STRATEGY=jwt # NOT RECOMMENDED: https://www.ory.sh/docs/hydra/advanced#json-web-tokens
     restart: on-failure
 
   mysqld-hydra:

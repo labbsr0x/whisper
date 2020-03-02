@@ -1,6 +1,9 @@
 package api
 
 import (
+	"net/http"
+	"net/url"
+
 	"github.com/labbsr0x/goh/gohserver"
 	"github.com/labbsr0x/goh/gohtypes"
 	"github.com/labbsr0x/whisper/db"
@@ -9,8 +12,6 @@ import (
 	"github.com/labbsr0x/whisper/misc"
 	"github.com/labbsr0x/whisper/web/ui"
 	"github.com/sirupsen/logrus"
-	"net/http"
-	"net/url"
 
 	"github.com/labbsr0x/whisper/web/api/types"
 	"github.com/labbsr0x/whisper/web/config"

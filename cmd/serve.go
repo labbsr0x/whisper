@@ -24,12 +24,7 @@ var serveCmd = &cobra.Command{
 
 		server := new(web.Server).InitFromWebBuilder(builder)
 
-		_, err := server.Self.CheckCredentials()
-		if err != nil {
-			return err
-		}
-
-		err = server.Run()
+		err := server.Run()
 		if err != nil {
 			return err
 		}

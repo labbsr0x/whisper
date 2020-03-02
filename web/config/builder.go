@@ -23,38 +23,44 @@ import (
 )
 
 const (
-	baseUIPath     = "base-ui-path"
-	port           = "port"
-	hydraAdminURL  = "hydra-admin-url"
-	hydraPublicURL = "hydra-public-url"
-	publicURL      = "public-url"
-	logLevel       = "log-level"
-	scopesFilePath = "scopes-file-path"
-	databaseURL    = "database-url"
-	secretKey      = "secret-key"
-	mailUser       = "mail-user"
-	mailPassword   = "mail-password"
-	mailHost       = "mail-host"
-	mailPort       = "mail-port"
-	shutdownTime   = "shutdown-time"
+	baseUIPath        = "base-ui-path"
+	port              = "port"
+	hydraAdminURL     = "hydra-admin-url"
+	hydraPublicURL    = "hydra-public-url"
+	hydraClientID     = "hydra-client-id"
+	hydraClientSecret = "hydra-client-secret"
+	hydraClientName   = "hydra-client-name"
+	publicURL         = "public-url"
+	logLevel          = "log-level"
+	scopesFilePath    = "scopes-file-path"
+	databaseURL       = "database-url"
+	secretKey         = "secret-key"
+	mailUser          = "mail-user"
+	mailPassword      = "mail-password"
+	mailHost          = "mail-host"
+	mailPort          = "mail-port"
+	shutdownTime      = "shutdown-time"
 )
 
 // Flags define the fields that will be passed via cmd
 type Flags struct {
-	Port           string
-	BaseUIPath     string
-	LogLevel       string
-	ScopesFilePath string
-	HydraAdminURL  string
-	HydraPublicURL string
-	PublicURL      string
-	DatabaseURL    string
-	SecretKey      string
-	MailUser       string
-	MailPassword   string
-	MailHost       string
-	MailPort       string
-	ShutdownTime   time.Duration
+	Port              string
+	BaseUIPath        string
+	LogLevel          string
+	ScopesFilePath    string
+	HydraAdminURL     string
+	HydraPublicURL    string
+	HydraClientID     string
+	HydraClientSecret string
+	HydraClientName   string
+	PublicURL         string
+	DatabaseURL       string
+	SecretKey         string
+	MailUser          string
+	MailPassword      string
+	MailHost          string
+	MailPort          string
+	ShutdownTime      time.Duration
 }
 
 // WebBuilder defines the parametric information of a whisper server instance
@@ -73,11 +79,14 @@ func AddFlags(flags *pflag.FlagSet) {
 	flags.StringP(port, "p", "7070", "[optional] Custom port for accessing Whisper's services. Defaults to 7070")
 	flags.StringP(hydraAdminURL, "a", "", "Hydra Admin URL")
 	flags.StringP(hydraPublicURL, "o", "", "Hydra Public URL")
+	flags.String(hydraClientID, "whisper", "[optional] The Client ID of this Whisper instance to register itself to Hydra")
+	flags.String(hydraClientName, "Whisper", "[optional] The Client Name of this Whisper instance to register itself to Hydra")
+	flags.String(hydraClientSecret, "password", "[optional] The Client Secret of this Whisper instance to register itself to Hydra")
 	flags.StringP(publicURL, "", "", "Public URL for referencing in links")
 	flags.StringP(logLevel, "l", "info", "[optional] Sets the Log Level to one of seven (trace, debug, info, warn, error, fatal, panic). Defaults to info")
 	flags.StringP(scopesFilePath, "s", "", "Sets the path to the json file where the available scopes will be found")
 	flags.StringP(databaseURL, "d", "", "Sets the database url where user credential data will be stored")
-	flags.StringP(secretKey, "k", "", "Sets the secret key used to hash the stored passwords")
+	flags.StringP(secretKey, "k", "", "Sets a secret key to securely hash stored passwords and email confirmation tokens")
 	flags.StringP(mailUser, "", "", "Sets the mail worker user")
 	flags.StringP(mailPassword, "", "", "Sets the mail worker user's password")
 	flags.StringP(mailHost, "", "", "Sets the mail worker host")
@@ -94,6 +103,9 @@ func (b *WebBuilder) Init(v *viper.Viper, outbox chan<- mail.Mail) *WebBuilder {
 	flags.ScopesFilePath = v.GetString(scopesFilePath)
 	flags.HydraAdminURL = v.GetString(hydraAdminURL)
 	flags.HydraPublicURL = v.GetString(hydraPublicURL)
+	flags.HydraClientID = v.GetString(hydraClientID)
+	flags.HydraClientName = v.GetString(hydraClientName)
+	flags.HydraClientSecret = v.GetString(hydraClientSecret)
 	flags.PublicURL = v.GetString(publicURL)
 	flags.DatabaseURL = v.GetString(databaseURL)
 	flags.SecretKey = v.GetString(secretKey)
@@ -115,14 +127,23 @@ func (b *WebBuilder) Init(v *viper.Viper, outbox chan<- mail.Mail) *WebBuilder {
 	gohtypes.PanicIfError("Invalid hydra admin url", 500, err)
 	hydraPublicURI, err := url.Parse(flags.HydraPublicURL)
 	gohtypes.PanicIfError("Invalid hydra public url", 500, err)
+	publicURI, err := url.Parse(flags.PublicURL)
+	gohtypes.PanicIfError("Invalid public url", 500, err)
+
+	loginRedirectURI, _ := publicURI.Parse("/login")
+	logoutRedirectURI, _ := publicURI.Parse("/logout")
 
 	b.Self = new(client.WhisperClient).InitFromConfig(&config.Config{
-		ClientID:       "whisper",
-		ClientSecret:   "",
-		WhisperURL:     nil,
-		HydraAdminURL:  hydraAdminURI,
-		HydraPublicURL: hydraPublicURI,
-		Scopes:         b.GrantScopes.GetScopeListFromGrantScopeMap(),
+		ClientID:          b.HydraClientID,
+		ClientName:        b.HydraClientName,
+		ClientSecret:      b.HydraClientSecret,
+		WhisperURL:        nil,
+		HydraAdminURL:     hydraAdminURI,
+		HydraPublicURL:    hydraPublicURI,
+		Scopes:            b.GrantScopes.GetScopeListFromGrantScopeMap(),
+		LoginRedirectURL:  loginRedirectURI,
+		LogoutRedirectURL: logoutRedirectURI,
+		PublicURL:         publicURI,
 	})
 
 	logrus.Infof("GrantScopes: '%v'", b.GrantScopes)
@@ -162,8 +183,6 @@ func (flags *Flags) check() {
 		panic(errMsg)
 	}
 }
-
-
 
 // initDB opens a connection with the database
 func (b *WebBuilder) initDB() *gorm.DB {

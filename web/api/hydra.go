@@ -1,11 +1,13 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/labbsr0x/goh/gohserver"
 	"github.com/labbsr0x/whisper/web/config"
-	"net/http"
 )
 
+// HydraAPI hydra info interface
 type HydraAPI interface {
 	HydraGETHandler() http.Handler
 }

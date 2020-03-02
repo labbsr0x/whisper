@@ -2,6 +2,7 @@ package api
 
 import "net/http"
 
+// MockUserCredentialsAPI holds the mock info
 type MockUserCredentialsAPI struct {
 }
 

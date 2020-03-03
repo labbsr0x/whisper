@@ -80,7 +80,7 @@ func (s *Server) Run() error {
 
 	router.Handle("/hydra", s.HydraAPIs.HydraGETHandler()).Methods("GET")
 
-	// secureRouter.Handle("/home",  )
+	secureRouter.Handle("/home", s.HomeAPIs.GETHandler())
 	secureRouter.Handle("/update", s.UserCredentialsAPIs.GETUpdatePageHandler("/secure/update")).Methods("GET")
 	secureRouter.Handle("/update", s.UserCredentialsAPIs.PUTHandler()).Methods("PUT")
 
@@ -91,6 +91,7 @@ func (s *Server) Run() error {
 	return s.ListenAndServe(router)
 }
 
+// ListenAndServe starts up the server
 func (s *Server) ListenAndServe(router *mux.Router) error {
 
 	srv := &http.Server{

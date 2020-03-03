@@ -29,6 +29,7 @@ type UserCredentialsAPI interface {
 	PUTChangePasswordPageHandler(route string) http.Handler
 	GETRegistrationPageHandler(route string) http.Handler
 	GETUpdatePageHandler(route string) http.Handler
+	InitFromWebBuilder(w *config.WebBuilder) UserCredentialsAPI
 }
 
 // DefaultUserCredentialsAPI holds the default implementation of the User API interface
@@ -38,7 +39,7 @@ type DefaultUserCredentialsAPI struct {
 }
 
 // InitFromWebBuilder initializes the default user credentials API from a WebBuilder
-func (dapi *DefaultUserCredentialsAPI) InitFromWebBuilder(w *config.WebBuilder) *DefaultUserCredentialsAPI {
+func (dapi *DefaultUserCredentialsAPI) InitFromWebBuilder(w *config.WebBuilder) UserCredentialsAPI {
 	dapi.WebBuilder = w
 	dapi.UserCredentialsDAO = new(db.DefaultUserCredentialsDAO).Init(w.SecretKey, w.BaseUIPath, w.PublicURL, w.Outbox, w.DB)
 

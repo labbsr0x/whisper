@@ -1,6 +1,9 @@
 package api
 
 import (
+	"net/http"
+	"net/url"
+
 	"github.com/labbsr0x/goh/gohserver"
 	"github.com/labbsr0x/goh/gohtypes"
 	"github.com/labbsr0x/whisper/hydra"
@@ -9,14 +12,13 @@ import (
 	"github.com/labbsr0x/whisper/web/config"
 	"github.com/labbsr0x/whisper/web/ui"
 	"github.com/sirupsen/logrus"
-	"net/http"
-	"net/url"
 )
 
 // ConsentAPI defines the available user apis
 type ConsentAPI interface {
 	ConsentGETHandler(route string) http.Handler
 	ConsentPOSTHandler() http.Handler
+	InitFromWebBuilder(webBuilder *config.WebBuilder) ConsentAPI
 }
 
 // DefaultConsentAPI holds the default implementation of the User API interface
@@ -25,7 +27,7 @@ type DefaultConsentAPI struct {
 }
 
 // InitFromWebBuilder initializes a default consent api instance from a web builder instance
-func (dapi *DefaultConsentAPI) InitFromWebBuilder(webBuilder *config.WebBuilder) *DefaultConsentAPI {
+func (dapi *DefaultConsentAPI) InitFromWebBuilder(webBuilder *config.WebBuilder) ConsentAPI {
 	dapi.WebBuilder = webBuilder
 	return dapi
 }

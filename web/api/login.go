@@ -21,6 +21,7 @@ import (
 type LoginAPI interface {
 	LoginGETHandler(route string) http.Handler
 	LoginPOSTHandler() http.Handler
+	InitFromWebBuilder(w *config.WebBuilder) LoginAPI
 }
 
 // DefaultLoginAPI holds the default implementation of the User API interface
@@ -30,7 +31,7 @@ type DefaultLoginAPI struct {
 }
 
 // InitFromWebBuilder initializes a default login api instance
-func (dapi *DefaultLoginAPI) InitFromWebBuilder(w *config.WebBuilder) *DefaultLoginAPI {
+func (dapi *DefaultLoginAPI) InitFromWebBuilder(w *config.WebBuilder) LoginAPI {
 	dapi.WebBuilder = w
 	dapi.UserCredentialsDAO = new(db.DefaultUserCredentialsDAO).Init(w.SecretKey, w.BaseUIPath, w.PublicURL, w.Outbox, w.DB)
 	return dapi

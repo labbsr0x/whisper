@@ -37,3 +37,4 @@ func (payload *ConsentRequestPayload) Check() error {
 	}
 	return nil
 }
+

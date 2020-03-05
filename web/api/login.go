@@ -57,7 +57,7 @@ func (dapi *DefaultLoginAPI) LoginPOSTHandler() http.Handler {
 
 		info := dapi.HydraHelper.AcceptLoginRequest(
 			payload.Challenge,
-			hydra.AcceptLoginRequestPayload{ACR: "0", Remember: payload.Remember, RememberFor: 3600, Subject: payload.Username},
+			hydra.AcceptLoginRequestPayload{ACR: "0", Remember: payload.Remember, RememberFor: 2592000, Subject: payload.Username},
 		)
 		logrus.Debugf("Accept login request info: %v", info)
 		if info != nil {

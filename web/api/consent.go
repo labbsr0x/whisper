@@ -80,7 +80,8 @@ func (dapi *DefaultConsentAPI) ConsentGETHandler(route string) http.Handler {
 		gohtypes.PanicIfError("Unable to parse the consent_challenge parameter", http.StatusBadRequest, err)
 		info := dapi.HydraHelper.GetConsentRequestInfo(challenge)
 		logrus.Debugf("Consent Request Info: '%v'", info)
-		if info["skip"].(bool) {
+		consentClient := info["client"].(map[string]interface{})
+		if info["skip"].(bool) || consentClient["client_id"] == dapi.HydraClientID { // if oauth client is whisper, we skip consent page
 			info = dapi.HydraHelper.AcceptConsentRequest(
 				challenge,
 				hydra.AcceptConsentRequestPayload{

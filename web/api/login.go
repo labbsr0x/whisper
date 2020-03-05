@@ -110,7 +110,7 @@ func (dapi *DefaultLoginAPI) PostLoginCallbackGETHandler() http.Handler {
 			tokens, err := dapi.Self.ExchangeCodeForToken(code, codeVerifierCookie.Value, stateCookie.Value)
 			gohtypes.PanicIfError(fmt.Sprintf("Unable to exchange code '%v' for tokens: %s", code, tokens), 500, err)
 
-			logrus.Infof("Exchanged code '%v' for the following tokens: %v", tokens)
+			logrus.Infof("Exchanged code '%v' for the following tokens: %v", code, tokens)
 			http.SetCookie(w, &http.Cookie{
 				Name:  "ACCESS_TOKEN",
 				Value: tokens.AccessToken,

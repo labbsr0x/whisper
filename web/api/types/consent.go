@@ -2,8 +2,9 @@ package types
 
 import (
 	"fmt"
-	"github.com/labbsr0x/whisper/misc"
 	"html/template"
+
+	"github.com/labbsr0x/whisper/misc"
 )
 
 // ConsentPage defines the data needed to build a consent page

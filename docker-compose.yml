@@ -56,8 +56,8 @@ services:
       - OIDC_SUBJECT_IDENTIFIERS_SUPPORTED_TYPES=public,pairwise
       - OIDC_SUBJECT_IDENTIFIERS_PAIRWISE_SALT=youReallyNeedToChangeThis
       - URLS_SELF_ISSUER=http://hydra:4444
-      - URLS_SELF_CONSENT=http://localhost:7070/consent
-      - URLS_SELF_LOGIN=http://localhost:7070/login
+      - URLS_CONSENT=http://localhost:7070/consent
+      - URLS_LOGIN=http://localhost:7070/login
       - OAUTH2_EXPOSE_INTERNAL_ERRORS=true
       - SECRETS_SYSTEM=youReallyNeedToChangeThis
       - SERVE_ADMIN_CORS_ENABLED=true

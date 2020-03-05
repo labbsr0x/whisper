@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-var appScopes = []string{"openid", "offline"}  // openid and offline will be there by default
+var AppScopes = []string{"openid", "offline"}  // openid and offline will be there by default
 
 // GrantScope defines the structure of a grant scope
 type GrantScope struct {
@@ -21,9 +21,9 @@ type GrantScopes map[string]GrantScope
 // GetScopeListFromGrantScopeMap builds a list of scopes from a grant scope map
 func (gss GrantScopes) GetScopeListFromGrantScopeMap() []string {
 	for _, v := range gss {
-		appScopes = append(appScopes, v.Scope)
+		AppScopes = append(AppScopes, v.Scope)
 	}
-	return appScopes
+	return AppScopes
 }
 
 // GetGrantScopesFromFile reads into memory the json scopes file

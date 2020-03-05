@@ -130,7 +130,7 @@ func (b *WebBuilder) Init(v *viper.Viper, outbox chan<- mail.Mail) *WebBuilder {
 	publicURI, err := url.Parse(flags.PublicURL)
 	gohtypes.PanicIfError("Invalid public url", 500, err)
 
-	loginRedirectURI, _ := publicURI.Parse("/home")
+	loginRedirectURI, _ := publicURI.Parse("/after-login")
 	logoutRedirectURI, _ := publicURI.Parse("/logout")
 
 	b.Self = new(client.WhisperClient).InitFromConfig(&config.Config{

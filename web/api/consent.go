@@ -48,9 +48,9 @@ func (dapi *DefaultConsentAPI) ConsentPOSTHandler() http.Handler {
 					payload.Challenge,
 					hydra.AcceptConsentRequestPayload{
 						GrantAccessTokenAudience: misc.ConvertInterfaceArrayToStringArray(info["requested_access_token_audience"].([]interface{})),
-						GrantScope:               payload.GrantScope,
+						GrantScope:               misc.MergeTwoStringArrays(payload.GrantScope, []string{"openid", "offline"}),
 						Remember:                 payload.Remember,
-						RememberFor:              3600,
+						RememberFor:              -1,
 					})
 
 				logrus.Debugf("Consent Accept Info: '%v'", acceptInfo)
@@ -84,7 +84,7 @@ func (dapi *DefaultConsentAPI) ConsentGETHandler(route string) http.Handler {
 			info = dapi.HydraHelper.AcceptConsentRequest(
 				challenge,
 				hydra.AcceptConsentRequestPayload{
-					GrantScope:               misc.ConvertInterfaceArrayToStringArray(info["requested_scope"].([]interface{})),
+					GrantScope:               misc.MergeTwoStringArrays(misc.ConvertInterfaceArrayToStringArray(info["requested_scope"].([]interface{})), []string{"openid", "offline"}),
 					GrantAccessTokenAudience: misc.ConvertInterfaceArrayToStringArray(info["requested_access_token_audience"].([]interface{}))},
 			)
 
@@ -115,8 +115,11 @@ func getConsentPage(consentRequestInfo map[string]interface{}, scopes misc.Grant
 		requestedScopes := misc.ConvertInterfaceArrayToStringArray(i)
 
 		for _, scope := range requestedScopes {
-			consentPageInfo.RequestedScopes = append(consentPageInfo.RequestedScopes, scopes[scope])
+			if (scope != "openid" && scope != "offline") {
+				consentPageInfo.RequestedScopes = append(consentPageInfo.RequestedScopes, scopes[scope])
+			}
 		}
+
 	}
 
 	return consentPageInfo

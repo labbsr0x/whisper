@@ -27,6 +27,7 @@ type Server struct {
 	ConsentAPIs         api.ConsentAPI
 	HydraAPIs           api.HydraAPI
 	HomeAPIs            api.HomeAPI
+	LandingAPIs         api.LandingAPI
 }
 
 var _userAPI = new(api.DefaultUserCredentialsAPI)
@@ -34,6 +35,7 @@ var _loginAPI = new(api.DefaultLoginAPI)
 var _consentAPI = new(api.DefaultConsentAPI)
 var _hydraAPI = new(api.DefaultHydraAPI)
 var _homeAPI = new(api.DefaultHomeAPI)
+var _landingAPI = new(api.DefaultLandingAPI)
 
 // InitFromWebBuilder builds a Server instance
 func (s *Server) InitFromWebBuilder(webBuilder *config.WebBuilder) *Server {
@@ -43,6 +45,7 @@ func (s *Server) InitFromWebBuilder(webBuilder *config.WebBuilder) *Server {
 	s.ConsentAPIs = _consentAPI.InitFromWebBuilder(webBuilder)
 	s.HydraAPIs = _hydraAPI.InitFromWebBuilder(webBuilder)
 	s.HomeAPIs = _homeAPI.InitFromWebBuilder(webBuilder)
+	s.LandingAPIs = _landingAPI.InitFromWebBuilder(webBuilder)
 
 	logLevel, err := logrus.ParseLevel(s.LogLevel)
 	if err != nil {
@@ -57,13 +60,16 @@ func (s *Server) InitFromWebBuilder(webBuilder *config.WebBuilder) *Server {
 // Run initializes the web server and its apis
 func (s *Server) Run() error {
 	router := mux.NewRouter().StrictSlash(true)
-	secureRouter := router.PathPrefix("/secure").Subrouter()
+	secureRouter := router.PathPrefix("/").Subrouter()
+
+	router.Handle("/", s.LandingAPIs.GETHandler()).Methods("GET")
 
 	router.PathPrefix("/static").Handler(ui.Handler(s.BaseUIPath)).Methods("GET")
 	router.Handle("/metrics", promhttp.Handler()).Methods("GET")
 
 	router.Handle("/login", s.LoginAPIs.LoginGETHandler("/login")).Methods("GET")
 	router.Handle("/login", s.LoginAPIs.LoginPOSTHandler()).Methods("POST")
+	router.Handle("/after-login", s.LoginAPIs.PostLoginCallbackGETHandler()).Methods("GET")
 
 	router.Handle("/consent", s.ConsentAPIs.ConsentGETHandler("/consent")).Methods("GET")
 	router.Handle("/consent", s.ConsentAPIs.ConsentPOSTHandler()).Methods("POST")
@@ -80,8 +86,8 @@ func (s *Server) Run() error {
 
 	router.Handle("/hydra", s.HydraAPIs.HydraGETHandler()).Methods("GET")
 
-	secureRouter.Handle("/home", s.HomeAPIs.GETHandler())
-	secureRouter.Handle("/update", s.UserCredentialsAPIs.GETUpdatePageHandler("/secure/update")).Methods("GET")
+	router.Handle("/home", s.HomeAPIs.GETHandler("/home")).Methods("GET")
+	secureRouter.Handle("/update", s.UserCredentialsAPIs.GETUpdatePageHandler("/update")).Methods("GET")
 	secureRouter.Handle("/update", s.UserCredentialsAPIs.PUTHandler()).Methods("PUT")
 
 	router.Use(middleware.GetPrometheusMiddleware())

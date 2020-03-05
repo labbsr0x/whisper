@@ -2,12 +2,13 @@ package ui
 
 import (
 	"bytes"
-	"github.com/labbsr0x/goh/gohtypes"
-	"github.com/labbsr0x/whisper/misc"
 	"html/template"
 	"io/ioutil"
 	"net/http"
 	"path"
+
+	"github.com/labbsr0x/goh/gohtypes"
+	"github.com/labbsr0x/whisper/misc"
 )
 
 // Enum
@@ -20,6 +21,7 @@ const (
 	Login               = "login.html"
 	Registration        = "registration.html"
 	Update              = "update.html"
+	Home                = "home.html"
 )
 
 // Handler defines the handler for ui requests

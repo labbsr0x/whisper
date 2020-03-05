@@ -1,8 +1,10 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/labbsr0x/goh/gohserver"
 	"github.com/labbsr0x/goh/gohtypes"
@@ -21,6 +23,7 @@ import (
 type LoginAPI interface {
 	LoginGETHandler(route string) http.Handler
 	LoginPOSTHandler() http.Handler
+	PostLoginCallbackGETHandler() http.Handler
 	InitFromWebBuilder(w *config.WebBuilder) LoginAPI
 }
 
@@ -91,4 +94,40 @@ func (dapi *DefaultLoginAPI) LoginGETHandler(route string) http.Handler {
 		}
 		panic(gohtypes.Error{Code: http.StatusBadRequest, Err: err, Message: "Unable to parse the login_challenge"})
 	}))
+}
+
+// PostLoginCallbackGETHandler defines the logic for handling behavior in whisper after successful login
+func (dapi *DefaultLoginAPI) PostLoginCallbackGETHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		code, err := url.QueryUnescape(r.URL.Query().Get("code"))
+		if err == nil && code != "" {
+			// exchange the code retrieved by tokens that identify the user and more
+			codeVerifierCookie, err := r.Cookie("CODE_VERIFIER")
+			gohtypes.PanicIfError("Unable to exchange code for tokens", 500, err)
+			stateCookie, err := r.Cookie("STATE")
+			gohtypes.PanicIfError("Unable to exchange code for tokens", 500, err)
+
+			tokens, err := dapi.Self.ExchangeCodeForToken(code, codeVerifierCookie.Value, stateCookie.Value)
+			gohtypes.PanicIfError(fmt.Sprintf("Unable to exchange code '%v' for tokens: %s", code, tokens), 500, err)
+
+			logrus.Infof("Exchanged code '%v' for the following tokens: %v", tokens)
+			http.SetCookie(w, &http.Cookie{
+				Name:  "ACCESS_TOKEN",
+				Value: tokens.AccessToken,
+			})
+			http.SetCookie(w, &http.Cookie{
+				Name:    "CODE_VERIFIER",
+				Value:   "",
+				Expires: time.Unix(0, 0),
+			})
+			http.SetCookie(w, &http.Cookie{
+				Name:    "STATE",
+				Value:   "",
+				Expires: time.Unix(0, 0),
+			})
+
+			// Redirect to the specified url
+			http.Redirect(w, r, "/home", http.StatusFound)
+		}
+	})
 }

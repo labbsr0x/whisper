@@ -8,7 +8,7 @@ require (
 	github.com/gorilla/mux v1.7.3
 	github.com/jinzhu/gorm v1.9.11
 	github.com/labbsr0x/goh v1.0.1
-	github.com/labbsr0x/whisper-client v0.9.3
+	github.com/labbsr0x/whisper-client v0.9.4
 	github.com/prometheus/client_golang v1.2.1
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5

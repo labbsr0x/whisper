@@ -56,3 +56,19 @@ func GetEncryptedPassword(secretKey, password, salt string) string {
 
 	return base64.URLEncoding.EncodeToString(hash.Sum(nil))
 }
+
+// MergeTwoStringArrays a function to merge, without repeating values, two different string arrays
+func MergeTwoStringArrays(arr1, arr2 []string) []string {
+	cache := map[string]bool{}
+	for _, data := range arr1 {
+		cache[data] = true
+	}
+
+	for _, data := range arr2 {
+		if !cache[data] {
+			arr1 = append(arr1, data)
+		}
+	}
+
+	return arr1
+}
